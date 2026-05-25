@@ -85,7 +85,7 @@ if page != st.session_state.last_main_tab:
 # ============================================================
 # DASHBOARD
 # ============================================================
-if page == "🏠 Dashboard":
+if page == "🏠 Tổng":
     conn = get_connection()
     today = date.today()
     today_str = today.strftime("%Y-%m-%d")
