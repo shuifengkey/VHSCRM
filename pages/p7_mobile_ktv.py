@@ -21,6 +21,7 @@ MOBILE_CSS = """
 /* Card thiết kế chuẩn mobile */
 .mobile-card {
     background: white;
+    color: #0f172a;
     border-radius: 20px;
     padding: 20px;
     margin-bottom: 16px;

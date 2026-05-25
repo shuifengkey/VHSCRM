@@ -7,7 +7,7 @@ GLOBAL_CSS = """
 html, body, [class*="css"], .stApp {
     font-family: 'Inter', -apple-system, sans-serif !important;
 }
-.stApp { background: #f0f2f5 !important; }
+.stApp { background: #f0f2f5 !important; color: #0f172a !important; }
 .block-container { padding: 0 1.5rem 2rem !important; max-width: 1400px; }
 
 /* ── HIDE sidebar & default chrome ── */
@@ -144,7 +144,8 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
 .stTimeInput > div > div > input {
     border: 1.5px solid #e2e8f0 !important;
     border-radius: 10px !important; font-size: 13px !important;
-    background: white !important; transition: border-color .15s !important;
+    background: white !important; color: #0f172a !important;
+    transition: border-color .15s !important;
 }
 .stTextInput > div > div > input:focus,
 .stTextArea > div > div > textarea:focus {
