@@ -184,6 +184,19 @@ st.markdown('<div class="vhs-nav-radio-container">', unsafe_allow_html=True)
 page = st.radio("nav", NAV_ITEMS, horizontal=True, label_visibility="collapsed", key="topnav")
 st.markdown("</div>", unsafe_allow_html=True)
 
+# JS: Di chuyển thanh nav ra ngoài body để position:fixed luôn hoạt động khi cuộn
+components.html("""
+<script>
+(function() {
+    const parentDoc = window.parent.document;
+    const nav = parentDoc.querySelector('.vhs-nav-radio-container');
+    if (nav && nav.parentElement !== parentDoc.body) {
+        parentDoc.body.appendChild(nav);
+    }
+})();
+</script>
+""", height=0, width=0)
+
 if "last_main_tab" not in st.session_state:
     st.session_state.last_main_tab = page
 if "current_subpage" not in st.session_state:
