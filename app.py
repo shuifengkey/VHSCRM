@@ -6,7 +6,9 @@ sys.path.insert(0, os.path.dirname(__file__))
 from utils.database import init_db, seed_demo_data, get_connection
 from utils.styles import GLOBAL_CSS, card, badge, section_header, stat_row, COLORS
 from datetime import datetime, date, timedelta
+from zoneinfo import ZoneInfo
 import plotly.graph_objects as go
+import streamlit.components.v1 as components
 
 st.set_page_config(
     page_title="VHS CRM", page_icon="🐛",
@@ -22,6 +24,115 @@ if "auto_scheduled" not in st.session_state:
     st.session_state.auto_scheduled = True
 
 st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
+
+def inject_countdown_banner(conn):
+    try:
+        now_vn = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh'))
+        today_str = now_vn.strftime('%Y-%m-%d')
+        tomorrow_str = (now_vn + timedelta(days=1)).strftime('%Y-%m-%d')
+        
+        jobs = conn.execute('''
+            SELECT s.ngay_du_kien, s.gio_bat_dau, c.ten_cty
+            FROM schedules s JOIN customers c ON s.ma_kh = c.ma_kh
+            WHERE s.trang_thai = 'scheduled' 
+              AND s.ngay_du_kien IN (?, ?)
+        ''', (today_str, tomorrow_str)).fetchall()
+        
+        upcoming = []
+        for j in jobs:
+            try:
+                job_dt_str = f"{j['ngay_du_kien']} {j['gio_bat_dau']}"
+                job_dt = datetime.strptime(job_dt_str, '%Y-%m-%d %H:%M')
+                job_dt = job_dt.replace(tzinfo=ZoneInfo('Asia/Ho_Chi_Minh'))
+                delta = (job_dt - now_vn).total_seconds()
+                
+                # Trong vòng 6 tiếng (21600 giây)
+                if 0 < delta <= 21600:
+                    upcoming.append({
+                        "ten_cty": j['ten_cty'],
+                        "gio_bat_dau": j['gio_bat_dau'],
+                        "timestamp": job_dt.timestamp() * 1000 # JS uses milliseconds
+                    })
+            except Exception:
+                pass
+                
+        if upcoming:
+            upcoming.sort(key=lambda x: x["timestamp"])
+            best = upcoming[0]
+            
+            js_code = f"""
+            <script>
+            (function() {{
+                const targetTime = {best['timestamp']};
+                const cty = "{best['ten_cty']}";
+                const gio = "{best['gio_bat_dau']}";
+                
+                const parentDoc = window.parent.document;
+                let banner = parentDoc.getElementById("vhs-countdown-banner");
+                
+                if (!banner) {{
+                    banner = parentDoc.createElement("div");
+                    banner.id = "vhs-countdown-banner";
+                    banner.style.position = "fixed";
+                    banner.style.top = "15px";
+                    banner.style.left = "50%";
+                    banner.style.transform = "translateX(-50%)";
+                    banner.style.zIndex = "999999";
+                    banner.style.backgroundColor = "#fff";
+                    banner.style.border = "1px solid #e2e8f0";
+                    banner.style.borderLeft = "5px solid #f59e0b";
+                    banner.style.borderRadius = "12px";
+                    banner.style.padding = "10px 16px";
+                    banner.style.boxShadow = "0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)";
+                    banner.style.width = "90%";
+                    banner.style.maxWidth = "350px";
+                    banner.style.fontFamily = "Inter, sans-serif";
+                    banner.style.display = "flex";
+                    banner.style.flexDirection = "column";
+                    banner.style.alignItems = "center";
+                    banner.style.cursor = "pointer";
+                    
+                    banner.onclick = function() {{ banner.style.display = "none"; }};
+                    parentDoc.body.appendChild(banner);
+                }}
+                
+                const updateTimer = () => {{
+                    const now = new Date().getTime();
+                    const distance = targetTime - now;
+                    
+                    if (distance < 0) {{
+                        banner.innerHTML = `<div style="font-size:12px;color:#475569;font-weight:600;margin-bottom:2px;">🚨 Đã đến giờ thi công:</div>
+                                            <div style="font-size:14px;color:#0f172a;font-weight:800;">${{cty}} (${{gio}})</div>`;
+                        return;
+                    }}
+                    
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                    
+                    let timeStr = "";
+                    if (hours > 0) timeStr += hours + "h ";
+                    timeStr += minutes + "m " + seconds + "s";
+                    
+                    banner.innerHTML = `
+                        <div style="font-size:11px;color:#64748b;font-weight:600;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.5px;">Sắp tới ca thi công (nhấn để ẩn)</div>
+                        <div style="font-size:14px;color:#0f172a;font-weight:800;margin-bottom:2px;text-align:center;">${{cty}}</div>
+                        <div style="font-size:24px;color:#f59e0b;font-weight:900;letter-spacing:1px;font-variant-numeric:tabular-nums;">${{timeStr}}</div>
+                    `;
+                }};
+                
+                updateTimer();
+                setInterval(updateTimer, 1000);
+            }})();
+            </script>
+            """
+            components.html(js_code, height=0, width=0)
+    except Exception as e:
+        pass
+
+conn_main = get_connection()
+inject_countdown_banner(conn_main)
+conn_main.close()
 
 # ============================================================
 # TOP NAVBAR

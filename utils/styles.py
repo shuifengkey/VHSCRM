@@ -220,7 +220,7 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
     }
     .stRadio { width: 100% !important; margin: 0 !important; }
-    .stRadio > div {
+    .stRadio [role="radiogroup"] {
         justify-content: center !important;
         width: 100% !important;
         gap: 4px !important; /* Khoảng cách vài px theo ý khách */
@@ -228,8 +228,12 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         background: transparent !important; 
         padding: 0 !important;
     }
-    .stRadio > div > label {
+    .stRadio [role="radiogroup"] > div {
         flex: 1 1 0 !important;
+        display: flex !important;
+    }
+    .stRadio [role="radiogroup"] > div > label {
+        width: 100% !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
@@ -243,17 +247,18 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         min-height: 48px !important;
         overflow: hidden !important;
     }
-    .stRadio > div > label:hover {
+    .stRadio [role="radiogroup"] > div > label:hover {
         background: rgba(0,0,0,0.04) !important;
     }
-    .stRadio > div [data-checked="true"],
-    .stRadio > div label:has(input:checked) {
+    .stRadio [role="radiogroup"] [data-checked="true"],
+    .stRadio [role="radiogroup"] label:has(input:checked) {
         background: #16a34a !important;
         color: white !important;
+        border-color: #16a34a !important;
         box-shadow: 0 4px 10px rgba(22,163,74,0.3) !important;
     }
     /* Style the text inside the radio labels to be small */
-    .stRadio > div > label p {
+    .stRadio [role="radiogroup"] p {
         font-size: 11px !important;
         font-weight: 800 !important;
         margin: 0 !important;
