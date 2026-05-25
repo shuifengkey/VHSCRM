@@ -223,7 +223,7 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
     .stRadio [role="radiogroup"] {
         display: flex !important;
         width: 100% !important;
-        gap: 6px !important;
+        gap: 3px !important;
         flex-wrap: nowrap !important;
         overflow-x: auto !important;
         -webkit-overflow-scrolling: touch;
