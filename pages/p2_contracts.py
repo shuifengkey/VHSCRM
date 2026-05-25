@@ -1,0 +1,646 @@
+# pages/p2_contracts.py — Hợp Đồng v4
+import streamlit as st
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from utils.database import get_connection
+from utils.styles import badge, section_header, COLORS
+from utils.scheduling import (auto_generate_schedules, calc_dates_for_month,
+                               describe_schedule, THU_NAMES)
+from datetime import date, datetime, timedelta, time
+import calendar
+from pages.p2_contracts_edit import edit_contract_dialog
+import plotly.graph_objects as go
+
+TAN_SUAT_OPTS = {1:"1 lần/tháng", 2:"2 lần/tháng",
+                 3:"3 lần/tháng", 4:"4 lần/tháng"}
+
+KHU_VUC_OPTIONS = [
+    "Nhà hàng", "Văn phòng", "Cửa hàng",
+    "Sân vườn", "Bếp", "Tòa nhà", "Căn hộ/nhà ở"
+]
+DICH_HAI_OPTIONS = [
+    "Ruồi", "Muỗi", "Chuột",
+    "Ong", "Nhện", "Kiến",
+    "Mối", "Mọt", "Gián"
+]
+PHUONG_PHAP_OPTIONS = [
+    "Phun sương", "Đặt bẫy",
+    "Phun tồn lưu", "Phun khói",
+    "Khử trùng", "Bả"
+]
+
+def _time_input_row(label_bd, label_kt, key_bd, key_kt,
+                    default_bd="06:00", default_kt="06:30"):
+    """
+    Hiển thị 2 ô giờ dạng time_input.
+    Trả về (gio_bat_dau_str, gio_ket_thuc_str, is_valid).
+    """
+    c1, c2 = st.columns(2)
+    h_bd, m_bd = map(int, default_bd.split(":"))
+    h_kt, m_kt = map(int, default_kt.split(":"))
+    
+    with c1:
+        gbd = st.time_input(label_bd, value=time(h_bd, m_bd), key=key_bd)
+    with c2:
+        gkt = st.time_input(label_kt, value=time(h_kt, m_kt), key=key_kt)
+    
+    gbd_str = gbd.strftime("%H:%M")
+    gkt_str = gkt.strftime("%H:%M")
+    
+    # Night-shift notice
+    if gkt < gbd:
+        st.caption("🌙 Ca đêm — kết thúc sang ngày hôm sau. Hệ thống tự xử lý.")
+        
+    return gbd_str, gkt_str, True
+
+
+
+def _preview_schedule(hd_dict: dict, ky_thang: str):
+    """Hiển thị preview các ngày thi công cho kỳ cho trước."""
+    dates = calc_dates_for_month(hd_dict, ky_thang)
+    thu_map = {0:"CN",1:"T2",2:"T3",3:"T4",4:"T5",5:"T6",6:"T7"}
+    pills = "".join(
+        f'<div style="background:#dbeafe;color:#1e40af;border-radius:10px;'
+        f'padding:8px 12px;font-size:12px;font-weight:700;text-align:center;min-width:90px;">'
+        f'Lần {i+1}<br>'
+        f'<span style="font-size:14px;">{d.strftime("%d/%m")}</span><br>'
+        f'<span style="font-weight:400;font-size:10px;">{thu_map[d.weekday()]}</span>'
+        f'</div>'
+        for i, d in enumerate(dates)
+    )
+    return f'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">{pills}</div>'
+
+
+def render():
+    st.markdown(section_header("Hợp Đồng",
+        "Tạo hợp đồng · Setup lịch thi công · Tự sinh lịch kỳ", "📄"),
+        unsafe_allow_html=True)
+
+    tab_list, tab_add, tab_chart = st.tabs(
+        ["📋  Danh Sách", "➕  Tạo Hợp Đồng Mới", "📊  Phân Tích"]
+    )
+
+    # =========================================================
+    # DANH SÁCH
+    # =========================================================
+    with tab_list:
+        today     = date.today()
+        today_str = today.strftime("%Y-%m-%d")
+
+        conn = get_connection()
+        c1, c2, c3 = st.columns([3,1,1])
+        with c1: search   = st.text_input("🔍 Tìm kiếm", placeholder="Mã HĐ / Tên KH...")
+        with c2: f_status = st.selectbox("Trạng thái",["Tất cả","🟢 Hiệu lực","🟡 Sắp hết hạn","🔴 Hết hạn"])
+        with c3: f_ts     = st.selectbox("Tần suất",["Tất cả"]+list(TAN_SUAT_OPTS.values()))
+
+        rows = [dict(r) for r in conn.execute("""
+            SELECT ct.*, k.ten_cty, k.sdt, k.dai_dien,
+              CAST(julianday(ct.ngay_het_han)-julianday('now') AS INT) as days_left,
+              (SELECT COUNT(*) FROM schedules s WHERE s.ma_hd=ct.ma_hd AND s.trang_thai='completed') as so_xong,
+              (SELECT COUNT(*) FROM schedules s WHERE s.ma_hd=ct.ma_hd) as tong_ca
+            FROM contracts ct JOIN customers k ON ct.ma_kh=k.ma_kh
+            ORDER BY ct.ngay_het_han
+        """).fetchall()]
+        conn.close()
+
+        def match(r):
+            d = r["days_left"] if r["days_left"] is not None else 999
+            if search and not any(search.lower() in str(r[f]).lower()
+                                  for f in ["ma_hd","ma_kh","ten_cty"]): return False
+            if f_status == "🟢 Hiệu lực"    and d <= 30: return False
+            if f_status == "🟡 Sắp hết hạn" and not (0 < d <= 30): return False
+            if f_status == "🔴 Hết hạn"     and d > 0:  return False
+            if f_ts != "Tất cả" and TAN_SUAT_OPTS.get(r["tan_suat"]) != f_ts: return False
+            return True
+
+        filtered = [r for r in rows if match(r)]
+        exp  = sum(1 for r in rows if (r["days_left"] or 999) <= 0)
+        warn = sum(1 for r in rows if 0 < (r["days_left"] or 999) <= 30)
+        ok   = len(rows) - exp - warn
+
+        st.markdown(f"""
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+          <div style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:10px;padding:8px 16px;">
+            <span style="font-size:13px;color:#166534;font-weight:700;">🟢 {ok} Hiệu lực</span></div>
+          <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:10px;padding:8px 16px;">
+            <span style="font-size:13px;color:#854d0e;font-weight:700;">🟡 {warn} Sắp hết (≤30n)</span></div>
+          <div style="background:#fee2e2;border:1px solid #fecaca;border-radius:10px;padding:8px 16px;">
+            <span style="font-size:13px;color:#991b1b;font-weight:700;">🔴 {exp} Hết hạn</span></div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if not filtered:
+            st.info("Không tìm thấy kết quả.")
+
+        for r in filtered:
+            d = r["days_left"] if r["days_left"] is not None else 999
+            sc = "#dc2626" if d<=0 else "#d97706" if d<=30 else "#16a34a"
+            sb = "#fff5f5" if d<=0 else "#fffbeb" if d<=30 else "#f0fdf4"
+            st_txt = "HẾT HẠN" if d<=0 else f"Còn {d} ngày"
+
+            is_night = False
+            try: is_night = int(r["gio_ket_thuc"].split(":")[0]) < int(r["gio_bat_dau"].split(":")[0])
+            except: pass
+
+            # Tóm tắt lịch lặp
+            sched_desc = describe_schedule(dict(r))
+
+            try:
+                total_d  = (date.fromisoformat(r["ngay_het_han"]) - date.fromisoformat(r["ngay_ky"])).days
+                elapsed  = (today - date.fromisoformat(r["ngay_ky"])).days
+                pct_life = max(0, min(100, int(elapsed/total_d*100))) if total_d else 100
+            except: pct_life = 0
+
+            freq_str = TAN_SUAT_OPTS.get(r['tan_suat'], '?') if r.get('loai_khach') == 'Định kỳ' else r.get('chu_ky_lap', '1_lan').replace('_', ' ')
+            with st.expander(
+                f"**{r['ma_hd']}** — {r['ten_cty']}  "
+                f"| {r.get('loai_khach', 'Định kỳ')} ({freq_str})  "
+                f"{'🌙 ' if is_night else ''}| {st_txt}"
+            ):
+                st.markdown(f"""
+                <div style="background:{sb};border-left:5px solid {sc};border-radius:0 12px 12px 0;padding:16px;margin-bottom:12px;">
+                  <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                    <div>
+                      <div style="font-size:16px;font-weight:700;color:#0f172a;">{r['ten_cty']}</div>
+                      <div style="font-size:12px;color:#64748b;margin-top:3px;">
+                        👤 {r['dai_dien'] or '—'} · 📞 {r['sdt'] or '—'}
+                      </div>
+                      <div style="font-size:12px;color:#2563eb;margin-top:6px;font-weight:600;">
+                        🗓️ {sched_desc}
+                      </div>
+                    </div>
+                    <div style="text-align:right;">
+                      <div style="font-size:24px;font-weight:800;color:{sc};">{f"{int(r['gia_tri_thang']):,.0f}".replace(",", ".")} đ</div>
+                      <div style="font-size:11px;color:#94a3b8;">{r.get('don_vi_tinh', '/tháng')}</div>
+                    </div>
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # 4 stat boxes
+                col1,col2,col3,col4 = st.columns(4)
+                for col,(lbl,val,vc) in zip(
+                    [col1,col2,col3,col4],
+                    [("Ngày Ký",r["ngay_ky"],"#0f172a"),
+                     ("Hết Hạn",r["ngay_het_han"] or "—", sc),
+                     ("TC Đầu Tiên",r["ngay_thi_cong_dau"] or "—","#2563eb"),
+                     ("Ca Hoàn Thành",f"{r['so_xong']}/{r['tong_ca']}","#16a34a")]
+                ):
+                    with col:
+                        st.markdown(f"""
+                        <div style="background:white;border:1px solid #e2e8f0;border-radius:10px;
+                                    padding:11px;text-align:center;">
+                          <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;">{lbl}</div>
+                          <div style="font-size:14px;font-weight:700;color:{vc};margin-top:3px;">{val}</div>
+                        </div>""", unsafe_allow_html=True)
+
+                # Progress bar
+                st.markdown(f"""
+                <div style="background:white;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-top:10px;">
+                  <div style="display:flex;justify-content:space-between;font-size:12px;color:#64748b;margin-bottom:5px;">
+                    <span>Vòng đời hợp đồng</span>
+                    <span><b style="color:#0f172a;">{pct_life}%</b> đã trôi qua</span>
+                  </div>
+                  <div style="background:#f1f5f9;border-radius:99px;height:7px;">
+                    <div style="background:{'#dc2626' if pct_life>=90 else '#d97706' if pct_life>=70 else '#16a34a'};
+                                height:7px;border-radius:99px;width:{pct_life}%;"></div>
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # Preview lịch tháng này
+                ky_hien_tai = today.strftime("%Y-%m")
+                prev_html   = _preview_schedule(dict(r), ky_hien_tai)
+                st.markdown(f"""
+                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-top:10px;">
+                  <div style="font-size:12px;font-weight:700;color:#0f172a;margin-bottom:8px;">
+                    📅 Dự kiến lịch tháng {ky_hien_tai}
+                  </div>
+                  {prev_html}
+                </div>
+                """, unsafe_allow_html=True)
+
+                # Sinh lịch & Action
+                st.markdown("---")
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    if st.button("🤖 Sinh lịch (2 tháng gần nhất)", key=f"gen_{r['ma_hd']}", type="primary"):
+                        ky_next = (today.replace(day=1)+timedelta(days=32)).strftime("%Y-%m")
+                        n1 = auto_generate_schedules(r["ma_hd"], ky_hien_tai)
+                        n2 = 0
+                        if r["loai_khach"] == "Định kỳ" or r["chu_ky_lap"] != "1_lan":
+                            n2 = auto_generate_schedules(r["ma_hd"], ky_next)
+                        n = n1 + n2
+                        st.success(f"✅ Đã sinh {n} ca mới." if n else "Lịch đã đủ hoặc không có lịch sinh thêm.")
+                        st.rerun()
+                with col_b:
+                    if st.button("🗑️ Xóa Hợp Đồng", key=f"del_{r['ma_hd']}"):
+                        st.session_state[f"confirm_del_{r['ma_hd']}"] = True
+
+                if st.session_state.get(f"confirm_del_{r['ma_hd']}"):
+                    st.warning(f"⚠️ Bạn có chắc chắn muốn xóa hợp đồng **{r['ma_hd']}** và **toàn bộ lịch thi công** không?")
+                    c_yes, c_no = st.columns([1, 4])
+                    with c_yes:
+                        if st.button("✅ Xác nhận xóa", key=f"yes_{r['ma_hd']}"):
+                            conn = get_connection()
+                            conn.execute("DELETE FROM logbook WHERE schedule_id IN (SELECT id FROM schedules WHERE ma_hd=?)", (r['ma_hd'],))
+                            conn.execute("DELETE FROM schedules WHERE ma_hd=?", (r['ma_hd'],))
+                            conn.execute("DELETE FROM contracts WHERE ma_hd=?", (r['ma_hd'],))
+                            conn.commit(); conn.close()
+                            st.session_state[f"confirm_del_{r['ma_hd']}"] = False
+                            st.success("Đã xóa thành công!"); st.rerun()
+                    with c_no:
+                        if st.button("❌ Hủy", key=f"no_{r['ma_hd']}"):
+                            st.session_state[f"confirm_del_{r['ma_hd']}"] = False
+                            st.rerun()
+                col_btn_edit, _ = st.columns([1, 4])
+                with col_btn_edit:
+                    if st.button("✏️ Sửa Hợp Đồng", key=f"btn_edit_dialog_{r['ma_hd']}"):
+                        edit_contract_dialog(r['ma_hd'])
+
+    # =========================================================
+    # TẠO MỚI
+    # =========================================================
+    with tab_add:
+        col_form, col_tip = st.columns([3, 1])
+
+        with col_form:
+            conn = get_connection()
+            all_kh = conn.execute(
+                "SELECT ma_kh, ten_cty FROM customers ORDER BY ma_kh"
+            ).fetchall()
+            conn.close()
+
+            if not all_kh:
+                st.warning("⚠️ Chưa có khách hàng. Bạn cần thêm Khách Hàng trước!")
+            else:
+                st.markdown('<div style="background:white;border:1px solid #e2e8f0;border-radius:14px;padding:24px;">', unsafe_allow_html=True)
+                st.markdown("**📋 Thông Tin Hợp Đồng**")
+                st.markdown('<hr style="margin:8px 0 16px">', unsafe_allow_html=True)
+
+                if st.session_state.get("add_hd_success"):
+                    st.success(st.session_state.add_hd_success)
+                    st.session_state.add_hd_success = None
+
+                with st.container():
+                    # ── Thông tin cơ bản ──
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        ma_hd   = st.text_input("Mã Hợp Đồng *", placeholder="VD: HD2025-006")
+                        ngay_ky = st.date_input("Ngày Ký *", value=date.today())
+                    with c2:
+                        kh_opts = {f"{r['ma_kh']} – {r['ten_cty']}": r['ma_kh'] for r in all_kh}
+                        kh_sel  = st.selectbox("Khách Hàng *", list(kh_opts.keys()))
+                        ngay_ht = st.date_input("Ngày Hết Hạn", value=date.today().replace(year=date.today().year+1))
+                    with c3:
+                        loai_khach = st.selectbox("Loại Khách", ["Định kỳ", "Khách lẻ"])
+                        if 'fmt_gia_tri' not in st.session_state:
+                            st.session_state.fmt_gia_tri = "3.500.000"
+                        def format_currency():
+                            val = st.session_state.raw_gia_tri
+                            try:
+                                num = int(val.replace(".", "").replace(",", "").strip())
+                                st.session_state.fmt_gia_tri = f"{num:,}".replace(",", ".")
+                            except: pass
+
+                        c_gia, c_dvt = st.columns(2)
+                        with c_gia:
+                            gia_tri_str = st.text_input("Giá Trị (VNĐ) *", key="raw_gia_tri", value=st.session_state.fmt_gia_tri, on_change=format_currency)
+                        with c_dvt:
+                            don_vi_tinh = st.selectbox("Đơn Vị", ["/tháng", "/lần thi công"])
+    
+                    st.markdown("**🏠 Khu vực xử lý**")
+                    khu_vuc_sel = st.multiselect(
+                        "Chọn khu vực", KHU_VUC_OPTIONS,
+                        help="Chọn một hoặc nhiều khu vực cần xử lý"
+                    )
+                    khu_vuc_xu_ly = ", ".join(khu_vuc_sel)
+    
+                    st.markdown("**🕷️ Dịch hại kiểm soát**")
+                    dich_hai_sel = st.multiselect(
+                        "Chọn loại dịch hại", DICH_HAI_OPTIONS,
+                        help="Chọn một hoặc nhiều loại côn trùng / dịch hại"
+                    )
+                    loai_con_trung = ", ".join(dich_hai_sel)
+    
+                    st.markdown("**💊 Phương pháp xử lý**")
+                    pp_sel = st.multiselect(
+                        "Chọn phương pháp", PHUONG_PHAP_OPTIONS,
+                        help="Chọn một hoặc nhiều phương pháp xử lý"
+                    )
+                    pp_khac = st.text_input("Phương pháp khác (nếu có)", placeholder="VD: Xông hơi...")
+                    phuong_phap_list = pp_sel + ([pp_khac] if pp_khac.strip() else [])
+                    phuong_phap_xu_ly = ", ".join(phuong_phap_list)
+    
+                    st.markdown('<hr style="margin:12px 0">', unsafe_allow_html=True)
+                    st.markdown("**🗓️ Cấu Hình Lịch Thi Công**")
+                    
+                    chu_ky_lap = "1_thang"
+                    tan_suat = 1
+                    tuan_lap_lai_val = ""
+                    
+                    if loai_khach == "Định kỳ":
+                        c_ts, c_kl = st.columns(2)
+                        with c_ts:
+                            tan_suat = st.selectbox(
+                                "Số Lần Thi Công / Tháng *",
+                                [1,2,3,4], format_func=lambda x: TAN_SUAT_OPTS[x]
+                            )
+                        with c_kl:
+                            kieu_lap = st.radio(
+                                "Kiểu Lịch Lặp *",
+                                ["📅 Ngày cố định hàng tháng", "📆 Thứ cố định trong tuần"],
+                                horizontal=True
+                            )
+                        kieu_lap_val = "ngay_co_dinh" if "Ngày cố định" in kieu_lap else "thu_co_dinh"
+    
+                        # ── NGÀY CỐ ĐỊNH ──
+                        if kieu_lap_val == "ngay_co_dinh":
+                            st.markdown("""
+                            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin:6px 0;font-size:12px;color:#1e40af;">
+                              📅 <b>Ngày cố định:</b> Chọn các ngày thi công cố định trong tháng. Ngày bắt đầu lặp sẽ tự động được tính.
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                            cols = st.columns(min(tan_suat, 4))
+                            selected_days = []
+                            interval = 30 // tan_suat
+                            for i in range(tan_suat):
+                                col_idx = i % 4
+                                with cols[col_idx]:
+                                    default_day = min(1 + interval * i, 31)
+                                    d = st.selectbox(f"Ngày lần {i+1} *", list(range(1, 32)), index=default_day - 1, key=f"ngay_{i}")
+                                    selected_days.append(str(d))
+                            
+                            tuan_lap_lai_val = ",".join(selected_days)
+                            
+                            # Tự động tính ngày đầu tiên dựa trên ngày thi công lần 1
+                            first_day = int(selected_days[0])
+                            year = date.today().year
+                            month = date.today().month
+                            max_d = calendar.monthrange(year, month)[1]
+                            d = min(first_day, max_d)
+                            suggested_date = date(year, month, d)
+                            
+                            if suggested_date < date.today():
+                                m = 1 if month == 12 else month + 1
+                                y = year + 1 if month == 12 else year
+                                max_d_next = calendar.monthrange(y, m)[1]
+                                d_next = min(first_day, max_d_next)
+                                suggested_date = date(y, m, d_next)
+
+                            ngay_thi_cong_dau = st.date_input(
+                                "Ngày Bắt Đầu Lặp *",
+                                value=suggested_date,
+                                help="Mốc kỳ đầu tiên. Các tháng sau sẽ lặp vào các ngày đã chọn."
+                            )
+                            lap_thu_val = None
+    
+                        # ── THỨ CỐ ĐỊNH ──
+                        else:
+                            st.markdown("""
+                            <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:10px 14px;margin:6px 0;font-size:12px;color:#5b21b6;">
+                              📆 <b>Thứ cố định:</b> Chọn ngày đầu tiên (phải đúng thứ muốn lặp). Chọn thêm <b>Tuần</b> để hệ thống lặp lại chính xác.
+                            </div>
+                            """, unsafe_allow_html=True)
+    
+                            thu_options = {
+                                "Chủ Nhật": 0, "Thứ Hai": 1, "Thứ Ba": 2,
+                                "Thứ Tư": 3,  "Thứ Năm": 4, "Thứ Sáu": 5, "Thứ Bảy": 6
+                            }
+                            c_thu, c_tuan, c_date = st.columns([1,1,2])
+                            with c_thu:
+                                thu_sel = st.selectbox("Thi Công Vào Thứ *", list(thu_options.keys()))
+                                lap_thu_val = thu_options[thu_sel]
+                            with c_tuan:
+                                tuan_opts = ["1", "2", "3", "4", "Cuối"]
+                                def_tuan = [str(i+1) for i in range(tan_suat)] if tan_suat <= 4 else ["1"]
+                                tuan_sel = st.multiselect("Vào Các Tuần *", tuan_opts, default=def_tuan, max_selections=tan_suat, help=f"Hãy chọn đúng {tan_suat} tuần.")
+                                tuan_lap_lai_val = ",".join(tuan_sel)
+                                if len(tuan_sel) < tan_suat:
+                                    st.warning(f"Vui lòng chọn đủ {tan_suat} tuần!")
+                            with c_date:
+                                from utils.scheduling import LAP_THU_TO_PY
+                                py_wd = LAP_THU_TO_PY[lap_thu_val]
+                                suggestion = date.today()
+                                while suggestion.weekday() != py_wd:
+                                    suggestion += timedelta(days=1)
+                                ngay_thi_cong_dau = st.date_input(
+                                    f"Ngày {thu_sel} Đầu Tiên *",
+                                    value=suggestion,
+                                    help=f"Phải là ngày {thu_sel}. Hệ thống dùng ngày này làm mốc kỳ đầu."
+                                )
+                                if ngay_thi_cong_dau.weekday() != py_wd:
+                                    st.warning(f"⚠️ Ngày {ngay_thi_cong_dau.strftime('%d/%m/%Y')} không phải {thu_sel}!")
+    
+                        st.markdown('<hr style="margin:12px 0">', unsafe_allow_html=True)
+                        st.markdown("**⏰ Khung Giờ Thi Công**")
+    
+                        gbd, gkt, time_valid = _time_input_row(
+                            "Giờ Bắt Đầu *", "Giờ Kết Thúc *",
+                            "form_gbd", "form_gkt"
+                        )
+    
+                    else:
+                        # ── KHÁCH LẺ ──
+                        st.markdown("""
+                        <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin:6px 0;font-size:12px;color:#92400e;">
+                          📌 <b>Khách lẻ:</b> Chọn ngày giờ thi công đầu tiên và thiết lập chu kỳ lặp (nếu có).
+                        </div>
+                        """, unsafe_allow_html=True)
+    
+                        c_ngay, c_gio = st.columns(2)
+                        with c_ngay:
+                            ngay_thi_cong_dau = st.date_input(
+                                "📅 Ngày Thi Công (Đầu tiên) *",
+                                value=date.today(),
+                                help="Ngày cụ thể sẽ thi công cho khách lẻ."
+                            )
+                        with c_gio:
+                            st.markdown("**⏰ Giờ Thi Công**")
+                            gbd, gkt, time_valid = _time_input_row(
+                                "Bắt Đầu *", "Kết Thúc *",
+                                "form_gbd", "form_gkt"
+                            )
+                            
+                        st.markdown("**🔄 Chu Kỳ Lặp**")
+                        c_loai, c_so = st.columns(2)
+                        with c_loai:
+                            loai_ck = st.selectbox("Lặp theo", ["Chỉ 1 lần duy nhất", "Tuần", "Tháng", "Năm"])
+                        
+                        if loai_ck == "Chỉ 1 lần duy nhất":
+                            chu_ky_lap = "1_lan"
+                        else:
+                            with c_so:
+                                so_ck = st.number_input(f"Số {loai_ck.lower()} / lần thi công", min_value=1, value=1, step=1)
+                            don_vi = "tuan" if loai_ck == "Tuần" else "thang" if loai_ck == "Tháng" else "nam"
+                            chu_ky_lap = f"{so_ck}_{don_vi}"
+                            
+                        kieu_lap_val = "ngay_co_dinh"
+                        tan_suat = 1
+                        lap_thu_val = None
+                        tuan_lap_lai_val = ""
+    
+                    ghi_chu  = st.text_area("Ghi Chú", height=60)
+
+                    # KTV mặc định cho hợp đồng
+                    conn_ktv = get_connection()
+                    ktv_list = [r["ten"] for r in conn_ktv.execute("SELECT ten FROM technicians WHERE active=1 ORDER BY ten").fetchall()]
+                    conn_ktv.close()
+                    ktv_options = ["(Chưa chọn)"] + ktv_list
+                    ktv_hd = st.selectbox("👷 Kỹ Thuật Viên phụ trách", ktv_options, help="KTV sẽ được gán mặc định cho các ca thi công của HĐ này")
+                    ktv_val = ktv_hd if ktv_hd != "(Chưa chọn)" else None
+
+                    gen_now  = st.checkbox("🤖 Tự sinh lịch ngay sau khi tạo", value=True)
+    
+                    # ── Live Preview ──
+                    try:
+                        hd_preview = {
+                            "ngay_thi_cong_dau": ngay_thi_cong_dau.isoformat(),
+                            "tan_suat": tan_suat,
+                            "kieu_lap": kieu_lap_val,
+                            "lap_thu":  lap_thu_val,
+                            "tuan_lap_lai": tuan_lap_lai_val,
+                            "gio_bat_dau": gbd, "gio_ket_thuc": gkt,
+                        }
+                        ky_preview = date.today().strftime("%Y-%m")
+                        prev_html = _preview_schedule(hd_preview, ky_preview)
+                        st.markdown(f"""
+                        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;margin:10px 0;">
+                          <div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:8px;">
+                            📅 Preview lịch tháng {ky_preview} — {TAN_SUAT_OPTS[tan_suat]}
+                          </div>
+                          {prev_html}
+                        </div>
+                        """, unsafe_allow_html=True)
+                    except: pass
+    
+                    submitted = st.button("📄 Tạo Hợp Đồng", use_container_width=True)
+                    if submitted:
+                        try:
+                            gia_tri = int(gia_tri_str.replace(".", "").replace(",", "").strip())
+                        except ValueError:
+                            gia_tri = -1
+                            
+                        if not ma_hd:
+                            st.error("⚠️ Phải nhập mã hợp đồng!")
+                        elif gia_tri < 0:
+                            st.error("⚠️ Giá trị hợp đồng không hợp lệ!")
+                        elif not time_valid:
+                            st.error("⚠️ Định dạng giờ không hợp lệ!")
+                        else:
+                            try:
+                                conn = get_connection()
+                                conn.execute("""
+                                    INSERT INTO contracts
+                                      (ma_hd,ma_kh,ngay_ky,ngay_het_han,
+                                       ngay_thi_cong_dau,gio_bat_dau,gio_ket_thuc,
+                                       tan_suat,kieu_lap,lap_thu,gia_tri_thang,ghi_chu,
+                                       don_vi_tinh,loai_khach,khu_vuc_xu_ly,loai_con_trung,chu_ky_lap,phuong_phap_xu_ly,tuan_lap_lai,ky_thuat_vien)
+                                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                                """, (ma_hd, kh_opts[kh_sel],
+                                      ngay_ky.isoformat(), ngay_ht.isoformat(),
+                                      ngay_thi_cong_dau.isoformat(),
+                                      gbd, gkt, tan_suat, kieu_lap_val, lap_thu_val,
+                                      gia_tri, ghi_chu, don_vi_tinh, loai_khach, khu_vuc_xu_ly, loai_con_trung, chu_ky_lap, phuong_phap_xu_ly, tuan_lap_lai_val, ktv_val))
+                                conn.commit(); conn.close()
+                                if gen_now:
+                                    t = date.today()
+                                    n1 = auto_generate_schedules(ma_hd, t.strftime("%Y-%m"))
+                                    n2 = 0
+                                    if loai_khach == "Định kỳ" or chu_ky_lap != "1_lan":
+                                        ky_next = (t.replace(day=1)+timedelta(days=32)).strftime("%Y-%m")
+                                        n2 = auto_generate_schedules(ma_hd, ky_next)
+                                    n = n1 + n2
+                                    st.session_state.add_hd_success = f"✅ Tạo HĐ **{ma_hd}** + sinh {n} ca!"
+                                else:
+                                    st.session_state.add_hd_success = f"✅ Tạo HĐ **{ma_hd}** thành công!"
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"❌ {e}")
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        with col_tip:
+            st.markdown("""
+            <div style="background:linear-gradient(160deg,#0f172a,#166534);border-radius:14px;padding:20px;color:white;">
+              <div style="font-size:14px;font-weight:700;margin-bottom:14px;">📐 Cách tính lịch</div>
+
+              <div style="font-size:12px;color:#86efac;font-weight:700;margin-bottom:4px;">NGÀY CỐ ĐỊNH</div>
+              <div style="font-size:11px;color:#cbd5e1;line-height:1.8;margin-bottom:14px;">
+                Tháng 5 bắt đầu ngày 5:<br>
+                · 1 lần → <b>05/05</b><br>
+                · 2 lần → <b>05/05</b> · <b>20/05</b><br>
+                · 3 lần → <b>05</b> · <b>15</b> · <b>25/05</b><br>
+                · 4 lần → <b>05</b>·<b>12</b>·<b>19</b>·<b>26/05</b>
+              </div>
+
+              <div style="font-size:12px;color:#86efac;font-weight:700;margin-bottom:4px;">THỨ CỐ ĐỊNH</div>
+              <div style="font-size:11px;color:#cbd5e1;line-height:1.8;margin-bottom:14px;">
+                Thứ Hai, 2 lần/tháng:<br>
+                → T2 tuần 1 + T2 tuần 3<br><br>
+                Thứ Tư, 3 lần/tháng:<br>
+                → T4 tuần 1 + tuần 3 + tuần 5<br>
+                (phân bổ đều tự động)
+              </div>
+
+              <div style="font-size:12px;color:#fbbf24;font-weight:700;margin-bottom:4px;">⏰ GIỜ CA ĐÊM</div>
+              <div style="font-size:11px;color:#cbd5e1;line-height:1.8;">
+                Nhập 23:00 đến 02:00<br>
+                → Hệ thống hiểu là sang hôm sau<br>
+                → KTV vẫn thấy ca đến 02:00
+              </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    # =========================================================
+    # PHÂN TÍCH
+    # =========================================================
+    with tab_chart:
+        conn = get_connection()
+        top8 = conn.execute("""
+            SELECT ct.ma_hd, k.ten_cty, ct.gia_tri_thang
+            FROM contracts ct JOIN customers k ON ct.ma_kh=k.ma_kh
+            WHERE ct.trang_thai='active' ORDER BY ct.gia_tri_thang DESC LIMIT 8
+        """).fetchall()
+        freq = conn.execute("""
+            SELECT tan_suat, kieu_lap, COUNT(*) cnt
+            FROM contracts GROUP BY tan_suat, kieu_lap ORDER BY tan_suat
+        """).fetchall()
+        conn.close()
+
+        c1, c2 = st.columns(2)
+        with c1:
+            if top8:
+                fig = go.Figure(go.Bar(
+                    y=[r["ten_cty"][:22] for r in top8],
+                    x=[r["gia_tri_thang"]/1e6 for r in top8],
+                    orientation="h",
+                    marker_color=["#16a34a","#22c55e","#4ade80","#86efac"]*2,
+                    text=[f"{r['gia_tri_thang']/1e6:.1f}M" for r in top8],
+                    textposition="outside",
+                ))
+                fig.update_layout(
+                    height=300, paper_bgcolor="white", plot_bgcolor="white",
+                    title=dict(text="Top HĐ Theo Giá Trị (triệu đ)",font=dict(size=13,color="#0f172a")),
+                    margin=dict(l=10,r=60,t=40,b=10), font=dict(family="Inter"),
+                    xaxis=dict(showgrid=True,gridcolor="#f1f5f9"), yaxis=dict(showgrid=False),
+                )
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar":False})
+        with c2:
+            if freq:
+                labels = [f"{TAN_SUAT_OPTS[r['tan_suat']]} ({'Ngày cố định' if r['kieu_lap']=='ngay_co_dinh' else 'Thứ cố định'})" for r in freq]
+                fig2 = go.Figure(go.Bar(
+                    x=labels, y=[r["cnt"] for r in freq],
+                    marker=dict(color=["#16a34a","#0d9488","#2563eb","#7c3aed",
+                                       "#d97706","#dc2626","#64748b","#0f172a"]),
+                    text=[str(r["cnt"]) for r in freq], textposition="outside",
+                ))
+                fig2.update_layout(
+                    height=300, paper_bgcolor="white", plot_bgcolor="white",
+                    title=dict(text="Phân Bổ HĐ Theo Tần Suất & Kiểu Lịch",font=dict(size=13,color="#0f172a")),
+                    margin=dict(l=10,r=10,t=40,b=10), font=dict(family="Inter"),
+                    xaxis=dict(showgrid=False,tickangle=-20),
+                    yaxis=dict(showgrid=True,gridcolor="#f1f5f9"),
+                )
+                st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar":False})

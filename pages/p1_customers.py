@@ -1,0 +1,216 @@
+# pages/p1_customers.py - Module Khách Hàng - nâng cấp v2
+import streamlit as st
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from utils.database import get_connection
+from utils.styles import card, badge, section_header, COLORS
+from datetime import date
+import plotly.graph_objects as go
+
+def render():
+    st.markdown(section_header("Quản Lý Khách Hàng", "Master Data — CRUD toàn bộ thông tin khách hàng", "👥"), unsafe_allow_html=True)
+
+    tab_list, tab_add, tab_detail = st.tabs(["📋  Danh Sách", "➕  Thêm Mới", "📊  Phân Tích"])
+
+    # ===== DANH SÁCH =====
+    with tab_list:
+        conn = get_connection()
+        c1, c2, c3 = st.columns([3, 1, 1])
+        with c1: search = st.text_input("🔍 Tìm kiếm", placeholder="Tên công ty, mã KH, số điện thoại...")
+        with c2: filter_pk = st.selectbox("Phân khúc", ["Tất cả","Nhà hàng", "Khách sạn", "Căn hộ/Biệt thự", "KCC", "Nhà Kho/Xưởng"])
+        with c3: sort_by = st.selectbox("Sắp xếp", ["Mã KH","Tên A-Z","Mới nhất"])
+
+        query = "SELECT k.*, (SELECT COUNT(*) FROM contracts c WHERE c.ma_kh=k.ma_kh AND c.trang_thai='active') as so_hd FROM customers k WHERE 1=1"
+        params = []
+        if search:
+            query += " AND (ma_kh LIKE ? OR ten_cty LIKE ? OR sdt LIKE ? OR dai_dien LIKE ?)"
+            params.extend([f"%{search}%"]*4)
+        if filter_pk != "Tất cả":
+            query += " AND phan_khuc=?"
+            params.append(filter_pk)
+        query += {"Mã KH":" ORDER BY ma_kh", "Tên A-Z":" ORDER BY ten_cty", "Mới nhất":" ORDER BY created_at DESC"}.get(sort_by, " ORDER BY ma_kh")
+
+        rows = conn.execute(query, params).fetchall()
+        conn.close()
+
+        # Tổng số đếm
+        st.markdown(f'<div style="font-size:13px;color:#64748b;margin-bottom:12px;">Tìm thấy <b style="color:#0f172a">{len(rows)}</b> khách hàng</div>', unsafe_allow_html=True)
+
+        if not rows:
+            st.markdown(card('<div style="text-align:center;padding:32px;color:#94a3b8;">😔 Không tìm thấy kết quả nào</div>'), unsafe_allow_html=True)
+
+        # Grid card layout
+        cols = st.columns(3)
+        for i, r in enumerate(rows):
+            with cols[i % 3]:
+                pk_colors = {"Nhà hàng":"orange", "Khách sạn":"blue", "Căn hộ/Biệt thự":"green", "KCC":"purple", "Nhà Kho/Xưởng":"gray"}
+                pk_color = pk_colors.get(r["phan_khuc"], "gray")
+                hd_text = f"{r['so_hd']} HĐ active" if r["so_hd"] else "Chưa có HĐ"
+                hd_color = "#16a34a" if r["so_hd"] else "#94a3b8"
+
+                with st.container(border=True):
+                    st.markdown(f"""
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+<div style="width:40px;height:40px;border-radius:10px;
+            background:linear-gradient(135deg,#16a34a20,#16a34a10);
+            display:flex;align-items:center;justify-content:center;
+            font-size:18px;">🏢</div>
+{badge(r["phan_khuc"], pk_color)}
+</div>
+<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:2px;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{r["ten_cty"]}</div>
+<div style="font-size:11px;color:#94a3b8;margin-bottom:10px;">{r["ma_kh"]}</div>
+<div style="font-size:12px;color:#64748b;line-height:1.8;">
+{'👤 ' + r["dai_dien"] if r["dai_dien"] else ''}{'<br>' if r["dai_dien"] else ''}
+{'📞 ' + r["sdt"] if r["sdt"] else ''}
+</div>
+""", unsafe_allow_html=True)
+
+                    c1, c2 = st.columns([3, 1], vertical_alignment="bottom")
+                    with c1:
+                        st.markdown(f'<div style="font-size:12px;font-weight:600;color:{hd_color};margin-top:8px;">📄 {hd_text}</div>', unsafe_allow_html=True)
+                    with c2:
+                        with st.popover("✏️ Sửa", use_container_width=True):
+                            with st.form(f"edit_{r['ma_kh']}"):
+                                ten = st.text_input("Tên công ty", value=r["ten_cty"], key=f"ten_{r['ma_kh']}")
+                                dd  = st.text_input("Đại diện", value=r["dai_dien"] or "", key=f"dd_{r['ma_kh']}")
+                                sp  = st.text_input("SĐT", value=r["sdt"] or "", key=f"sp_{r['ma_kh']}")
+                                da  = st.text_input("Địa chỉ", value=r["dia_chi"] or "", key=f"da_{r['ma_kh']}")
+                                gc  = st.text_area("Ghi chú", value=r["ghi_chu"] or "", key=f"gc_{r['ma_kh']}", height=60)
+                                
+                                if st.form_submit_button("💾 Lưu Cập Nhật", type="primary", use_container_width=True):
+                                    if sp and not sp.isdigit():
+                                        st.error("⚠️ Số điện thoại chỉ được nhập số!")
+                                    else:
+                                        try:
+                                            conn2 = get_connection()
+                                            conn2.execute("UPDATE customers SET ten_cty=?,dai_dien=?,sdt=?,dia_chi=?,ghi_chu=? WHERE ma_kh=?",
+                                                          (ten,dd,sp,da,gc,r["ma_kh"]))
+                                            conn2.commit(); conn2.close()
+                                            st.success("✅ Đã cập nhật!"); st.rerun()
+                                        except Exception as e: st.error(e)
+                                
+                                st.markdown("---")
+                                msg_del = "Xác nhận xóa (bao gồm cả HĐ và Lịch)" if r["so_hd"] else "Xác nhận xóa Khách Hàng này"
+                                xac_nhan = st.checkbox(msg_del, key=f"xac_nhan_{r['ma_kh']}")
+                                if st.form_submit_button("🗑️ Xóa Khách Hàng", use_container_width=True):
+                                    if xac_nhan:
+                                        try:
+                                            conn2 = get_connection()
+                                            conn2.execute("DELETE FROM logbook WHERE ma_kh=?", (r["ma_kh"],))
+                                            conn2.execute("DELETE FROM schedules WHERE ma_kh=?", (r["ma_kh"],))
+                                            conn2.execute("DELETE FROM contracts WHERE ma_kh=?", (r["ma_kh"],))
+                                            conn2.execute("DELETE FROM customers WHERE ma_kh=?", (r["ma_kh"],))
+                                            conn2.commit(); conn2.close()
+                                            st.success("Đã xóa Khách Hàng và các HĐ/Lịch liên quan!"); st.rerun()
+                                        except Exception as e: st.error(e)
+                                    else:
+                                        st.warning("Vui lòng check 'Xác nhận xóa' trước khi bấm Xóa.")
+
+    # ===== THÊM MỚI =====
+    with tab_add:
+        col_form, col_preview = st.columns([2, 1])
+        with col_form:
+            st.markdown('<div style="background:white;border:1px solid #e2e8f0;border-radius:14px;padding:24px;">', unsafe_allow_html=True)
+            st.markdown("**📝 Thông Tin Khách Hàng Mới**")
+            st.markdown('<hr style="margin:12px 0">', unsafe_allow_html=True)
+            if st.session_state.get("add_kh_success"):
+                st.success(st.session_state.add_kh_success)
+                st.session_state.add_kh_success = None
+                
+            with st.form("form_add_kh", clear_on_submit=True):
+                c1, c2 = st.columns(2)
+                with c1:
+                    ma_kh  = st.text_input("Mã KH *", placeholder="VD: KH007")
+                    ten    = st.text_input("Tên Công Ty *", placeholder="Công ty TNHH ABC")
+                    dai_dien = st.text_input("Người Đại Diện", placeholder="Nguyễn Văn A")
+                with c2:
+                    sdt    = st.text_input("Số Điện Thoại", placeholder="090xxxxxxx")
+                    pk     = st.selectbox("Phân Khúc", ["Nhà hàng", "Khách sạn", "Căn hộ/Biệt thự", "KCC", "Nhà Kho/Xưởng"])
+                    email  = st.text_input("Email (tuỳ chọn)", placeholder="contact@company.vn")
+                dia_chi = st.text_input("Địa Chỉ Đầy Đủ", placeholder="Số nhà, đường, phường, quận, TP")
+                ghi_chu = st.text_area("Ghi Chú Nội Bộ", placeholder="Thông tin thêm về khách hàng...", height=80)
+
+                submitted = st.form_submit_button("➕ Tạo Khách Hàng Mới", use_container_width=True)
+                if submitted:
+                    if not ma_kh or not ten or not sdt:
+                        st.error("⚠️ Mã KH, Tên công ty và Số điện thoại là bắt buộc!")
+                    elif sdt and not sdt.isdigit():
+                        st.error("⚠️ Số điện thoại chỉ được nhập số!")
+                    else:
+                        try:
+                            conn = get_connection()
+                            conn.execute("INSERT INTO customers (ma_kh,ten_cty,dai_dien,sdt,dia_chi,phan_khuc,ghi_chu) VALUES (?,?,?,?,?,?,?)",
+                                         (ma_kh.strip(), ten.strip(), dai_dien, sdt, dia_chi, pk, ghi_chu))
+                            conn.commit(); conn.close()
+                            st.session_state.add_kh_success = f"✅ Đã thêm **{ten}** ({ma_kh})"
+                            st.rerun()
+                        except Exception as e: st.error(f"❌ {e}")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with col_preview:
+            st.markdown(card("""
+            <div style="text-align:center;padding:16px 0;">
+                <div style="font-size:48px;margin-bottom:12px;">💡</div>
+                <div style="font-size:14px;font-weight:600;color:#0f172a;margin-bottom:8px;">Hướng dẫn</div>
+                <div style="font-size:12px;color:#64748b;line-height:1.7;text-align:left;">
+                    • <b>Mã KH</b>: Định danh duy nhất (VD: KH001)<br>
+                    • <b>Phân khúc</b>:<br>
+                    &nbsp;&nbsp;— Nhà hàng, Khách sạn, Căn hộ/Biệt thự, KCC, Nhà Kho/Xưởng<br>
+                    • Sau khi tạo KH, vào <b>Hợp Đồng</b> để thiết lập hợp đồng dịch vụ
+                </div>
+            </div>
+            """), unsafe_allow_html=True)
+
+    # ===== PHÂN TÍCH =====
+    with tab_detail:
+        conn = get_connection()
+        seg = conn.execute("SELECT phan_khuc, COUNT(*) cnt FROM customers GROUP BY phan_khuc").fetchall()
+        rev = conn.execute("""
+            SELECT c.phan_khuc, SUM(ct.gia_tri_thang) rev
+            FROM customers c JOIN contracts ct ON c.ma_kh=ct.ma_kh
+            WHERE ct.trang_thai='active' GROUP BY c.phan_khuc
+        """).fetchall()
+        growth = conn.execute("""
+            SELECT substr(created_at,1,7) as mo, COUNT(*) cnt
+            FROM customers GROUP BY mo ORDER BY mo DESC LIMIT 6
+        """).fetchall()
+        conn.close()
+
+        if not seg:
+            st.info("Chưa có dữ liệu.")
+        else:
+            col1, col2 = st.columns(2)
+            with col1:
+                # Donut chart
+                fig = go.Figure(go.Pie(
+                    labels=[r["phan_khuc"] for r in seg],
+                    values=[r["cnt"] for r in seg],
+                    hole=.6,
+                    marker=dict(colors=["#16a34a","#2563eb","#d97706", "#7c3aed", "#64748b"], line=dict(color="white",width=3)),
+                    textinfo="label+value+percent",
+                ))
+                fig.add_annotation(text=f"<b>{sum(r['cnt'] for r in seg)}</b><br>KH", x=.5, y=.5,
+                                   font=dict(size=18, color="#0f172a"), showarrow=False)
+                fig.update_layout(height=280, paper_bgcolor="white", showlegend=False,
+                                  title=dict(text="Phân Bổ Khách Hàng", font=dict(size=14,color="#0f172a")),
+                                  margin=dict(l=10,r=10,t=40,b=10), font=dict(family="Inter"))
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar":False})
+
+            with col2:
+                # Doanh thu theo phân khúc
+                fig2 = go.Figure(go.Bar(
+                    x=[r["phan_khuc"] for r in rev],
+                    y=[r["rev"]/1e6 for r in rev],
+                    marker=dict(color=["#16a34a","#2563eb","#d97706", "#7c3aed", "#64748b"],
+                                line=dict(color="white",width=2)),
+                    text=[f"{r['rev']/1e6:.1f}M" for r in rev],
+                    textposition="outside",
+                ))
+                fig2.update_layout(
+                    height=280, paper_bgcolor="white", plot_bgcolor="white",
+                    title=dict(text="Doanh Thu/Tháng theo Phân Khúc (triệu đ)", font=dict(size=14,color="#0f172a")),
+                    margin=dict(l=10,r=10,t=40,b=10), font=dict(family="Inter"),
+                    xaxis=dict(showgrid=False), yaxis=dict(showgrid=True, gridcolor="#f1f5f9"),
+                )
+                st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar":False})
