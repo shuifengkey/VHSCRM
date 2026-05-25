@@ -219,43 +219,62 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         padding: 8px 8px 18px 8px !important;
         box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
     }
-    .stRadio { width: 100% !important; margin: 0 !important; }
+    .stRadio { width: 100% !important; margin: 0 !important; display: flex; justify-content: center; }
     .stRadio > div {
-        justify-content: space-between !important;
-        width: 100% !important;
-        gap: 6px !important;
+        justify-content: center !important;
+        width: auto !important;
+        gap: 4px !important;
     }
     .stRadio > div > label {
-        flex: 1;
+        flex: 0 1 auto !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
         justify-content: center !important;
-        background: #f8fafc !important;
+        background: transparent !important;
         color: #475569 !important;
-        padding: 12px 2px !important;
+        padding: 8px 12px !important;
         border-radius: 12px !important;
-        border: 1px solid #e2e8f0 !important;
-        height: 60px !important;
+        border: none !important;
+        height: auto !important;
+        min-height: 54px !important;
     }
     .stRadio > div > label:hover {
-        background: #f1f5f9 !important;
+        background: rgba(0,0,0,0.04) !important;
     }
     .stRadio > div [data-checked="true"],
     .stRadio > div label:has(input:checked) {
         background: #16a34a !important;
         color: white !important;
-        border-color: #16a34a !important;
-        box-shadow: 0 4px 10px rgba(22,163,74,0.3) !important;
+        box-shadow: 0 4px 12px rgba(22,163,74,0.3) !important;
     }
     /* Style the text inside the radio labels to be small */
     .stRadio > div > label p {
-        font-size: 12px !important;
+        font-size: 11px !important;
         font-weight: 800 !important;
         margin: 0 !important;
         text-align: center !important;
         line-height: 1.2 !important;
     }
+
+    /* ── TABS (Menu phụ) MOBILE ── */
+    .stTabs [data-baseweb="tab-list"] {
+        width: 100% !important;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        padding: 4px !important;
+    }
+    .stTabs [data-baseweb="tab"] {
+        flex: 1 0 auto !important;
+        text-align: center !important;
+        padding: 8px 12px !important;
+        font-size: 12px !important;
+        white-space: nowrap !important;
+    }
+    /* Ẩn thanh cuộn của tab */
+    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar { display: none; }
 }
 </style>
 """
