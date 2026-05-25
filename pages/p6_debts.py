@@ -136,48 +136,54 @@ def render():
 
         st.markdown(f'<div style="font-size:13px;color:#64748b;margin-bottom:12px;"><b>{len(debts)}</b> bản ghi</div>', unsafe_allow_html=True)
 
-        # Bảng HTML
+        # Mobile-friendly Card Layout thay cho Table
         rows_html = ""
         for d in debts:
             no = d["can_thu"] - d["da_thu"]
             pct = int(d["da_thu"]/d["can_thu"]*100) if d["can_thu"] else 100
             row_bg = "#fff5f5" if no > 0 else "white"
             no_color = "#dc2626" if no > 0 else "#16a34a"
+            border_color = "#fecaca" if no > 0 else "#e2e8f0"
             rows_html += f"""
-            <tr style="background:{row_bg};">
-                <td style="padding:10px 12px;font-weight:600;color:#0f172a;">{d['ma_hd']}</td>
-                <td style="padding:10px 12px;">{d['ten_cty']}</td>
-                <td style="padding:10px 12px;text-align:center;">{d['ky_thanh_toan']}</td>
-                <td style="padding:10px 12px;text-align:right;font-weight:600;">{d['can_thu']/1e6:.2f}M</td>
-                <td style="padding:10px 12px;text-align:right;color:#16a34a;font-weight:600;">{d['da_thu']/1e6:.2f}M</td>
-                <td style="padding:10px 12px;text-align:right;color:{no_color};font-weight:700;">{no/1e6:.2f}M</td>
-                <td style="padding:10px 12px;text-align:center;">{d['ngay_thu'][:10] if d['ngay_thu'] else '—'}</td>
-                <td style="padding:10px 12px;">
-                    <div style="background:#e2e8f0;border-radius:99px;height:6px;width:80px;">
-                        <div style="background:{'#16a34a' if pct>=100 else '#d97706' if pct>=50 else '#dc2626'};height:6px;border-radius:99px;width:{pct}%;"></div>
+            <div style="background:{row_bg};border:1px solid {border_color};border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+                    <div>
+                        <div style="font-size:15px;font-weight:700;color:#0f172a;">{d['ten_cty']}</div>
+                        <div style="font-size:12px;color:#64748b;margin-top:2px;">
+                            📋 {d['ma_hd']} &nbsp;·&nbsp; 🗓️ Kỳ {d['ky_thanh_toan']}
+                        </div>
                     </div>
-                    <span style="font-size:10px;color:#94a3b8;">{pct}%</span>
-                </td>
-            </tr>"""
+                    <div style="text-align:right;">
+                        <div style="font-size:16px;font-weight:800;color:{no_color};">{no/1e6:.2f}M đ</div>
+                        <div style="font-size:11px;color:#94a3b8;">{'Còn Nợ' if no > 0 else 'Đã Xong'}</div>
+                    </div>
+                </div>
+                
+                <div style="display:flex;justify-content:space-between;background:#f8fafc;padding:10px;border-radius:8px;margin-bottom:10px;border:1px solid #e2e8f0;">
+                    <div style="text-align:center;">
+                        <div style="font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700;">Cần Thu</div>
+                        <div style="font-size:14px;font-weight:700;color:#0f172a;">{d['can_thu']/1e6:.2f}M</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700;">Đã Thu</div>
+                        <div style="font-size:14px;font-weight:700;color:#16a34a;">{d['da_thu']/1e6:.2f}M</div>
+                    </div>
+                    <div style="text-align:center;">
+                        <div style="font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700;">Ngày Thu</div>
+                        <div style="font-size:13px;font-weight:600;color:#0f172a;">{d['ngay_thu'][:10] if d['ngay_thu'] else '—'}</div>
+                    </div>
+                </div>
+                
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-bottom:4px;">
+                    <span>Tiến độ thanh toán</span>
+                    <span style="font-weight:700;color:#0f172a;">{pct}%</span>
+                </div>
+                <div style="background:#e2e8f0;border-radius:99px;height:6px;width:100%;">
+                    <div style="background:{'#16a34a' if pct>=100 else '#d97706' if pct>=50 else '#dc2626'};height:6px;border-radius:99px;width:{pct}%;"></div>
+                </div>
+            </div>"""
 
-        st.markdown(f"""
-        <div style="overflow-x:auto;background:white;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;">
-        <table style="width:100%;border-collapse:collapse;font-size:13px;">
-            <thead>
-                <tr style="background:#0f172a;color:white;">
-                    <th style="padding:12px;text-align:left;">Mã HĐ</th>
-                    <th style="padding:12px;">Khách Hàng</th>
-                    <th style="padding:12px;text-align:center;">Kỳ</th>
-                    <th style="padding:12px;text-align:right;">Cần Thu</th>
-                    <th style="padding:12px;text-align:right;">Đã Thu</th>
-                    <th style="padding:12px;text-align:right;">Còn Nợ</th>
-                    <th style="padding:12px;text-align:center;">Ngày Thu</th>
-                    <th style="padding:12px;">Tiến Độ</th>
-                </tr>
-            </thead>
-            <tbody>{rows_html}</tbody>
-        </table>
-        </div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div>{rows_html}</div>""", unsafe_allow_html=True)
 
     with tab_manage:
         col_pay, col_new = st.columns([1,1])
