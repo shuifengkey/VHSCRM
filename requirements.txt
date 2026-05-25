@@ -1,4 +1,5 @@
 streamlit
 plotly
 pandas
+libsql-client
 python-dotenv
