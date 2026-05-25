@@ -223,7 +223,7 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
     .stRadio [role="radiogroup"] {
         display: flex !important;
         width: 100% !important;
-        gap: 3px !important;
+        gap: 0px !important;
         flex-wrap: nowrap !important;
         overflow-x: auto !important;
         -webkit-overflow-scrolling: touch;
@@ -252,6 +252,8 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         border: none !important;
         white-space: nowrap !important;
         min-width: 0 !important;
+        margin-right: 2px !important; /* Adding a tiny margin if they want gap 0 but don't want them entirely merged. Wait, user specifically said =0. Let's strictly use 0. */
+        margin: 0 !important;
     }
     .stRadio [role="radiogroup"] > div > label:hover {
         background: #e2e8f0 !important;
@@ -263,7 +265,7 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         box-shadow: 0 4px 10px rgba(22,163,74,0.3) !important;
     }
     .stRadio [role="radiogroup"] p {
-        font-size: 14px !important;
+        font-size: 15px !important;
         font-weight: 700 !important;
         margin: 0 !important;
         white-space: nowrap !important;
