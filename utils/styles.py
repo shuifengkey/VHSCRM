@@ -203,9 +203,48 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
 
 /* ── MOBILE ── */
 @media (max-width: 768px) {
-    .vhs-nav { padding: 0 12px; overflow-x: auto; }
-    .block-container { padding: 0 .5rem 1rem !important; }
-    .vhs-status { display: none; }
+    .vhs-nav { display: none !important; }
+    .block-container { padding: 0 .5rem 80px !important; }
+    
+    .vhs-nav-radio-container {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        background: white;
+        border-top: 1px solid #e2e8f0;
+        z-index: 9999;
+        padding: 5px 5px 15px 5px !important;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+    }
+    .stRadio { width: 100% !important; margin: 0 !important; }
+    .stRadio > div {
+        justify-content: space-around !important;
+        width: 100% !important;
+        gap: 0 !important;
+    }
+    .stRadio > div > label {
+        flex: 1;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        background: transparent !important;
+        color: #64748b !important;
+        padding: 6px 0 !important;
+        border-radius: 12px !important;
+    }
+    .stRadio > div > label:hover {
+        background: rgba(0,0,0,0.02) !important;
+    }
+    .stRadio > div [data-checked="true"],
+    .stRadio > div label:has(input:checked) {
+        background: transparent !important;
+        color: #16a34a !important;
+    }
+    /* Style the text inside the radio labels to be small */
+    .stRadio > div > label p {
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        margin: 0 !important;
+    }
 }
 </style>
 """
