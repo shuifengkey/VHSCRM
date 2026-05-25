@@ -218,46 +218,43 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         z-index: 9999;
         padding: 6px 6px 16px 6px !important;
         box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
-        box-sizing: border-box !important;
-        overflow: hidden !important;
     }
-    .stRadio { width: 100% !important; margin: 0 !important; box-sizing: border-box !important; }
+    .stRadio { width: 100% !important; margin: 0 !important; }
     .stRadio [role="radiogroup"] {
         display: flex !important;
         width: 100% !important;
-        gap: 3px !important;
+        gap: 6px !important;
         flex-wrap: nowrap !important;
-        background: transparent !important; 
-        padding: 0 !important;
-        box-sizing: border-box !important;
-        overflow: hidden !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        padding: 2px 2px !important;
+        scroll-snap-type: x mandatory;
     }
+    /* Ẩn thanh cuộn */
+    .stRadio [role="radiogroup"]::-webkit-scrollbar { display: none; }
+    .stRadio [role="radiogroup"] { -ms-overflow-style: none; scrollbar-width: none; }
+
     .stRadio [role="radiogroup"] > div {
-        flex: 1 1 0% !important;
-        min-width: 0 !important;
-        max-width: none !important;
+        flex: 0 0 auto !important;
         display: flex !important;
-        box-sizing: border-box !important;
+        scroll-snap-align: start;
     }
     .stRadio [role="radiogroup"] > div > label {
-        width: 100% !important;
         display: flex !important;
-        flex-direction: column !important;
+        flex-direction: row !important;
         align-items: center !important;
         justify-content: center !important;
-        background: #f8fafc !important;
+        gap: 4px !important;
+        background: #f1f5f9 !important;
         color: #334155 !important;
-        padding: 8px 2px !important;
-        border-radius: 10px !important;
+        padding: 10px 14px !important;
+        border-radius: 12px !important;
         border: none !important;
-        height: auto !important;
-        min-height: 50px !important;
-        overflow: hidden !important;
+        white-space: nowrap !important;
         min-width: 0 !important;
-        box-sizing: border-box !important;
     }
     .stRadio [role="radiogroup"] > div > label:hover {
-        background: #f1f5f9 !important;
+        background: #e2e8f0 !important;
     }
     .stRadio [role="radiogroup"] [data-checked="true"],
     .stRadio [role="radiogroup"] label:has(input:checked) {
@@ -265,17 +262,11 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         color: white !important;
         box-shadow: 0 4px 10px rgba(22,163,74,0.3) !important;
     }
-    /* Chữ trong nút — tăng kích thước */
     .stRadio [role="radiogroup"] p {
-        font-size: 13px !important;
+        font-size: 14px !important;
         font-weight: 700 !important;
         margin: 0 !important;
-        text-align: center !important;
-        line-height: 1.3 !important;
         white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        max-width: 100% !important;
     }
 
     /* ── TABS (Menu phụ) MOBILE ── */
