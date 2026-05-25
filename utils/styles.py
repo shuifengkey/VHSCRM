@@ -221,15 +221,19 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
     }
     .stRadio { width: 100% !important; margin: 0 !important; }
     .stRadio [role="radiogroup"] {
-        justify-content: center !important;
+        display: flex !important;
+        justify-content: stretch !important;
         width: 100% !important;
-        gap: 4px !important; /* Khoảng cách vài px theo ý khách */
+        gap: 3px !important;
         flex-wrap: nowrap !important;
         background: transparent !important; 
         padding: 0 !important;
     }
+    /* Wrapper div cho mỗi nút — ép bằng nhau tuyệt đối */
     .stRadio [role="radiogroup"] > div {
-        flex: 1 1 0 !important;
+        flex: 1 1 0% !important;
+        min-width: 0 !important;
+        max-width: none !important;
         display: flex !important;
     }
     .stRadio [role="radiogroup"] > div > label {
@@ -240,12 +244,13 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         justify-content: center !important;
         background: white !important;
         color: #475569 !important;
-        padding: 6px 0 !important;
+        padding: 8px 2px !important;
         border-radius: 10px !important;
         border: 1px solid #e2e8f0 !important;
         height: auto !important;
-        min-height: 48px !important;
+        min-height: 50px !important;
         overflow: hidden !important;
+        min-width: 0 !important;
     }
     .stRadio [role="radiogroup"] > div > label:hover {
         background: rgba(0,0,0,0.04) !important;
@@ -257,7 +262,7 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         border-color: #16a34a !important;
         box-shadow: 0 4px 10px rgba(22,163,74,0.3) !important;
     }
-    /* Style the text inside the radio labels to be small */
+    /* Chữ trong nút */
     .stRadio [role="radiogroup"] p {
         font-size: 11px !important;
         font-weight: 800 !important;
@@ -265,7 +270,9 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         text-align: center !important;
         line-height: 1.2 !important;
         white-space: nowrap !important;
+        overflow: hidden !important;
         text-overflow: ellipsis !important;
+        max-width: 100% !important;
     }
 
     /* ── TABS (Menu phụ) MOBILE ── */
