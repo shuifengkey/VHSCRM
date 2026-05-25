@@ -64,6 +64,7 @@ NAV_ITEMS = [
     "👥 Khách",
     "📄 HĐ",
     "📅 Lịch",
+    "📱 Logbook",
     "⚙️ Menu"
 ]
 
@@ -211,7 +212,7 @@ if page == "🏠 Tổng":
             
         st.markdown("<hr style='margin:12px 0; border:0; border-top:1px solid #f1f5f9;'>", unsafe_allow_html=True)
         if st.button("➡️ Đi tới Sổ Nhật Ký (Logbook)", use_container_width=True):
-            st.session_state.nav_radio = "📱 Logbook"
+            st.session_state.topnav = "📱 Logbook"
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -266,15 +267,14 @@ elif page == "📄 HĐ":
     from pages import p2_contracts; p2_contracts.render()
 elif page == "📅 Lịch":
     from pages import p3_scheduling; p3_scheduling.render()
+elif page == "📱 Logbook":
+    from pages import p4_logbook; p4_logbook.render()
 elif page == "⚙️ Menu":
     if not st.session_state.current_subpage:
         st.markdown('<div style="padding:10px;font-size:20px;font-weight:800;color:#0f172a;margin-bottom:15px;">⚙️ Menu Ứng Dụng</div>', unsafe_allow_html=True)
         
         m1, m2 = st.columns(2)
         with m1:
-            if st.button("📱 Logbook", use_container_width=True):
-                st.session_state.current_subpage = "Logbook"
-                st.rerun()
             if st.button("💰 Công Nợ", use_container_width=True):
                 st.session_state.current_subpage = "Công Nợ"
                 st.rerun()
@@ -296,8 +296,7 @@ elif page == "⚙️ Menu":
         st.markdown('</div>', unsafe_allow_html=True)
         
         sp = st.session_state.current_subpage
-        if sp == "Logbook": from pages import p4_logbook; p4_logbook.render()
-        elif sp == "Công Nợ": from pages import p6_debts; p6_debts.render()
+        if sp == "Công Nợ": from pages import p6_debts; p6_debts.render()
         elif sp == "Xuất PDF": from pages import p5_pdf; p5_pdf.render()
         elif sp == "Kỹ Thuật Viên": from pages import p7_technicians; p7_technicians.render()
         elif sp == "App KTV": from pages import p7_mobile_ktv; p7_mobile_ktv.render()
