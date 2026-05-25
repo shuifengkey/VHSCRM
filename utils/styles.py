@@ -223,22 +223,25 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
     .stRadio > div {
         justify-content: space-between !important;
         width: 100% !important;
-        gap: 2px !important; /* Khoảng cách rất nhỏ */
+        gap: 1px !important; /* Thu nhỏ tối đa khoảng cách */
         flex-wrap: nowrap !important;
+        background: #f1f5f9 !important; /* Tạo viền giả giữa các nút */
+        padding: 2px !important;
+        border-radius: 14px !important;
     }
     .stRadio > div > label {
-        flex: 1 1 0 !important; /* Bắt buộc chia đều và tự co lại cho vừa màn hình */
+        flex: 1 1 0 !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
         justify-content: center !important;
         background: transparent !important;
         color: #475569 !important;
-        padding: 8px 0 !important; /* Không dùng padding ngang để ép vào vừa hộp */
-        border-radius: 12px !important;
+        padding: 6px 0 !important;
+        border-radius: 10px !important;
         border: none !important;
         height: auto !important;
-        min-height: 52px !important;
+        min-height: 48px !important;
         overflow: hidden !important;
     }
     .stRadio > div > label:hover {
