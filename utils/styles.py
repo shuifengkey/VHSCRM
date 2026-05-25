@@ -221,13 +221,12 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
     }
     .stRadio { width: 100% !important; margin: 0 !important; }
     .stRadio > div {
-        justify-content: space-between !important;
+        justify-content: center !important;
         width: 100% !important;
-        gap: 1px !important; /* Thu nhỏ tối đa khoảng cách */
+        gap: 4px !important; /* Khoảng cách vài px theo ý khách */
         flex-wrap: nowrap !important;
-        background: #f1f5f9 !important; /* Tạo viền giả giữa các nút */
-        padding: 2px !important;
-        border-radius: 14px !important;
+        background: transparent !important; 
+        padding: 0 !important;
     }
     .stRadio > div > label {
         flex: 1 1 0 !important;
@@ -235,11 +234,11 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         flex-direction: column !important;
         align-items: center !important;
         justify-content: center !important;
-        background: transparent !important;
+        background: white !important;
         color: #475569 !important;
         padding: 6px 0 !important;
         border-radius: 10px !important;
-        border: none !important;
+        border: 1px solid #e2e8f0 !important;
         height: auto !important;
         min-height: 48px !important;
         overflow: hidden !important;
