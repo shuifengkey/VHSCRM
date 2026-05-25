@@ -216,25 +216,28 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         background: white;
         border-top: 1px solid #e2e8f0;
         z-index: 9999;
-        padding: 6px 4px 16px 4px !important; /* Thu nhỏ padding 2 bên */
+        padding: 6px 6px 16px 6px !important;
         box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
+        box-sizing: border-box !important;
+        overflow: hidden !important;
     }
-    .stRadio { width: 100% !important; margin: 0 !important; }
+    .stRadio { width: 100% !important; margin: 0 !important; box-sizing: border-box !important; }
     .stRadio [role="radiogroup"] {
         display: flex !important;
-        justify-content: stretch !important;
         width: 100% !important;
         gap: 3px !important;
         flex-wrap: nowrap !important;
         background: transparent !important; 
         padding: 0 !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
     }
-    /* Wrapper div cho mỗi nút — ép bằng nhau tuyệt đối */
     .stRadio [role="radiogroup"] > div {
         flex: 1 1 0% !important;
         min-width: 0 !important;
         max-width: none !important;
         display: flex !important;
+        box-sizing: border-box !important;
     }
     .stRadio [role="radiogroup"] > div > label {
         width: 100% !important;
@@ -242,33 +245,33 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         flex-direction: column !important;
         align-items: center !important;
         justify-content: center !important;
-        background: white !important;
-        color: #475569 !important;
+        background: #f8fafc !important;
+        color: #334155 !important;
         padding: 8px 2px !important;
         border-radius: 10px !important;
-        border: 1px solid #e2e8f0 !important;
+        border: none !important;
         height: auto !important;
         min-height: 50px !important;
         overflow: hidden !important;
         min-width: 0 !important;
+        box-sizing: border-box !important;
     }
     .stRadio [role="radiogroup"] > div > label:hover {
-        background: rgba(0,0,0,0.04) !important;
+        background: #f1f5f9 !important;
     }
     .stRadio [role="radiogroup"] [data-checked="true"],
     .stRadio [role="radiogroup"] label:has(input:checked) {
         background: #16a34a !important;
         color: white !important;
-        border-color: #16a34a !important;
         box-shadow: 0 4px 10px rgba(22,163,74,0.3) !important;
     }
-    /* Chữ trong nút */
+    /* Chữ trong nút — tăng kích thước */
     .stRadio [role="radiogroup"] p {
-        font-size: 11px !important;
-        font-weight: 800 !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
         margin: 0 !important;
         text-align: center !important;
-        line-height: 1.2 !important;
+        line-height: 1.3 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
