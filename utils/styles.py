@@ -216,28 +216,30 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         background: white;
         border-top: 1px solid #e2e8f0;
         z-index: 9999;
-        padding: 8px 8px 18px 8px !important;
+        padding: 6px 4px 16px 4px !important; /* Thu nhỏ padding 2 bên */
         box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
     }
-    .stRadio { width: 100% !important; margin: 0 !important; display: flex; justify-content: center; }
+    .stRadio { width: 100% !important; margin: 0 !important; }
     .stRadio > div {
-        justify-content: center !important;
-        width: auto !important;
-        gap: 4px !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        gap: 2px !important; /* Khoảng cách rất nhỏ */
+        flex-wrap: nowrap !important;
     }
     .stRadio > div > label {
-        flex: 0 1 auto !important;
+        flex: 1 1 0 !important; /* Bắt buộc chia đều và tự co lại cho vừa màn hình */
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
         justify-content: center !important;
         background: transparent !important;
         color: #475569 !important;
-        padding: 8px 12px !important;
+        padding: 8px 0 !important; /* Không dùng padding ngang để ép vào vừa hộp */
         border-radius: 12px !important;
         border: none !important;
         height: auto !important;
-        min-height: 54px !important;
+        min-height: 52px !important;
+        overflow: hidden !important;
     }
     .stRadio > div > label:hover {
         background: rgba(0,0,0,0.04) !important;
@@ -246,7 +248,7 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
     .stRadio > div label:has(input:checked) {
         background: #16a34a !important;
         color: white !important;
-        box-shadow: 0 4px 12px rgba(22,163,74,0.3) !important;
+        box-shadow: 0 4px 10px rgba(22,163,74,0.3) !important;
     }
     /* Style the text inside the radio labels to be small */
     .stRadio > div > label p {
@@ -255,6 +257,8 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         margin: 0 !important;
         text-align: center !important;
         line-height: 1.2 !important;
+        white-space: nowrap !important;
+        text-overflow: ellipsis !important;
     }
 
     /* ── TABS (Menu phụ) MOBILE ── */
