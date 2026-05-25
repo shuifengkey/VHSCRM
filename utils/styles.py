@@ -66,6 +66,10 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
     white-space: nowrap !important;
     transition: all .15s !important;
 }
+/* Hide the radio button circle itself */
+.stRadio > div > label > div:first-child {
+    display: none !important;
+}
 .stRadio > div > label:hover {
     background: rgba(255,255,255,.07) !important;
     color: #e2e8f0 !important;
