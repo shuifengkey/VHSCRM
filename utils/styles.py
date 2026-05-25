@@ -216,38 +216,45 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         background: white;
         border-top: 1px solid #e2e8f0;
         z-index: 9999;
-        padding: 5px 5px 15px 5px !important;
-        box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+        padding: 8px 8px 18px 8px !important;
+        box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
     }
     .stRadio { width: 100% !important; margin: 0 !important; }
     .stRadio > div {
-        justify-content: space-around !important;
+        justify-content: space-between !important;
         width: 100% !important;
-        gap: 0 !important;
+        gap: 6px !important;
     }
     .stRadio > div > label {
         flex: 1;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        background: transparent !important;
-        color: #64748b !important;
-        padding: 6px 0 !important;
+        justify-content: center !important;
+        background: #f8fafc !important;
+        color: #475569 !important;
+        padding: 12px 2px !important;
         border-radius: 12px !important;
+        border: 1px solid #e2e8f0 !important;
+        height: 60px !important;
     }
     .stRadio > div > label:hover {
-        background: rgba(0,0,0,0.02) !important;
+        background: #f1f5f9 !important;
     }
     .stRadio > div [data-checked="true"],
     .stRadio > div label:has(input:checked) {
-        background: transparent !important;
-        color: #16a34a !important;
+        background: #16a34a !important;
+        color: white !important;
+        border-color: #16a34a !important;
+        box-shadow: 0 4px 10px rgba(22,163,74,0.3) !important;
     }
     /* Style the text inside the radio labels to be small */
     .stRadio > div > label p {
-        font-size: 10px !important;
-        font-weight: 700 !important;
+        font-size: 12px !important;
+        font-weight: 800 !important;
         margin: 0 !important;
+        text-align: center !important;
+        line-height: 1.2 !important;
     }
 }
 </style>
