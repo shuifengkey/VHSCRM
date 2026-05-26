@@ -2,6 +2,22 @@ import streamlit as st
 from utils.database import get_connection
 
 def render():
+    st.markdown("""
+    <style>
+    @media (max-width: 576px) {
+        div[data-testid="stHorizontalBlock"]:has(.keep-row) {
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+        }
+        div[data-testid="stHorizontalBlock"]:has(.keep-row) > div[data-testid="column"] {
+            width: fit-content !important;
+            flex: 1 1 0% !important;
+            min-width: 0 !important;
+        }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
     tab_list, tab_add = st.tabs(["📋 Danh Sách KTV", "➕ Thêm KTV"])
 
     # ===== DANH SÁCH =====
@@ -14,7 +30,8 @@ def render():
         else:
             for r in ktvs:
                 with st.container(border=True):
-                    c1, c2 = st.columns([5, 1], vertical_alignment="center")
+                    st.markdown("<div class='keep-row'></div>", unsafe_allow_html=True)
+                    c1, c2 = st.columns([3, 1], vertical_alignment="center")
                     with c1:
                         st.markdown(f"""
 <div style="display:flex;align-items:center;gap:12px;">

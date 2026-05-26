@@ -14,15 +14,21 @@ def render():
     
     st.markdown("""
     <style>
-    div[data-testid="stElementContainer"]:has(.align-right) + div[data-testid="stElementContainer"] {
-        display: flex;
-        justify-content: flex-end;
+    @media (max-width: 576px) {
+        div[data-testid="stHorizontalBlock"]:has(.keep-row) {
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+        }
+        div[data-testid="stHorizontalBlock"]:has(.keep-row) > div[data-testid="column"] {
+            width: fit-content !important;
+            flex: 1 1 0% !important;
+            min-width: 0 !important;
+        }
     }
     </style>
     """, unsafe_allow_html=True)
 
     def render_edit_popover(r, suffix):
-        st.markdown("<div class='align-right'></div>", unsafe_allow_html=True)
         with st.popover("✏️"):
             with st.form(f"edit_{r['ma_kh']}_{suffix}"):
                 ten = st.text_input("Tên công ty", value=r["ten_cty"], key=f"ten_{r['ma_kh']}_{suffix}")
@@ -114,7 +120,8 @@ def render():
 </div>
 """, unsafe_allow_html=True)
     
-                        c_hd, c_act = st.columns([5, 1], vertical_alignment="bottom")
+                        st.markdown("<div class='keep-row'></div>", unsafe_allow_html=True)
+                        c_hd, c_act = st.columns([3, 1], vertical_alignment="bottom")
                         with c_hd:
                             st.markdown(f'<div style="font-size:12px;font-weight:600;color:{hd_color};margin-top:8px;">📄 {hd_text}</div>', unsafe_allow_html=True)
                         with c_act:
