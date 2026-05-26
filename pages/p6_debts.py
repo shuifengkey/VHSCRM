@@ -228,7 +228,7 @@ def render():
                         conn = get_connection()
                         new_da_thu = d["da_thu"] + so_tien
                         conn.execute("UPDATE debts SET da_thu=?,ngay_thu=? WHERE id=?",
-                                     (new_da_thu, datetime.now(timezone(timedelta(hours=7))).date().isoformat(), d["id"]))
+                                     (new_da_thu, (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().isoformat(), d["id"]))
                         conn.commit(); conn.close()
                         if new_da_thu >= d["can_thu"]:
                             st.success("✅ Thanh toán HOÀN TẤT!"); st.balloons()
@@ -258,7 +258,7 @@ def render():
                 hd = hd_opts.get(hd_sel, {})
                 c1,c2 = st.columns(2)
                 with c1:
-                    ky = st.text_input("Kỳ (YYYY-MM)", value=datetime.now(timezone(timedelta(hours=7))).date().strftime("%Y-%m"))
+                    ky = st.text_input("Kỳ (YYYY-MM)", value=(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().strftime("%Y-%m"))
                     ct = st.number_input("Cần Thu (VNĐ)", value=float(hd.get("gia_tri_thang",0)), step=100_000.0)
                 with c2:
                     dt = st.number_input("Đã Thu (VNĐ)", value=0.0, step=100_000.0)

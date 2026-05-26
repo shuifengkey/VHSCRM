@@ -101,10 +101,10 @@ def render():
                     with st.spinner("⏳ Đang sinh PDF..."):
                         if "Báo Giá" in doc_type:
                             pdf_bytes = generate_bao_gia(customer_dict, contract_dict)
-                            filename = f"BaoGia_{selected_ma_kh}_{datetime.now(timezone(timedelta(hours=7))).strftime('%Y%m%d')}.pdf"
+                            filename = f"BaoGia_{selected_ma_kh}_{(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime('%Y%m%d')}.pdf"
                         elif "Hợp Đồng" in doc_type:
                             pdf_bytes = generate_hop_dong(customer_dict, contract_dict)
-                            filename = f"HopDong_{contract_dict['ma_hd']}_{datetime.now(timezone(timedelta(hours=7))).strftime('%Y%m%d')}.pdf"
+                            filename = f"HopDong_{contract_dict['ma_hd']}_{(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime('%Y%m%d')}.pdf"
                         else:
                             # Phiếu xác nhận
                             if not logbook_entry:
@@ -112,7 +112,7 @@ def render():
                                 return
                             logbook_dict = dict(logbook_entry)
                             pdf_bytes = generate_phieu_xac_nhan(customer_dict, contract_dict, logbook_dict)
-                            filename = f"PhieuXacNhan_{selected_ma_kh}_{datetime.now(timezone(timedelta(hours=7))).strftime('%Y%m%d%H%M')}.pdf"
+                            filename = f"PhieuXacNhan_{selected_ma_kh}_{(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime('%Y%m%d%H%M')}.pdf"
                     
                     # Nút download
                     st.download_button(
@@ -132,7 +132,7 @@ def render():
             st.markdown(f"""
             <div style="padding:12px;background:#fffbeb;border-radius:8px;font-size:13px;">
                 📄 <b>Loại chứng từ:</b> {doc_type}<br>
-                🕐 <b>Thời điểm xuất:</b> {datetime.now(timezone(timedelta(hours=7))).strftime('%H:%M %d/%m/%Y')}<br>
+                🕐 <b>Thời điểm xuất:</b> {(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime('%H:%M %d/%m/%Y')}<br>
                 📂 <b>Định dạng:</b> PDF (A4, tiếng Việt)
             </div>
             """, unsafe_allow_html=True)

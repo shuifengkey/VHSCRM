@@ -309,7 +309,7 @@ def auto_generate_next_ky(ma_hd: str, ky_hien_tai: str):
 
 def is_job_active_now(ngay_du_kien: str, gio_bat_dau: str, gio_ket_thuc: str) -> bool:
     try:
-        now = datetime.now(timezone(timedelta(hours=7)))
+        now = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7))
         h_bd, m_bd = map(int, gio_bat_dau.split(":"))
         sch_date = date.fromisoformat(ngay_du_kien)
         start_dt = datetime(sch_date.year, sch_date.month, sch_date.day, h_bd, m_bd)
@@ -370,7 +370,7 @@ def auto_generate_all_future_schedules(months: int = 2) -> int:
         return 0
         
     created = 0
-    target = datetime.now(timezone(timedelta(hours=7))).date().replace(day=1)
+    target = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().replace(day=1)
     for _ in range(months + 1):
         ky_thang = target.strftime("%Y-%m")
         for ct in cts:

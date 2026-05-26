@@ -26,7 +26,7 @@ st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
 
 def inject_countdown_banner(conn):
     try:
-        now_vn = datetime.now(timezone(timedelta(hours=7)))
+        now_vn = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7))
         today_str = now_vn.strftime('%Y-%m-%d')
         tomorrow_str = (now_vn + timedelta(days=1)).strftime('%Y-%m-%d')
         
@@ -136,9 +136,9 @@ conn_main.close()
 # ============================================================
 # TOP NAVBAR
 # ============================================================
-now  = datetime.now(timezone(timedelta(hours=7)))
+now  = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7))
 conn = get_connection()
-today_str   = datetime.now(timezone(timedelta(hours=7))).date().strftime("%Y-%m-%d")
+today_str   = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().strftime("%Y-%m-%d")
 ca_hom_nay  = conn.execute(
     "SELECT COUNT(*) FROM schedules WHERE ngay_du_kien=? AND trang_thai='scheduled'",
     (today_str,)
@@ -244,7 +244,7 @@ if page != st.session_state.last_main_tab:
 # ============================================================
 if page == "🏠 Tổng Quan":
     conn = get_connection()
-    today = datetime.now(timezone(timedelta(hours=7))).date()
+    today = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date()
     today_str = today.strftime("%Y-%m-%d")
 
     total_kh    = conn.execute("SELECT COUNT(*) FROM customers").fetchone()[0]

@@ -13,10 +13,10 @@ def render():
     tab_work, tab_history, tab_stats = st.tabs(["🔧  Check-in / Out", "📋  Lịch Sử", "📊  Thống Kê KTV"])
 
     with tab_work:
-        now_dt = datetime.now(timezone(timedelta(hours=7)))
-        today_str = datetime.now(timezone(timedelta(hours=7))).date().strftime("%Y-%m-%d")
-        tomorrow_str = (datetime.now(timezone(timedelta(hours=7))).date()+timedelta(days=1)).strftime("%Y-%m-%d")
-        past3_str = (datetime.now(timezone(timedelta(hours=7))).date()-timedelta(days=3)).strftime("%Y-%m-%d")
+        now_dt = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7))
+        today_str = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().strftime("%Y-%m-%d")
+        tomorrow_str = ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date()+timedelta(days=1)).strftime("%Y-%m-%d")
+        past3_str = ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date()-timedelta(days=3)).strftime("%Y-%m-%d")
 
         conn = get_connection()
         pending = conn.execute("""
@@ -159,7 +159,7 @@ def render():
             elif log and log.get("checkin_time"):
                 # Đang thi công
                 ci_dt = datetime.fromisoformat(log["checkin_time"])
-                elapsed = int((datetime.now(timezone(timedelta(hours=7))) - ci_dt).total_seconds() / 60)
+                elapsed = int(((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)) - ci_dt).total_seconds() / 60)
     
                 time_check = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], log["checkin_time"], job["ngay_du_kien"])
     
@@ -185,7 +185,7 @@ def render():
                     attachments = st.file_uploader("📷 Đính kèm Hình ảnh / Tài liệu", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True)
                     if st.form_submit_button("🚪 CHECK-OUT — KẾT THÚC CA", use_container_width=True):
                         checkin_time = datetime.fromisoformat(log["checkin_time"])
-                        if (datetime.now(timezone(timedelta(hours=7))) - checkin_time).total_seconds() < 300:
+                        if ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)) - checkin_time).total_seconds() < 300:
                             st.error("⚠️ Phải thi công ít nhất 5 phút mới được Check-out!")
                         else:
                             try:
@@ -204,7 +204,7 @@ def render():
 
                                 conn = get_connection()
                                 conn.execute("UPDATE logbook SET checkout_time=?,hoa_chat=?,ket_qua=?,attachments=? WHERE id=?",
-                                             (datetime.now(timezone(timedelta(hours=7))).isoformat(), hoa_chat, ket_qua, attachments_str, log["id"]))
+                                             ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), hoa_chat, ket_qua, attachments_str, log["id"]))
                                 conn.commit()
                                 conn.close()
                                 
@@ -229,8 +229,8 @@ def render():
     
             else:
                 # Chưa check-in
-                now_str = datetime.now(timezone(timedelta(hours=7))).strftime("%H:%M")
-                time_preview = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], datetime.now(timezone(timedelta(hours=7))).isoformat(), job["ngay_du_kien"])
+                now_str = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime("%H:%M")
+                time_preview = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), job["ngay_du_kien"])
     
                 st.markdown(f"""
                 <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:12px;">
@@ -253,14 +253,14 @@ def render():
                             st.error(f"❌ KTV **{ktv}** đang thi công tại **{active_other['ten_cty']}** (từ {active_other['checkin_time'][11:16]}). Phải Check-out ca đó trước khi Check-in ca mới!")
                         else:
                             try:
-                                tc = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], datetime.now(timezone(timedelta(hours=7))).isoformat(), job["ngay_du_kien"])
+                                tc = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), job["ngay_du_kien"])
                                 conn.execute("""INSERT INTO logbook (schedule_id,ma_kh,ky_thuat_vien,checkin_time,canh_bao_gio)
                                                 VALUES(?,?,?,?,?)""",
-                                             (job["id"],job["ma_kh"],ktv,datetime.now(timezone(timedelta(hours=7))).isoformat(), 1 if tc["violation"] else 0))
+                                             (job["id"],job["ma_kh"],ktv,(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), 1 if tc["violation"] else 0))
                                 conn.execute("UPDATE schedules SET ky_thuat_vien=? WHERE id=?", (ktv, job["id"]))
                                 conn.commit(); conn.close()
                                 if tc["violation"]: st.warning(tc["message"])
-                                st.success(f"✅ Check-in lúc {datetime.now(timezone(timedelta(hours=7))).strftime('%H:%M')} — Chúc làm tốt!")
+                                st.success(f"✅ Check-in lúc {(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime('%H:%M')} — Chúc làm tốt!")
                                 st.rerun()
                             except Exception as e: 
                                 conn.close()
@@ -272,7 +272,7 @@ def render():
             ktv_opts = ["Tất cả"] + ktvs
             
             c1,c2 = st.columns(2)
-            with c1: filter_date = st.date_input("Từ ngày", value=datetime.now(timezone(timedelta(hours=7))).date()-timedelta(days=30))
+            with c1: filter_date = st.date_input("Từ ngày", value=(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date()-timedelta(days=30))
             with c2: filter_ktv = st.selectbox("Lọc theo KTV", ktv_opts)
     
             q = """SELECT l.*, c.ten_cty FROM logbook l JOIN customers c ON l.ma_kh=c.ma_kh

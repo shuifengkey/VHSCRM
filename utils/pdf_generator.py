@@ -56,7 +56,7 @@ def _build_header(elements, styles, doc_type: str, ma_so: str):
                        spaceAfter=4, alignment=TA_CENTER, fontName="Helvetica-Bold")
     ))
     elements.append(Paragraph(
-        f"Số: {ma_so} | Ngày: {datetime.now(timezone(timedelta(hours=7))).strftime('%d/%m/%Y')}",
+        f"Số: {ma_so} | Ngày: {(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime('%d/%m/%Y')}",
         ParagraphStyle("DocNum", parent=styles["Normal"],
                        fontSize=9, textColor=colors.grey,
                        spaceAfter=10, alignment=TA_CENTER)
@@ -198,7 +198,7 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, logbook_entry: dict)
     styles = getSampleStyleSheet()
     elements = []
 
-    ma_phieu = f"PXN-{datetime.now(timezone(timedelta(hours=7))).strftime('%Y%m%d%H%M')}"
+    ma_phieu = f"PXN-{(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime('%Y%m%d%H%M')}"
     _build_header(elements, styles, "PHIẾU XÁC NHẬN DỊCH VỤ", ma_phieu)
 
     # Thông tin công trình
@@ -336,7 +336,7 @@ def generate_hop_dong(customer: dict, contract: dict) -> bytes:
     elements.append(Spacer(1, 0.8*cm))
 
     # Ký kết
-    date_str = datetime.now(timezone(timedelta(hours=7))).strftime("TP. Hồ Chí Minh, ngày %d tháng %m năm %Y")
+    date_str = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime("TP. Hồ Chí Minh, ngày %d tháng %m năm %Y")
     elements.append(Paragraph(date_str,
         ParagraphStyle("DateSign", parent=styles["Normal"],
                        fontSize=9, alignment=TA_CENTER, spaceAfter=8)))
