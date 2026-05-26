@@ -3,7 +3,7 @@ import streamlit as st
 import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
 
-from utils.database import init_db, seed_demo_data, get_connection
+from utils.database import init_db, get_connection
 from utils.styles import GLOBAL_CSS, card, badge, section_header, stat_row, COLORS
 from datetime import timezone, datetime, date, timedelta
 import plotly.graph_objects as go
@@ -14,7 +14,6 @@ st.set_page_config(
     layout="wide", initial_sidebar_state="collapsed"
 )
 init_db()
-seed_demo_data()
 
 # Tự động sinh lịch cho 2 tháng tới cho các khách định kỳ
 if "auto_scheduled" not in st.session_state:

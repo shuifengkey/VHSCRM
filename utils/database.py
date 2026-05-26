@@ -64,9 +64,9 @@ def get_connection():
             pass
             
     if not db_url:
-        db_url = os.environ.get("TURSO_DATABASE_URL")
+        db_url = os.environ.get("TURSO_DATABASE_URL", "https://vhs-crm-shuifengkey.aws-ap-northeast-1.turso.io")
     if not auth_token:
-        auth_token = os.environ.get("TURSO_AUTH_TOKEN")
+        auth_token = os.environ.get("TURSO_AUTH_TOKEN", "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3Nzk3MjE1OTIsImlkIjoiMDE5ZTVmYWItYTMwMS03NDI0LWJkMDEtYjQxYWFkMDY3YjJlIiwicmlkIjoiOGUxZDI1YmUtM2VkYy00MGE2LWFiM2QtYjRmYTMzNGNjMGRlIn0.quHMJF0JlPiFzRP3m50uR9YJE5ec3zm-644ZWp3gJfayzUpxCLBwnpqCY6fKr1MN7TCVjcBOOUn_BZRlZpIXBw")
         
     if db_url:
         try:
