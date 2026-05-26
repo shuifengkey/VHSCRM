@@ -59,12 +59,15 @@ def complete_schedule(schedule_id: int, contract: dict) -> dict:
 
     if gia_tri > 0:
         if dvt == "/lần thi công":
-            debt = conn.execute("SELECT id, can_thu FROM debts WHERE ma_hd=? AND ky_thanh_toan=?", (ma_hd, ky_thang)).fetchone()
+            completed_count = conn.execute("SELECT COUNT(id) FROM schedules WHERE ma_hd=? AND ky_thang=? AND trang_thai='completed'", (ma_hd, ky_thang)).fetchone()[0]
+            new_can_thu = completed_count * gia_tri
+            
+            debt = conn.execute("SELECT id FROM debts WHERE ma_hd=? AND ky_thanh_toan=?", (ma_hd, ky_thang)).fetchone()
             if debt:
-                conn.execute("UPDATE debts SET can_thu = can_thu + ? WHERE id=?", (gia_tri, debt["id"]))
+                conn.execute("UPDATE debts SET can_thu = ? WHERE id=?", (new_can_thu, debt["id"]))
             else:
                 conn.execute("INSERT INTO debts (ma_hd, ma_kh, ky_thanh_toan, can_thu, da_thu, ghi_chu) VALUES (?, ?, ?, ?, ?, ?)",
-                             (ma_hd, ma_kh, ky_thang, gia_tri, 0.0, "Tự động sinh (theo lần)"))
+                             (ma_hd, ma_kh, ky_thang, new_can_thu, 0.0, "Tự động sinh (theo lần)"))
         else: # /tháng
             total_required = int(contract.get("tan_suat") or 1)
             completed_count = conn.execute("SELECT COUNT(id) FROM schedules WHERE ma_hd=? AND ky_thang=? AND trang_thai='completed'", (ma_hd, ky_thang)).fetchone()[0]
