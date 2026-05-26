@@ -12,6 +12,10 @@ def render():
 
     tab_overview, tab_detail, tab_manage = st.tabs(["📊  Tổng Quan", "📋  Chi Tiết", "⚙️  Quản Lý"])
 
+    def format_money(val):
+        if val >= 1_000_000: return f"{val/1e6:.2f}M"
+        return f"{val/1000:,.0f}k"
+
     with tab_overview:
         conn = get_connection()
         summary = conn.execute("""
@@ -154,7 +158,7 @@ def render():
                         </div>
                     </div>
                     <div style="text-align:right;">
-                        <div style="font-size:16px;font-weight:800;color:{no_color};">{no/1e6:.2f}M đ</div>
+                        <div style="font-size:16px;font-weight:800;color:{no_color};">{format_money(no)} đ</div>
                         <div style="font-size:11px;color:#94a3b8;">{'Còn Nợ' if no > 0 else 'Đã Xong'}</div>
                     </div>
                 </div>
@@ -162,11 +166,11 @@ def render():
                 <div style="display:flex;justify-content:space-between;background:#f8fafc;padding:10px;border-radius:8px;margin-bottom:10px;border:1px solid #e2e8f0;">
                     <div style="text-align:center;">
                         <div style="font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700;">Cần Thu</div>
-                        <div style="font-size:14px;font-weight:700;color:#0f172a;">{d['can_thu']/1e6:.2f}M</div>
+                        <div style="font-size:14px;font-weight:700;color:#0f172a;">{format_money(d['can_thu'])}</div>
                     </div>
                     <div style="text-align:center;">
                         <div style="font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700;">Đã Thu</div>
-                        <div style="font-size:14px;font-weight:700;color:#16a34a;">{d['da_thu']/1e6:.2f}M</div>
+                        <div style="font-size:14px;font-weight:700;color:#16a34a;">{format_money(d['da_thu'])}</div>
                     </div>
                     <div style="text-align:center;">
                         <div style="font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700;">Ngày Thu</div>
