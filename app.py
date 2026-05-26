@@ -247,7 +247,30 @@ NAV_ITEMS = [
 ]
 
 # Đặt radio ngay dưới navbar (CSS inline lo Desktop, CSS media query lo Mobile)
-st.markdown('<div style="background:#0f172a;padding:0 24px 0 180px;margin-top:-74px;margin-bottom:20px;" class="nav-marker">', unsafe_allow_html=True)
+st.markdown('''
+<style>
+/* Đảm bảo cột menu (1) chiếm phần lớn, cột cài đặt (2) cố định 65px để không đè lên nhau */
+.element-container:has(.nav-marker) + .element-container div[data-testid="column"]:nth-of-type(1) {
+    flex: 1 1 calc(100% - 75px) !important;
+    width: calc(100% - 75px) !important;
+}
+.element-container:has(.nav-marker) + .element-container div[data-testid="column"]:nth-of-type(2) {
+    flex: 0 0 65px !important;
+    width: 65px !important;
+    min-width: 65px !important;
+}
+/* Trên mobile Streamlit tự chuyển column thành dòng dọc, ta ép nó nằm ngang */
+@media (max-width: 768px) {
+    .element-container:has(.nav-marker) + .element-container div[data-testid="stHorizontalBlock"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+    }
+}
+</style>
+<div style="background:#0f172a;padding:0 24px 0 180px;margin-top:-74px;margin-bottom:20px;" class="nav-marker">
+''', unsafe_allow_html=True)
 _c_nav, _c_set = st.columns([15, 1], vertical_alignment="center")
 with _c_nav:
     page = st.radio("nav", NAV_ITEMS, horizontal=True, label_visibility="collapsed", key="topnav")
