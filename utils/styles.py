@@ -16,7 +16,7 @@ section[data-testid="stSidebar"] { display: none !important; }
 .stDeployButton { display: none; }
 
 /* ── VHS STANDARDIZED UI ── */
-.vhs-card {
+.vhs-card, div[data-testid="stVerticalBlockBorderWrapper"] {
     background: white !important; border: 1px solid #e2e8f0 !important; border-radius: 14px !important; padding: 24px !important; box-shadow: 0 1px 4px rgba(0,0,0,.04) !important;
 }
 .vhs-list-item {
