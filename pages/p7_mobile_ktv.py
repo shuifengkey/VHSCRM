@@ -138,13 +138,14 @@ def render():
         st.markdown('<div class="mobile-header">👨‍🔧 Kỹ Thuật Viên</div>', unsafe_allow_html=True)
         st.markdown("<p style='text-align:center;color:#64748b;'>Vui lòng chọn tên của bạn để bắt đầu ca làm việc.</p>", unsafe_allow_html=True)
         
-        selected_ktv = st.selectbox("Tên của bạn", ["(Chọn tên)"] + ktv_list, label_visibility="collapsed")
+        options = ktv_list if ktv_list else ["(Chưa có KTV)"]
+        selected_ktv = st.selectbox("Tên của bạn", options, label_visibility="collapsed")
         if st.button("🚀 Bắt đầu ca làm việc", type="primary", use_container_width=True):
-            if selected_ktv != "(Chọn tên)":
+            if selected_ktv and selected_ktv != "(Chưa có KTV)":
                 st.session_state.mobile_ktv = selected_ktv
                 st.rerun()
             else:
-                st.error("Vui lòng chọn tên!")
+                st.error("Chưa có KTV nào trong hệ thống!")
         st.markdown('</div>', unsafe_allow_html=True)
         return
 
