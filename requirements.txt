@@ -6,3 +6,6 @@ python-dotenv
 reportlab
 python-dateutil
 Pillow
+
+msal
+requests

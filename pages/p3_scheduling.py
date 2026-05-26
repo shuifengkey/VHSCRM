@@ -15,6 +15,95 @@ ST_LBL = {"completed":"Xong","scheduled":"Chờ TC","skipped":"Bỏ qua"}
 TS_LABEL = {1:"1 Lần/tháng", 2:"2 Lần", 3:"3 Lần", 4:"4 Lần"}
 THU_OPTS = {1:"Thứ 2",2:"Thứ 3",3:"Thứ 4",4:"Thứ 5",5:"Thứ 6",6:"Thứ 7",0:"Chủ Nhật"}
 
+@st.dialog("🔄 Đồng bộ Microsoft Outlook")
+def outlook_sync_dialog(thang, nam):
+    from utils.outlook_sync import get_cached_token, initiate_device_flow, complete_device_flow, push_event_to_outlook
+    conn = get_connection()
+    c = conn.cursor()
+    settings = dict(c.execute("SELECT key_name, value_data FROM settings").fetchall())
+    conn.close()
+    
+    client_id = settings.get("outlook_client_id")
+    tenant_id = settings.get("outlook_tenant_id")
+    cache_str = settings.get("outlook_token_cache")
+    
+    if not client_id or not tenant_id:
+        st.warning("⚠️ Chưa cấu hình Microsoft Azure App!")
+        st.info("Vui lòng vào mục **Cài Đặt** để điền Client ID và Tenant ID trước khi đồng bộ.")
+        return
+        
+    if "ms_flow" not in st.session_state:
+        st.session_state.ms_flow = None
+    if "ms_token" not in st.session_state:
+        st.session_state.ms_token = None
+        
+    access_token, new_cache = get_cached_token(client_id, tenant_id, cache_str)
+    
+    if new_cache and new_cache != cache_str:
+        conn = get_connection()
+        conn.execute("INSERT OR REPLACE INTO settings (id, key_name, value_data) VALUES ((SELECT id FROM settings WHERE key_name='outlook_token_cache'), 'outlook_token_cache', ?)", (new_cache,))
+        conn.commit(); conn.close()
+        
+    if access_token:
+        st.session_state.ms_token = access_token
+        
+    if not st.session_state.ms_token:
+        if not st.session_state.ms_flow:
+            if st.button("🔑 Đăng nhập Microsoft", use_container_width=True):
+                flow = initiate_device_flow(client_id, tenant_id)
+                st.session_state.ms_flow = flow
+                st.rerun()
+        else:
+            flow = st.session_state.ms_flow
+            st.info(f"**Hướng dẫn đăng nhập:**\n1. Truy cập {flow['verification_uri']}\n2. Nhập mã code: **{flow['user_code']}**")
+            
+            if st.button("✅ Tôi đã đăng nhập xong", type="primary", use_container_width=True):
+                token, new_cache = complete_device_flow(client_id, tenant_id, flow)
+                if token:
+                    st.session_state.ms_token = token
+                    st.session_state.ms_flow = None
+                    conn = get_connection()
+                    conn.execute("INSERT OR REPLACE INTO settings (id, key_name, value_data) VALUES ((SELECT id FROM settings WHERE key_name='outlook_token_cache'), 'outlook_token_cache', ?)", (new_cache,))
+                    conn.commit(); conn.close()
+                    st.success("Đăng nhập thành công!")
+                    st.rerun()
+                else:
+                    st.error("Đăng nhập thất bại hoặc chưa hoàn tất, vui lòng thử lại.")
+    else:
+        st.success("✅ Đã kết nối với Outlook!")
+        st.markdown(f"Bạn đang chuẩn bị đồng bộ lịch thi công của **Tháng {thang}/{nam}** lên Outlook.")
+        
+        if st.button(f"🚀 Bắt đầu Đồng bộ Tháng {thang}", type="primary", use_container_width=True):
+            with st.spinner("Đang đẩy dữ liệu sang Outlook..."):
+                ky_str = f"{nam}-{thang:02d}"
+                conn = get_connection()
+                schedules = conn.execute('''
+                    SELECT s.ngay_du_kien, s.gio_bat_dau, s.gio_ket_thuc, s.ghi_chu, s.ky_thuat_vien, c.ten_cty, c.dia_chi
+                    FROM schedules s
+                    JOIN customers c ON s.ma_kh=c.ma_kh
+                    WHERE strftime('%Y-%m', s.ngay_du_kien) = ? AND s.trang_thai != 'skipped'
+                ''', (ky_str,)).fetchall()
+                conn.close()
+                
+                success_count = 0
+                for s in schedules:
+                    start_dt = f"{s['ngay_du_kien']}T{s['gio_bat_dau']}:00"
+                    end_dt = f"{s['ngay_du_kien']}T{s['gio_ket_thuc']}:00"
+                    subject = f"[VHS] Thi công: {s['ten_cty']}"
+                    content = f"<p><b>Khách hàng:</b> {s['ten_cty']}</p>"
+                    if s['ky_thuat_vien']: content += f"<p><b>KTV:</b> {s['ky_thuat_vien']}</p>"
+                    if s['ghi_chu']: content += f"<p><b>Ghi chú:</b> {s['ghi_chu']}</p>"
+                    
+                    ok, resp = push_event_to_outlook(st.session_state.ms_token, subject, start_dt, end_dt, content, s.get('dia_chi') or "")
+                    if ok: success_count += 1
+                
+                if success_count == len(schedules):
+                    st.success(f"🎉 Đã đồng bộ thành công {success_count}/{len(schedules)} sự kiện!")
+                else:
+                    st.warning(f"Đã đồng bộ {success_count}/{len(schedules)} sự kiện. (Có {len(schedules)-success_count} lỗi)")
+                st.balloons()
+
+
 
 
 def render():
@@ -395,10 +484,15 @@ def render():
     # ═══════════════════════════════════
     with tab_cal:
         today = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date()
-        c1,c2,_ = st.columns([1,1,2])
+        c1,c2,c3,_ = st.columns([1,1,2,2])
         with c1: sel_m = st.selectbox("Tháng",range(1,13),index=today.month-1,format_func=lambda x:f"Tháng {x:02d}")
         year_list = list(range(today.year - 2, today.year + 4))
         with c2: sel_y = st.selectbox("Năm", year_list, index=year_list.index(today.year))
+        
+        with c3:
+            st.markdown("<div style='margin-top:28px;'></div>", unsafe_allow_html=True)
+            if st.button("🔄 Đồng bộ Outlook", type="secondary"):
+                outlook_sync_dialog(sel_m, sel_y)
 
         conn = get_connection()
         ky_str = f"{sel_y}-{sel_m:02d}"

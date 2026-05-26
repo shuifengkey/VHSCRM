@@ -188,6 +188,20 @@ def _do_init_db():
         FOREIGN KEY (ma_hd) REFERENCES contracts(ma_hd)
     )""")
 
+    c.execute("""CREATE TABLE IF NOT EXISTS uploads (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        ma_kh         TEXT,
+        file_name     TEXT,
+        file_path     TEXT,
+        uploaded_at   TEXT DEFAULT (datetime('now','localtime'))
+    )""")
+    
+    c.execute("""CREATE TABLE IF NOT EXISTS settings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        key_name TEXT UNIQUE NOT NULL,
+        value_data TEXT
+    )""")
+
     # --- Auto Migration for existing databases ---
     try: c.execute("ALTER TABLE contracts ADD COLUMN don_vi_tinh TEXT DEFAULT '/tháng'")
     except Exception: pass
