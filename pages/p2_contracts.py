@@ -179,7 +179,7 @@ def render():
                     </div>
                     """, unsafe_allow_html=True)
                 with c_action:
-                    if st.button("✏️ Sửa", key=f"btn_edit_dialog_{r['ma_hd']}", use_container_width=True):
+                    if st.button("✏️ Sửa", key=f"btn_edit_dialog_{r['ma_hd']}"):
                         edit_contract_dialog(r['ma_hd'])
 
                 # 4 stat boxes

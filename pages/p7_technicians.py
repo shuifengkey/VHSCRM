@@ -35,7 +35,7 @@ def render():
 """, unsafe_allow_html=True)
                     
                     with c2:
-                        with st.popover("✏️ Sửa", use_container_width=True):
+                        with st.popover("✏️ Sửa"):
                             with st.form(f"form_edit_{r['ma_ktv']}"):
                                 st.markdown("##### ✏️ Sửa Thông Tin")
                                 e_ten = st.text_input("Tên KTV", value=r['ten'])

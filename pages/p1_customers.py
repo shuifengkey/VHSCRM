@@ -70,7 +70,7 @@ def render():
                     with c1:
                         st.markdown(f'<div style="font-size:12px;font-weight:600;color:{hd_color};margin-top:8px;">📄 {hd_text}</div>', unsafe_allow_html=True)
                     with c2:
-                        with st.popover("✏️ Sửa", use_container_width=True):
+                        with st.popover("✏️ Sửa"):
                             with st.form(f"edit_{r['ma_kh']}"):
                                 ten = st.text_input("Tên công ty", value=r["ten_cty"], key=f"ten_{r['ma_kh']}")
                                 dd  = st.text_input("Đại diện", value=r["dai_dien"] or "", key=f"dd_{r['ma_kh']}")

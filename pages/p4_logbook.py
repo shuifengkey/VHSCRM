@@ -142,7 +142,7 @@ def render():
     </div>
     """, unsafe_allow_html=True)
                             with c2:
-                                with st.popover("📎 Bổ sung", use_container_width=True):
+                                with st.popover("📎 Bổ sung"):
                                     with st.form(f"form_attach_{job['id']}"):
                                         extra_att = st.file_uploader("Thêm ảnh/tài liệu", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"extra_file_{job['id']}")
                                         if st.form_submit_button("Lưu bổ sung", use_container_width=True):
