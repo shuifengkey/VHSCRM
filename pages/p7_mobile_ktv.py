@@ -205,9 +205,14 @@ def render():
             # Ca hôm qua chưa hoàn thành (bị quá hạn) -> hiện để xử lý
             show_job = True
         elif is_completed:
-            # Nếu ca đã hoàn thành, chỉ hiện trên app nếu nó được hoàn thành trong ngày hôm nay
-            co_date_str = job["co_time"][:10] if job.get("co_time") else ""
-            if co_date_str == today_str or sch_date == today_str:
+            if job.get("co_time"):
+                try:
+                    co_dt = datetime.fromisoformat(job["co_time"])
+                    if co_dt.tzinfo is not None: co_dt = co_dt.replace(tzinfo=None)
+                    if (now_dt - co_dt).total_seconds() <= 6 * 3600:
+                        show_job = True
+                except: pass
+            elif sch_date == today_str:
                 show_job = True
         elif job.get("checkin_time") and not is_completed:
             # Ca đang thi công từ mấy hôm trước (quên checkout) -> luôn hiện
@@ -251,9 +256,17 @@ def render():
             elif is_overdue: badge_html = '<div class="status-badge" style="background:#ef4444;color:white;">⚠️ Quá ca</div>'
             
             badge_str = f" {badge_html}" if badge_html else ""
+            
+            date_str = ""
+            if not is_completed:
+                try:
+                    _d = date.fromisoformat(job['ngay_du_kien'])
+                    date_str = f" <span style='font-size:16px;color:#64748b;'>({_d.strftime('%d/%m')})</span>"
+                except: pass
+
             st.markdown(f"""
             <div class="mobile-card" style="background:{bg_color};border-color:{border_color};">
-                <div class="shift-time">{job['gio_bat_dau']} - {job['gio_ket_thuc']}</div>
+                <div class="shift-time">{job['gio_bat_dau']} - {job['gio_ket_thuc']}{date_str}</div>
                 <div class="shift-company">🏢 {job['ten_cty']}</div>{badge_str}
                 <div class="shift-address">
                     📍 {str(job['dia_chi']).replace(chr(10), ' ') if job['dia_chi'] else 'Chưa có địa chỉ'}<br>
