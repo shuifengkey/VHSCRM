@@ -14,8 +14,7 @@ def render():
 
     def format_money(val):
         if val == 0: return "0"
-        if abs(val) >= 1_000_000: return f"{val/1e6:.2f}M"
-        return f"{val/1000:,.0f}k"
+        return f"{int(val):,}".replace(",", ".")
 
     with tab_overview:
         conn = get_connection()
