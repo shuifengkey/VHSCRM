@@ -132,16 +132,16 @@ def render():
                         c1, c2 = st.columns([4, 1], vertical_alignment="center")
                         with c1:
                             st.markdown(f"""
-                            <div style="color:#166534;">
-                                <div style="font-size:16px;font-weight:700;">✅ Ca Đã Hoàn Thành</div>
-                                <div style="font-size:13px;color:#4ade80;margin-top:2px;">
-                                    {log['checkin_time'][11:16]} → {log['checkout_time'][11:16]}
-                                    {f' · Thời gian: {dur_str}' if dur_str else ''}
-                                </div>
-                                {'<div style="background:#fef9c3;border-radius:8px;padding:4px 8px;margin-top:6px;font-size:11px;color:#854d0e;display:inline-block;">⚠️ Có cảnh báo sai giờ</div>' if log.get('canh_bao_gio') else ''}
-                                <div style="font-size:12px;color:#475569;margin-top:4px;"><b>👷 KTV:</b> {log.get('ky_thuat_vien','-')} &nbsp;|&nbsp; <b>💊 Hóa chất:</b> {log.get('hoa_chat','-')} &nbsp;|&nbsp; <b>📝 KQ:</b> {log.get('ket_qua','-')}</div>
-                            </div>
-                            """, unsafe_allow_html=True)
+<div style="color:#166534;">
+    <div style="font-size:16px;font-weight:700;">✅ Ca Đã Hoàn Thành</div>
+    <div style="font-size:13px;color:#4ade80;margin-top:2px;">
+        {log['checkin_time'][11:16]} → {log['checkout_time'][11:16]}
+        {f' · Thời gian: {dur_str}' if dur_str else ''}
+    </div>
+    {'<div style="background:#fef9c3;border-radius:8px;padding:4px 8px;margin-top:6px;font-size:11px;color:#854d0e;display:inline-block;">⚠️ Có cảnh báo sai giờ</div>' if log.get('canh_bao_gio') else ''}
+    <div style="font-size:12px;color:#475569;margin-top:4px;"><b>👷 KTV:</b> {log.get('ky_thuat_vien','-')} &nbsp;|&nbsp; <b>💊 Hóa chất:</b> {log.get('hoa_chat','-')} &nbsp;|&nbsp; <b>📝 KQ:</b> {log.get('ket_qua','-')}</div>
+</div>
+""", unsafe_allow_html=True)
                         with c2:
                             with st.popover("📎 Bổ sung", use_container_width=True):
                                 with st.form(f"form_attach_{job['id']}"):
@@ -359,21 +359,16 @@ def render():
                         c1, c2 = st.columns([5, 1], vertical_alignment="center")
                         with c1:
                             st.markdown(f"""
-                            <div>
-                                <span style="font-size:15px;font-weight:700;color:#0f172a;">{status_icon} {log['ten_cty']}</span>
-                                {'<span style="font-size:10px;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:8px;margin-left:8px;font-weight:700;">⚠️ SAI GIỜ</span>' if warn else ''}
-                                <div style="font-size:12px;color:#64748b;margin-top:3px;">
-                                    👷 {log['ky_thuat_vien'] or '-'} &nbsp;·&nbsp;
-                                    🕐 {log['checkin_time'][11:16] if log['checkin_time'] else '-'} →
-                                    {log['checkout_time'][11:16] if log['checkout_time'] else '...'}
-                                    &nbsp;{dur}
-                                </div>
-                                <div style="margin-top:6px;display:flex;gap:4px;">
-                                    <div style="font-size:11px;color:#94a3b8;margin-right:6px;">{log['checkin_time'][:10] if log['checkin_time'] else ''}</div>
-                                    {att_html}
-                                </div>
-                            </div>
-                            """, unsafe_allow_html=True)
+<div style="font-size:15px;font-weight:700;color:#0f172a;">{status_icon} {log['ten_cty']} {'<span style="font-size:10px;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:8px;margin-left:8px;font-weight:700;display:inline-block;vertical-align:middle;">⚠️ SAI GIỜ</span>' if warn else ''}</div>
+<div style="font-size:12px;color:#64748b;margin-top:3px;">
+    👷 {log['ky_thuat_vien'] or '-'} &nbsp;·&nbsp;
+    🕐 {log['checkin_time'][11:16] if log['checkin_time'] else '-'} → {log['checkout_time'][11:16] if log['checkout_time'] else '...'} &nbsp;{dur}
+</div>
+<div style="margin-top:6px;display:flex;align-items:center;gap:4px;">
+    <div style="font-size:11px;color:#94a3b8;margin-right:6px;">{log['checkin_time'][:10] if log['checkin_time'] else ''}</div>
+    {att_html}
+</div>
+""", unsafe_allow_html=True)
                         with c2:
                             with st.popover("📎 Bổ sung", use_container_width=True):
                                 with st.form(f"hist_form_attach_{log['id']}"):
