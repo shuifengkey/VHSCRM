@@ -180,7 +180,7 @@ footer { display: none !important; }
 
     st.markdown("""
 <div style="text-align:center;margin-top:32px;font-size:11px;color:#475569;">
-    🛡️ Bảo mật bởi VHS CRM · PIN mặc định: <b>1234</b>
+    🛡️ Bảo mật bởi VHS CRM
 </div>
 """, unsafe_allow_html=True)
 
