@@ -35,10 +35,16 @@ class LibSQLCursorWrapper:
     def fetchall(self):
         return [RowProxy(self.rs.columns, row) for row in self.rs.rows]
 
+def _get_turso_client(url, token):
+    import libsql_client
+    return libsql_client.create_client_sync(url=url, auth_token=token)
+
+if st:
+    _get_turso_client = st.cache_resource(_get_turso_client)
+
 class LibSQLConnectionWrapper:
     def __init__(self, url, token):
-        import libsql_client
-        self.client = libsql_client.create_client_sync(url=url, auth_token=token)
+        self.client = _get_turso_client(url, token)
     def cursor(self):
         return self
     def execute(self, sql, parameters=()):
@@ -50,7 +56,8 @@ class LibSQLConnectionWrapper:
     def commit(self):
         pass
     def close(self):
-        self.client.close()
+        # Bỏ qua close để tái sử dụng client (tăng tốc độ)
+        pass
 
 def get_connection():
     db_url = None
