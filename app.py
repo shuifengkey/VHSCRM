@@ -5,8 +5,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from utils.database import init_db, seed_demo_data, get_connection
 from utils.styles import GLOBAL_CSS, card, badge, section_header, stat_row, COLORS
-from datetime import datetime, date, timedelta
-from zoneinfo import ZoneInfo
+from datetime import timezone, datetime, date, timedelta
 import plotly.graph_objects as go
 import streamlit.components.v1 as components
 
@@ -27,7 +26,7 @@ st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
 
 def inject_countdown_banner(conn):
     try:
-        now_vn = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh'))
+        now_vn = datetime.now(timezone(timedelta(hours=7)))
         today_str = now_vn.strftime('%Y-%m-%d')
         tomorrow_str = (now_vn + timedelta(days=1)).strftime('%Y-%m-%d')
         
@@ -43,7 +42,7 @@ def inject_countdown_banner(conn):
             try:
                 job_dt_str = f"{j['ngay_du_kien']} {j['gio_bat_dau']}"
                 job_dt = datetime.strptime(job_dt_str, '%Y-%m-%d %H:%M')
-                job_dt = job_dt.replace(tzinfo=ZoneInfo('Asia/Ho_Chi_Minh'))
+                job_dt = job_dt.replace(tzinfo=timezone(timedelta(hours=7)))
                 delta = (job_dt - now_vn).total_seconds()
                 
                 # Trong vòng 6 tiếng (21600 giây)
@@ -137,9 +136,9 @@ conn_main.close()
 # ============================================================
 # TOP NAVBAR
 # ============================================================
-now  = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh'))
+now  = datetime.now(timezone(timedelta(hours=7)))
 conn = get_connection()
-today_str   = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date().strftime("%Y-%m-%d")
+today_str   = datetime.now(timezone(timedelta(hours=7))).date().strftime("%Y-%m-%d")
 ca_hom_nay  = conn.execute(
     "SELECT COUNT(*) FROM schedules WHERE ngay_du_kien=? AND trang_thai='scheduled'",
     (today_str,)
@@ -245,7 +244,7 @@ if page != st.session_state.last_main_tab:
 # ============================================================
 if page == "🏠 Tổng Quan":
     conn = get_connection()
-    today = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date()
+    today = datetime.now(timezone(timedelta(hours=7))).date()
     today_str = today.strftime("%Y-%m-%d")
 
     total_kh    = conn.execute("SELECT COUNT(*) FROM customers").fetchone()[0]

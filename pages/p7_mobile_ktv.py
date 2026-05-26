@@ -1,7 +1,6 @@
-from zoneinfo import ZoneInfo
 import streamlit as st
 import sys, os
-from datetime import date, datetime, timedelta
+from datetime import timezone, date, datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from utils.database import get_connection
 from utils.scheduling import is_job_active_now, check_time_violation
@@ -87,17 +86,17 @@ def action_dialog(job, log):
         st.info(f"Khung giờ: {job['gio_bat_dau']} - {job['gio_ket_thuc']}")
         if st.button("📍 CHECK-IN NGAY", type="primary", use_container_width=True):
             conn = get_connection()
-            tc = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).isoformat(), job["ngay_du_kien"])
+            tc = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], datetime.now(timezone(timedelta(hours=7))).isoformat(), job["ngay_du_kien"])
             conn.execute("""INSERT INTO logbook (schedule_id,ma_kh,ky_thuat_vien,checkin_time,canh_bao_gio)
                             VALUES(?,?,?,?,?)""",
-                         (job["id"], job["ma_kh"], st.session_state.mobile_ktv, datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).isoformat(), 1 if tc["violation"] else 0))
+                         (job["id"], job["ma_kh"], st.session_state.mobile_ktv, datetime.now(timezone(timedelta(hours=7))).isoformat(), 1 if tc["violation"] else 0))
             conn.execute("UPDATE schedules SET ky_thuat_vien=? WHERE id=?", (st.session_state.mobile_ktv, job["id"]))
             conn.commit(); conn.close()
             st.rerun()
     else:
         # ĐANG THI CÔNG -> CHECK OUT
         ci_dt = datetime.fromisoformat(log["checkin_time"])
-        elapsed = int((datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')) - ci_dt).total_seconds() / 60)
+        elapsed = int((datetime.now(timezone(timedelta(hours=7))) - ci_dt).total_seconds() / 60)
         
         st.warning(f"⏱️ Đang thi công ({elapsed} phút)")
         
@@ -109,7 +108,7 @@ def action_dialog(job, log):
             conn.execute("""UPDATE logbook 
                             SET checkout_time=?, pest_found=?, chemical_used=? 
                             WHERE id=?""",
-                         (datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).isoformat(), pest_found, chemical, log["id"]))
+                         (datetime.now(timezone(timedelta(hours=7))).isoformat(), pest_found, chemical, log["id"]))
             conn.execute("UPDATE schedules SET trang_thai='completed' WHERE id=?", (job["id"],))
             conn.commit(); conn.close()
             st.rerun()
@@ -155,7 +154,7 @@ def render():
     st.markdown('<hr style="margin: 10px 0 20px 0; border-color: #e2e8f0;">', unsafe_allow_html=True)
 
     # Lấy dữ liệu ca
-    now_dt = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh'))
+    now_dt = datetime.now(timezone(timedelta(hours=7)))
     past3_str = (now_dt - timedelta(days=3)).strftime("%Y-%m-%d")
     tomorrow_str = (now_dt + timedelta(days=1)).strftime("%Y-%m-%d")
     

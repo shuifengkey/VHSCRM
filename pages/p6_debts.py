@@ -1,11 +1,10 @@
-from zoneinfo import ZoneInfo
 # pages/p6_debts.py - Công Nợ v2 — Charts + Aging + Quick Pay
 import streamlit as st
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from utils.database import get_connection
 from utils.styles import badge, section_header, stat_row, COLORS
-from datetime import date
+from datetime import timezone, date
 import plotly.graph_objects as go
 
 def render():
@@ -229,7 +228,7 @@ def render():
                         conn = get_connection()
                         new_da_thu = d["da_thu"] + so_tien
                         conn.execute("UPDATE debts SET da_thu=?,ngay_thu=? WHERE id=?",
-                                     (new_da_thu, datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date().isoformat(), d["id"]))
+                                     (new_da_thu, datetime.now(timezone(timedelta(hours=7))).date().isoformat(), d["id"]))
                         conn.commit(); conn.close()
                         if new_da_thu >= d["can_thu"]:
                             st.success("✅ Thanh toán HOÀN TẤT!"); st.balloons()
@@ -259,7 +258,7 @@ def render():
                 hd = hd_opts.get(hd_sel, {})
                 c1,c2 = st.columns(2)
                 with c1:
-                    ky = st.text_input("Kỳ (YYYY-MM)", value=datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date().strftime("%Y-%m"))
+                    ky = st.text_input("Kỳ (YYYY-MM)", value=datetime.now(timezone(timedelta(hours=7))).date().strftime("%Y-%m"))
                     ct = st.number_input("Cần Thu (VNĐ)", value=float(hd.get("gia_tri_thang",0)), step=100_000.0)
                 with c2:
                     dt = st.number_input("Đã Thu (VNĐ)", value=0.0, step=100_000.0)

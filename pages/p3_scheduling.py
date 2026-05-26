@@ -1,4 +1,3 @@
-from zoneinfo import ZoneInfo
 # pages/p3_scheduling.py — Lịch Thi Công v4
 import streamlit as st, sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -6,7 +5,7 @@ from utils.database  import get_connection
 from utils.scheduling import (auto_generate_schedules, calc_dates_for_month,
                                is_job_active_now, THU_NAMES)
 from utils.styles    import section_header, badge, COLORS
-from datetime import date, datetime, timedelta
+from datetime import timezone, date, datetime, timedelta
 import datetime as dt
 import plotly.graph_objects as go
 import calendar
@@ -38,8 +37,8 @@ def render():
     # SẮP THI CÔNG (trong 24h tới) + Quá ca
     # ═══════════════════════════════════
     with tab_today:
-        now      = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh'))
-        today    = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date()
+        now      = datetime.now(timezone(timedelta(hours=7)))
+        today    = datetime.now(timezone(timedelta(hours=7))).date()
         today_str = today.strftime("%Y-%m-%d")
         tom_str   = (today + timedelta(days=1)).strftime("%Y-%m-%d")
         past3_str = (today - timedelta(days=3)).strftime("%Y-%m-%d")
@@ -187,7 +186,7 @@ def render():
                 hd_sel = st.selectbox("Chọn Hợp Đồng",list(hd_opts.keys()),key="mth_hd")
                 hd = hd_opts[hd_sel]
             with c2:
-                today = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date()
+                today = datetime.now(timezone(timedelta(hours=7))).date()
                 ky_choices = []
                 for delta in range(-2,5):
                     d = today.replace(day=1) + timedelta(days=32*delta)
@@ -395,7 +394,7 @@ def render():
     # CALENDAR
     # ═══════════════════════════════════
     with tab_cal:
-        today = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date()
+        today = datetime.now(timezone(timedelta(hours=7))).date()
         c1,c2,_ = st.columns([1,1,2])
         with c1: sel_m = st.selectbox("Tháng",range(1,13),index=today.month-1,format_func=lambda x:f"Tháng {x:02d}")
         year_list = list(range(today.year - 2, today.year + 4))
@@ -430,7 +429,7 @@ def render():
                 if day==0:
                     body += '<td style="background:#fafafa;border:1px solid #f1f5f9;padding:5px;height:80px;"></td>'; continue
                 ds  = f"{sel_y}-{sel_m:02d}-{day:02d}"
-                isd = ds == datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date().strftime("%Y-%m-%d")
+                isd = ds == datetime.now(timezone(timedelta(hours=7))).date().strftime("%Y-%m-%d")
                 isw = dow >= 5
                 jobs= day_map.get(ds, [])
                 cbg = "#0f172a" if isd else "#fafafa" if isw else "white"
@@ -486,7 +485,7 @@ def render():
         conn.close()
 
         col_b, col_s = st.columns(2)
-        today = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date()
+        today = datetime.now(timezone(timedelta(hours=7))).date()
 
         with col_b:
             st.markdown('<div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:18px;">', unsafe_allow_html=True)
