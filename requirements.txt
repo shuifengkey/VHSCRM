@@ -3,3 +3,6 @@ plotly
 pandas
 libsql-client
 python-dotenv
+reportlab
+python-dateutil
+Pillow
