@@ -242,11 +242,12 @@ def render():
             _start = datetime(_sch_d.year, _sch_d.month, _sch_d.day, _h, _m)
             is_overdue = ((_start - now_dt).total_seconds() / 3600) < -24 and not is_completed
             
-            bg_color = "#f8fafc" if is_completed else ("#fffbeb" if is_active else ("#fef2f2" if is_overdue else "white"))
-            border_color = "#e2e8f0" if is_completed else ("#f59e0b" if is_active else ("#ef4444" if is_overdue else "#e2e8f0"))
+            bg_color = "#e2e8f0" if is_completed else ("#fffbeb" if is_active else ("#fef2f2" if is_overdue else "white"))
+            border_color = "#cbd5e1" if is_completed else ("#f59e0b" if is_active else ("#ef4444" if is_overdue else "#e2e8f0"))
             
             badge_html = ""
-            if is_active: badge_html = '<div class="status-badge" style="background:#f59e0b;color:white;">⏱️ Đang thi công</div>'
+            if is_completed: badge_html = '<div class="status-badge" style="background:#22c55e;color:white;">✅ Đã hoàn thành</div>'
+            elif is_active: badge_html = '<div class="status-badge" style="background:#f59e0b;color:white;">⏱️ Đang thi công</div>'
             elif is_overdue: badge_html = '<div class="status-badge" style="background:#ef4444;color:white;">⚠️ Quá ca</div>'
             
             badge_str = f"\\n                {badge_html}" if badge_html else ""
