@@ -1,6 +1,6 @@
 # app.py — VHS CRM v4 — Top navbar layout
 import streamlit as st
-import sys, os
+import sys, os, hashlib
 sys.path.insert(0, os.path.dirname(__file__))
 
 from utils.database import init_db, get_connection
@@ -14,6 +14,168 @@ st.set_page_config(
     layout="wide", initial_sidebar_state="collapsed"
 )
 init_db()
+
+# ============================================================
+# PIN AUTHENTICATION LAYER
+# ============================================================
+def _hash_pin(pin: str) -> str:
+    return hashlib.sha256(pin.encode()).hexdigest()
+
+def _ensure_pin_table():
+    """Tạo bảng app_settings và PIN mặc định (1234) nếu chưa có."""
+    conn = get_connection()
+    conn.execute("""CREATE TABLE IF NOT EXISTS app_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+    )""")
+    conn.commit()
+    existing = conn.execute("SELECT value FROM app_settings WHERE key='pin_hash'").fetchone()
+    if not existing:
+        conn.execute("INSERT INTO app_settings (key, value) VALUES ('pin_hash', ?)", (_hash_pin("1234"),))
+        conn.commit()
+    conn.close()
+
+def _verify_pin(pin: str) -> bool:
+    conn = get_connection()
+    row = conn.execute("SELECT value FROM app_settings WHERE key='pin_hash'").fetchone()
+    conn.close()
+    if not row:
+        return pin == "1234"
+    return row["value"] == _hash_pin(pin)
+
+def _change_pin(new_pin: str):
+    conn = get_connection()
+    conn.execute("UPDATE app_settings SET value=? WHERE key='pin_hash'", (_hash_pin(new_pin),))
+    conn.commit()
+    conn.close()
+
+_ensure_pin_table()
+
+# ---------- PIN GATE ----------
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "pin_error" not in st.session_state:
+    st.session_state.pin_error = False
+if "pin_input" not in st.session_state:
+    st.session_state.pin_input = ""
+
+if not st.session_state.authenticated:
+    # Style the entire page as the PIN screen
+    st.markdown("""
+<style>
+[data-testid="stSidebar"] { display: none !important; }
+[data-testid="stSidebarCollapsedControl"] { display: none !important; }
+header[data-testid="stHeader"] { display: none !important; }
+#MainMenu { display: none !important; }
+footer { display: none !important; }
+.stApp {
+    background: linear-gradient(145deg, #0a0f1e 0%, #101b33 40%, #0d2b1a 100%) !important;
+}
+.block-container {
+    max-width: 400px !important;
+    padding-top: 8vh !important;
+    margin: 0 auto !important;
+}
+/* Style the text input */
+.stTextInput > div > div > input {
+    background: rgba(255,255,255,0.06) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    color: #f1f5f9 !important;
+    border-radius: 14px !important;
+    padding: 14px 18px !important;
+    font-size: 20px !important;
+    text-align: center !important;
+    letter-spacing: 8px !important;
+    font-weight: 700 !important;
+}
+.stTextInput > div > div > input::placeholder {
+    color: #475569 !important;
+    letter-spacing: 6px !important;
+}
+.stTextInput > div > div > input:focus {
+    border-color: #16a34a !important;
+    box-shadow: 0 0 20px rgba(22,163,74,0.2) !important;
+}
+/* Style the button */
+.stButton > button {
+    background: linear-gradient(135deg, #16a34a, #15803d) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 14px !important;
+    padding: 14px !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px !important;
+    transition: all 0.2s ease !important;
+}
+.stButton > button:hover {
+    background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 8px 24px rgba(22,163,74,0.3) !important;
+}
+.stButton > button:active {
+    transform: scale(0.98) !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+    error_html = ""
+    if st.session_state.pin_error:
+        error_html = '<div style="background:rgba(220,38,38,0.12);border:1px solid rgba(220,38,38,0.3);border-radius:10px;padding:8px 14px;margin-bottom:16px;font-size:13px;color:#fca5a5;font-weight:600;text-align:center;animation:pinShake 0.4s ease-in-out;">🔒 Mã PIN không chính xác!</div>'
+
+    st.markdown(f"""
+<style>
+@keyframes pinSlideIn {{
+    from {{ opacity: 0; transform: translateY(30px) scale(0.97); }}
+    to {{ opacity: 1; transform: translateY(0) scale(1); }}
+}}
+@keyframes pinPulse {{
+    0%, 100% {{ box-shadow: 0 0 30px rgba(22,163,74,0.3); }}
+    50% {{ box-shadow: 0 0 50px rgba(22,163,74,0.5); }}
+}}
+@keyframes pinShake {{
+    0%, 100% {{ transform: translateX(0); }}
+    20%, 60% {{ transform: translateX(-8px); }}
+    40%, 80% {{ transform: translateX(8px); }}
+}}
+</style>
+<div style="animation:pinSlideIn 0.5s cubic-bezier(0.16,1,0.3,1);text-align:center;padding:20px 0 24px;">
+    <div style="width:80px;height:80px;margin:0 auto 20px;background:linear-gradient(135deg,#16a34a,#22d3ee);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 0 30px rgba(22,163,74,0.3);animation:pinPulse 2s infinite;">🔐</div>
+    <div style="font-size:26px;font-weight:800;color:#f8fafc;margin-bottom:6px;letter-spacing:-0.3px;">VHS CRM</div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:24px;">Nhập mã PIN để truy cập hệ thống</div>
+    {error_html}
+</div>
+""", unsafe_allow_html=True)
+
+    pin_val = st.text_input(
+        "Nhập mã PIN",
+        type="password",
+        max_chars=6,
+        key="pin_field",
+        placeholder="••••••",
+        label_visibility="collapsed"
+    )
+    if st.button("🔓 XÁC NHẬN", use_container_width=True, key="pin_submit"):
+        if _verify_pin(pin_val):
+            st.session_state.authenticated = True
+            st.session_state.pin_error = False
+            st.session_state.pin_input = ""
+            st.rerun()
+        else:
+            st.session_state.pin_error = True
+            st.rerun()
+
+    st.markdown("""
+<div style="text-align:center;margin-top:32px;font-size:11px;color:#475569;">
+    🛡️ Bảo mật bởi VHS CRM · PIN mặc định: <b>1234</b>
+</div>
+""", unsafe_allow_html=True)
+
+    st.stop()  # Block everything below until authenticated
+
+# ============================================================
+# AUTHENTICATED — MAIN APP
+# ============================================================
 
 # Tự động sinh lịch cho 2 tháng tới cho các khách định kỳ
 if "auto_scheduled" not in st.session_state:
