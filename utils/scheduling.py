@@ -332,7 +332,7 @@ def is_job_active_now(ngay_du_kien: str, gio_bat_dau: str, gio_ket_thuc: str) ->
 def check_time_violation(gio_bat_dau_hd: str, gio_ket_thuc_hd: str,
                           checkin_time_str: str, ngay_du_kien: str = None) -> dict:
     try:
-        ci = datetime.fromisoformat(checkin_time_str)
+        ci = datetime.fromisoformat(checkin_time_str).replace(tzinfo=None)
         h_bd, m_bd = map(int, gio_bat_dau_hd.split(":"))
 
         # Xác định ngày dự kiến thi công

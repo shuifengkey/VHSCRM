@@ -95,7 +95,7 @@ def action_dialog(job, log):
             st.rerun()
     else:
         # ĐANG THI CÔNG -> CHECK OUT
-        ci_dt = datetime.fromisoformat(log["checkin_time"])
+        ci_dt = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
         elapsed = int(((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)) - ci_dt).total_seconds() / 60)
         
         st.warning(f"⏱️ Đang thi công ({elapsed} phút)")

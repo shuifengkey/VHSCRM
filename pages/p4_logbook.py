@@ -137,8 +137,8 @@ def render():
             if log and log.get("checkout_time"):
                 dur_str = ""
                 try:
-                    ci = datetime.fromisoformat(log["checkin_time"])
-                    co = datetime.fromisoformat(log["checkout_time"])
+                    ci = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
+                    co = datetime.fromisoformat(log["checkout_time"]).replace(tzinfo=None)
                     mins = int((co - ci).total_seconds() / 60)
                     dur_str = f"{mins // 60}h {mins % 60}m"
                 except: pass
@@ -158,7 +158,7 @@ def render():
     
             elif log and log.get("checkin_time"):
                 # Đang thi công
-                ci_dt = datetime.fromisoformat(log["checkin_time"])
+                ci_dt = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
                 elapsed = int(((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)) - ci_dt).total_seconds() / 60)
     
                 time_check = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], log["checkin_time"], job["ngay_du_kien"])
@@ -184,7 +184,7 @@ def render():
                         height=80)
                     attachments = st.file_uploader("📷 Đính kèm Hình ảnh / Tài liệu", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True)
                     if st.form_submit_button("🚪 CHECK-OUT — KẾT THÚC CA", use_container_width=True):
-                        checkin_time = datetime.fromisoformat(log["checkin_time"])
+                        checkin_time = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
                         if ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)) - checkin_time).total_seconds() < 300:
                             st.error("⚠️ Phải thi công ít nhất 5 phút mới được Check-out!")
                         else:
@@ -295,8 +295,8 @@ def render():
                     warn = bool(log["canh_bao_gio"])
                     dur = ""
                     try:
-                        ci = datetime.fromisoformat(log["checkin_time"])
-                        co = datetime.fromisoformat(log["checkout_time"])
+                        ci = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
+                        co = datetime.fromisoformat(log["checkout_time"]).replace(tzinfo=None)
                         m = int((co-ci).total_seconds()/60)
                         dur = f"· {m//60}h{m%60}m"
                     except: pass
