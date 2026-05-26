@@ -445,7 +445,7 @@ if page == "🏠 Tổng Quan":
         st.markdown("<hr style='margin:12px 0; border:0; border-top:1px solid #f1f5f9;'>", unsafe_allow_html=True)
         def goto_logbook():
             st.session_state.topnav = "📓 Work Log"
-        st.button("👉 Đi tới Work Log", use_container_width=True, on_click=goto_logbook)
+        st.button("👉 Đi tới Work Log", type="primary", use_container_width=True, on_click=goto_logbook)
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col_b:
