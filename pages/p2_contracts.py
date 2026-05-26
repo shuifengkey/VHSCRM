@@ -412,9 +412,8 @@ def render():
                                 help="Ngày cụ thể sẽ thi công cho khách lẻ."
                             )
                         with c_gio:
-                            st.markdown("**⏰ Giờ Thi Công**")
                             gbd, gkt, time_valid = _time_input_row(
-                                "Bắt Đầu *", "Kết Thúc *",
+                                "⏰ Bắt Đầu *", "Kết Thúc *",
                                 "form_gbd", "form_gkt"
                             )
                             
