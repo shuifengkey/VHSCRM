@@ -64,7 +64,7 @@ section[data-testid="stSidebar"] { display: none !important; }
 
 /* ── NAV ITEMS (radio buttons restyled) ── */
 div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
-.stRadio { margin: 0 !important; }
+.stRadio { margin: 0 !important; width: 100% !important; }
 .stRadio > label { display: none !important; }
 .stRadio > div {
     display: flex !important; flex-direction: row !important;
