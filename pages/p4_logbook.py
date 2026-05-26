@@ -109,8 +109,8 @@ def render():
                             <div style="font-size:22px;font-weight:800;color:#0f172a;">{job['gio_bat_dau']}</div>
                             <div style="font-size:12px;color:#94a3b8;">đến {job['gio_ket_thuc']}</div>
                         </div>
+                        </div>
                     </div>
-                </div>
                 """, unsafe_allow_html=True)
         
                 conn = get_connection()
@@ -180,7 +180,7 @@ def render():
                     time_check = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], log["checkin_time"], job["ngay_du_kien"])
         
                     st.markdown(f"""
-                    <div style="background:#fffbeb;border:2px solid #d97706;border-radius:0 0 14px 14px;border-top:none;padding:16px;text-align:center;margin-bottom:24px;">
+                    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:16px;text-align:center;margin-top:16px;">
                         <div style="font-size:14px;color:#854d0e;font-weight:700;">⏱️ ĐANG THI CÔNG</div>
                         <div style="font-size:28px;font-weight:800;color:#0f172a;">Check-in {log['checkin_time'][11:16]}</div>
                         <div style="font-size:13px;color:#d97706;margin-bottom:12px;">Đã {elapsed} phút · KTV: {log.get('ky_thuat_vien','-')}</div>
@@ -249,7 +249,7 @@ def render():
                     time_preview = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), job["ngay_du_kien"])
         
                     st.markdown(f"""
-                    <div style="background:white;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 14px 14px;padding:16px;margin-bottom:24px;">
+                    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-top:16px;">
                         <div style="font-size:12px;color:#64748b;margin-bottom:12px;">Giờ hiện tại: <b style="color:#0f172a;">{now_str}</b>
                         &nbsp;·&nbsp; Khung giờ HĐ: <b>{job['gio_bat_dau']} – {job['gio_ket_thuc']}</b>
                         &nbsp;·&nbsp; {time_preview['message']}</div>
@@ -283,6 +283,9 @@ def render():
                                     st.error(f"❌ {e}")
                     
                     st.markdown("</div>", unsafe_allow_html=True)
+                
+                # Đóng thẻ vhs-card chính
+                st.markdown("</div>", unsafe_allow_html=True)
     
         with tab_history:
             conn = get_connection()
