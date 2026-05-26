@@ -1,6 +1,6 @@
 # app.py — VHS CRM v4 — Top navbar layout
 import streamlit as st
-import sys, os, hashlib
+import sys, os, hashlib, base64
 sys.path.insert(0, os.path.dirname(__file__))
 
 from utils.database import init_db, get_connection
@@ -9,8 +9,14 @@ from datetime import timezone, datetime, date, timedelta
 import plotly.graph_objects as go
 import streamlit.components.v1 as components
 
+# Load logo
+_LOGO_PATH = os.path.join(os.path.dirname(__file__), "logo.png")
+with open(_LOGO_PATH, "rb") as _f:
+    _LOGO_B64 = base64.b64encode(_f.read()).decode()
+_LOGO_URI = f"data:image/png;base64,{_LOGO_B64}"
+
 st.set_page_config(
-    page_title="VHS CRM", page_icon="🐛",
+    page_title="VHS CRM", page_icon=_LOGO_PATH,
     layout="wide", initial_sidebar_state="collapsed"
 )
 init_db()
@@ -140,7 +146,7 @@ footer { display: none !important; }
 }}
 </style>
 <div style="animation:pinSlideIn 0.5s cubic-bezier(0.16,1,0.3,1);text-align:center;padding:20px 0 24px;">
-    <div style="width:80px;height:80px;margin:0 auto 20px;background:linear-gradient(135deg,#16a34a,#22d3ee);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 0 30px rgba(22,163,74,0.3);animation:pinPulse 2s infinite;">🔐</div>
+    <img src="{_LOGO_URI}" style="width:90px;height:90px;margin:0 auto 20px;display:block;filter:drop-shadow(0 0 20px rgba(22,163,74,0.4));animation:pinPulse 2s infinite;" />
     <div style="font-size:26px;font-weight:800;color:#f8fafc;margin-bottom:6px;letter-spacing:-0.3px;">VHS CRM</div>
     <div style="font-size:13px;color:#64748b;margin-bottom:24px;">Nhập mã PIN để truy cập hệ thống</div>
     {error_html}
@@ -211,7 +217,7 @@ ca_hom_nay, tong_no = _get_navbar_stats(today_str)
 st.markdown(f"""
 <div class="vhs-nav">
   <div class="vhs-nav-brand">
-    <div class="vhs-nav-brand-icon">🐛</div>
+    <img src="{_LOGO_URI}" style="width:38px;height:38px;border-radius:8px;" />
     <div>
       <div class="vhs-nav-brand-text">VHS CRM</div>
       <div class="vhs-nav-brand-sub">Pest Control v4</div>
