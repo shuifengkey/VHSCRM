@@ -182,9 +182,10 @@ NAV_ITEMS = [
     "📲 App KTV",
 ]
 
-# Đặt radio ngay dưới navbar (CSS sẽ lo liệu việc hiển thị fixed bottom trên mobile và inline trên desktop)
-st.markdown('<div class="nav-marker"></div>', unsafe_allow_html=True)
+# Đặt radio ngay dưới navbar (CSS inline lo Desktop, CSS media query lo Mobile)
+st.markdown('<div style="background:#0f172a;padding:0 24px 0 180px;margin-top:-74px;margin-bottom:20px;" class="nav-marker">', unsafe_allow_html=True)
 page = st.radio("nav", NAV_ITEMS, horizontal=True, label_visibility="collapsed", key="topnav")
+st.markdown("</div>", unsafe_allow_html=True)
 
 # JS: Thêm class vào đúng container của radio để CSS dễ style (không dùng appendChild để tránh lỗi React)
 components.html("""

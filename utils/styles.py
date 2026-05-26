@@ -205,39 +205,23 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
 ::-webkit-scrollbar-track { background: #f1f5f9; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 
-/* ── NAV CONTAINER DESKTOP ── */
-.nav-marker { display: none; }
-.vhs-nav-st-radio,
-.element-container:has(.nav-marker) + .element-container {
-    background: transparent !important;
-    padding: 0 24px 0 180px;
-    margin-top: -64px; /* Adjusting slightly so it centers perfectly in the 54px nav */
-    margin-bottom: 20px;
-    position: relative;
-    z-index: 1000;
-    pointer-events: none; /* Let clicks pass through to status pills */
-}
-.vhs-nav-st-radio .stRadio,
-.element-container:has(.nav-marker) + .element-container .stRadio {
-    pointer-events: auto; /* Re-enable clicks on the nav items */
-}
-
 /* ── MOBILE ── */
 @media (max-width: 768px) {
     .vhs-nav { display: none !important; }
-    .block-container { padding: 0 .5rem 80px !important; }
+    .block-container { padding: 60px .5rem 20px !important; }
     
     .vhs-nav-st-radio,
     .element-container:has(.nav-marker) + .element-container {
         position: fixed !important;
-        bottom: 0 !important; left: 0 !important; right: 0 !important;
+        top: 0 !important; left: 0 !important; right: 0 !important;
+        bottom: auto !important;
         background: white !important;
-        border-top: 1px solid #e2e8f0 !important;
+        border-bottom: 1px solid #e2e8f0 !important;
         z-index: 999999 !important;
-        padding: 6px 6px 16px 6px !important;
+        padding: 6px 6px 10px 6px !important;
         margin-top: 0 !important;
         margin-bottom: 0 !important;
-        box-shadow: 0 -4px 24px rgba(0,0,0,0.08) !important;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.08) !important;
         pointer-events: auto; /* Ensure mobile is clickable */
     }
     
