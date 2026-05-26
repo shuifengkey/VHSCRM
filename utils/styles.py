@@ -20,7 +20,7 @@ section[data-testid="stSidebar"] { display: none !important; }
     background: white !important; border: 1px solid #e2e8f0 !important; border-radius: 14px !important; padding: 24px !important; box-shadow: 0 1px 4px rgba(0,0,0,.04) !important;
 }
 .vhs-list-item {
-    background: white !important; border: 1px solid #e2e8f0 !important; border-radius: 12px !important; padding: 16px !important; margin-bottom: 12px !important;
+    background: white !important; border: 1px solid #e2e8f0 !important; border-radius: 12px !important; padding: 16px !important; margin-bottom: 16px !important; display: block !important;
 }
 .vhs-sub-card {
     background: #f8fafc !important; border: 1px solid #e2e8f0 !important; border-radius: 10px !important; padding: 12px !important; margin-top: 10px !important;
