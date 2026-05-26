@@ -176,11 +176,7 @@ def edit_contract_dialog(ma_hd):
 
     ghi_chu = st.text_area("Ghi Chú", value=hd.get("ghi_chu") or "", height=60, key=f"e_gc_{ma_hd}")
 
-    st.markdown("""
-        <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:8px 12px;margin:10px 0;font-size:12px;color:#c2410c;">
-            ⚠️ <b>Lưu ý:</b> Sửa cấu hình lặp sẽ <b>không</b> tự động xóa hay sinh lại các ca thi công đã có. Bạn cần tự xóa và bấm Sinh lịch lại nếu muốn áp dụng cấu hình mới cho toàn bộ lịch.
-        </div>
-    """, unsafe_allow_html=True)
+
 
     if st.button("💾 Lưu Thay Đổi Hợp Đồng", type="primary", use_container_width=True, key=f"btn_save_{ma_hd}"):
         try:
@@ -200,8 +196,25 @@ def edit_contract_dialog(ma_hd):
                   ngay_thi_cong_dau.isoformat(), gbd.strftime("%H:%M"), gkt.strftime("%H:%M"), ghi_chu,
                   ma_hd))
             c.commit()
+            
+            # Xóa các ca chưa làm (không nằm trong logbook) để sinh lại theo cấu hình mới
+            c.execute("""
+                DELETE FROM schedules 
+                WHERE ma_hd=? AND trang_thai='scheduled' 
+                  AND id NOT IN (SELECT schedule_id FROM logbook)
+            """, (ma_hd,))
+            c.commit()
             c.close()
-            st.session_state.add_hd_success = f"✅ Đã cập nhật hợp đồng {ma_hd} thành công!"
+            
+            # Sinh lại lịch mới cho tháng bắt đầu + 2 tháng tới
+            from utils.scheduling import auto_generate_schedules
+            start = ngay_thi_cong_dau.replace(day=1)
+            n = 0
+            for _ in range(3):
+                n += auto_generate_schedules(ma_hd, start.strftime("%Y-%m"))
+                start = (start + timedelta(days=32)).replace(day=1)
+                
+            st.session_state.add_hd_success = f"✅ Đã cập nhật hợp đồng {ma_hd} và sinh lại {n} ca thi công mới!"
             st.rerun()
         except Exception as e:
             st.error(f"Lỗi: {e}")
