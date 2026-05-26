@@ -510,20 +510,7 @@ def render():
         with c2: sel_y = st.selectbox("Năm", year_list, index=year_list.index(today.year))
         
         with c3:
-            st.markdown("""
-            <style>
-            div[data-testid='column']:nth-of-type(3) div.stButton > button { 
-                white-space: nowrap !important;
-                height: 40px !important;
-                min-height: 40px !important;
-                max-height: 40px !important;
-                width: 100% !important;
-                padding-top: 0 !important;
-                padding-bottom: 0 !important;
-            }
-            </style>
-            """, unsafe_allow_html=True)
-            if st.button("🔄 Đồng bộ Google"):
+            if st.button("🔄 Đồng bộ", use_container_width=True):
                 google_sync_dialog(sel_m, sel_y)
 
         conn = get_connection()
