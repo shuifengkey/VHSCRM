@@ -128,45 +128,47 @@ def render():
                         dur_str = f"{mins // 60}h {mins % 60}m"
                     except: pass
         
-                    st.markdown(f"""
-                    <div style="background:#f0fdf4;border:2px solid #16a34a;border-radius:0 0 14px 14px;border-top:none;padding:12px 20px;text-align:center;margin-bottom:8px;">
-                        <div style="font-size:24px;margin-bottom:4px;">✅</div>
-                        <div style="font-size:14px;font-weight:700;color:#166534;">Ca Đã Hoàn Thành</div>
-                        <div style="font-size:12px;color:#4ade80;margin-top:2px;">
-                            {log['checkin_time'][11:16]} → {log['checkout_time'][11:16]}
-                            {f' · Thời gian: {dur_str}' if dur_str else ''}
-                        </div>
-                        {'<div style="background:#fef9c3;border-radius:8px;padding:4px 8px;margin-top:6px;font-size:11px;color:#854d0e;">⚠️ Có cảnh báo sai giờ</div>' if log.get('canh_bao_gio') else ''}
-                        <div style="font-size:12px;color:#475569;margin-top:8px;"><b>👷 KTV:</b> {log.get('ky_thuat_vien','-')} &nbsp;|&nbsp; <b>💊 Hóa chất:</b> {log.get('hoa_chat','-')} &nbsp;|&nbsp; <b>📝 Kết quả:</b> {log.get('ket_qua','-')}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-                    with st.expander("📎 Bổ sung tài liệu / Hình ảnh", expanded=False):
-                        with st.form(f"form_attach_{job['id']}"):
-                            extra_att = st.file_uploader("Thêm ảnh/tài liệu", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"extra_file_{job['id']}")
-                            if st.form_submit_button("Lưu bổ sung", use_container_width=True):
-                                if extra_att:
-                                    import os, uuid
-                                    uploaded_paths = []
-                                    upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
-                                    os.makedirs(upload_dir, exist_ok=True)
-                                    for f in extra_att:
-                                        filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
-                                        filepath = os.path.join(upload_dir, filename)
-                                        with open(filepath, "wb") as out:
-                                            out.write(f.getbuffer())
-                                        uploaded_paths.append(filename)
-                                    new_att_str = ",".join(uploaded_paths)
-                                    old_att = log.get("attachments", "")
-                                    final_att = (old_att + "," + new_att_str).strip(",") if old_att else new_att_str
-                                    conn_u = get_connection()
-                                    conn_u.execute("UPDATE logbook SET attachments=? WHERE id=?", (final_att, log["id"]))
-                                    conn_u.commit()
-                                    conn_u.close()
-                                    st.success("✅ Đã bổ sung tài liệu!")
-                                    st.rerun()
-                                else:
-                                    st.warning("⚠️ Chưa chọn file nào!")
+                    with st.container(border=True):
+                        c1, c2 = st.columns([4, 1], vertical_alignment="center")
+                        with c1:
+                            st.markdown(f"""
+                            <div style="color:#166534;">
+                                <div style="font-size:16px;font-weight:700;">✅ Ca Đã Hoàn Thành</div>
+                                <div style="font-size:13px;color:#4ade80;margin-top:2px;">
+                                    {log['checkin_time'][11:16]} → {log['checkout_time'][11:16]}
+                                    {f' · Thời gian: {dur_str}' if dur_str else ''}
+                                </div>
+                                {'<div style="background:#fef9c3;border-radius:8px;padding:4px 8px;margin-top:6px;font-size:11px;color:#854d0e;display:inline-block;">⚠️ Có cảnh báo sai giờ</div>' if log.get('canh_bao_gio') else ''}
+                                <div style="font-size:12px;color:#475569;margin-top:4px;"><b>👷 KTV:</b> {log.get('ky_thuat_vien','-')} &nbsp;|&nbsp; <b>💊 Hóa chất:</b> {log.get('hoa_chat','-')} &nbsp;|&nbsp; <b>📝 KQ:</b> {log.get('ket_qua','-')}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+                        with c2:
+                            with st.popover("📎 Bổ sung", use_container_width=True):
+                                with st.form(f"form_attach_{job['id']}"):
+                                    extra_att = st.file_uploader("Thêm ảnh/tài liệu", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"extra_file_{job['id']}")
+                                    if st.form_submit_button("Lưu bổ sung", use_container_width=True):
+                                        if extra_att:
+                                            import os, uuid
+                                            uploaded_paths = []
+                                            upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+                                            os.makedirs(upload_dir, exist_ok=True)
+                                            for f in extra_att:
+                                                filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
+                                                filepath = os.path.join(upload_dir, filename)
+                                                with open(filepath, "wb") as out:
+                                                    out.write(f.getbuffer())
+                                                uploaded_paths.append(filename)
+                                            new_att_str = ",".join(uploaded_paths)
+                                            old_att = log.get("attachments", "")
+                                            final_att = (old_att + "," + new_att_str).strip(",") if old_att else new_att_str
+                                            conn_u = get_connection()
+                                            conn_u.execute("UPDATE logbook SET attachments=? WHERE id=?", (final_att, log["id"]))
+                                            conn_u.commit()
+                                            conn_u.close()
+                                            st.success("✅ Đã bổ sung tài liệu!")
+                                            st.rerun()
+                                        else:
+                                            st.warning("⚠️ Chưa chọn file nào!")
                     
                     st.markdown("<div style='margin-bottom:24px;'></div>", unsafe_allow_html=True)
         
@@ -353,10 +355,10 @@ def render():
                                         att_html += f'<a href="data:{mime};base64,{fb64}" download="{filename}" title="Tải file {filename}" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:4px;text-decoration:none;font-size:16px;margin-left:4px;box-shadow:0 1px 2px rgba(0,0,0,0.05);">📄</a>'
                                     except: pass
 
-                    st.markdown(f"""
-                    <div style="background:white;border:1px solid #e2e8f0;border-left:4px solid {left_color};
-                                border-radius:0 12px 12px 0;padding:14px 16px;margin-bottom:8px;">
-                        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+                    with st.container(border=True):
+                        c1, c2 = st.columns([5, 1], vertical_alignment="center")
+                        with c1:
+                            st.markdown(f"""
                             <div>
                                 <span style="font-size:15px;font-weight:700;color:#0f172a;">{status_icon} {log['ten_cty']}</span>
                                 {'<span style="font-size:10px;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:8px;margin-left:8px;font-weight:700;">⚠️ SAI GIỜ</span>' if warn else ''}
@@ -366,43 +368,39 @@ def render():
                                     {log['checkout_time'][11:16] if log['checkout_time'] else '...'}
                                     &nbsp;{dur}
                                 </div>
+                                <div style="margin-top:6px;display:flex;gap:4px;">
+                                    <div style="font-size:11px;color:#94a3b8;margin-right:6px;">{log['checkin_time'][:10] if log['checkin_time'] else ''}</div>
+                                    {att_html}
+                                </div>
                             </div>
-                            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-                                <div style="font-size:11px;color:#94a3b8;">{log['checkin_time'][:10] if log['checkin_time'] else ''}</div>{
-                                f'<div style="display:flex;">{att_html}</div>' if att_html else ''
-                                }
-                            </div>
-                            </div>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    with st.expander("📎 Bổ sung tài liệu / Hình ảnh", expanded=False):
-                        with st.form(f"hist_form_attach_{log['id']}"):
-                            extra_att = st.file_uploader("Thêm ảnh/tài liệu", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"hist_extra_file_{log['id']}")
-                            if st.form_submit_button("Lưu bổ sung", use_container_width=True):
-                                if extra_att:
-                                    import os, uuid
-                                    uploaded_paths = []
-                                    upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
-                                    os.makedirs(upload_dir, exist_ok=True)
-                                    for f in extra_att:
-                                        filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
-                                        filepath = os.path.join(upload_dir, filename)
-                                        with open(filepath, "wb") as out:
-                                            out.write(f.getbuffer())
-                                        uploaded_paths.append(filename)
-                                    new_att_str = ",".join(uploaded_paths)
-                                    old_att = log.get("attachments", "")
-                                    final_att = (old_att + "," + new_att_str).strip(",") if old_att else new_att_str
-                                    conn_u = get_connection()
-                                    conn_u.execute("UPDATE logbook SET attachments=? WHERE id=?", (final_att, log["id"]))
-                                    conn_u.commit()
-                                    conn_u.close()
-                                    st.success("✅ Đã bổ sung tài liệu!")
-                                    st.rerun()
-                                else:
-                                    st.warning("⚠️ Chưa chọn file nào!")
+                            """, unsafe_allow_html=True)
+                        with c2:
+                            with st.popover("📎 Bổ sung", use_container_width=True):
+                                with st.form(f"hist_form_attach_{log['id']}"):
+                                    extra_att = st.file_uploader("Thêm ảnh/tài liệu", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"hist_extra_file_{log['id']}")
+                                    if st.form_submit_button("Lưu bổ sung", use_container_width=True):
+                                        if extra_att:
+                                            import os, uuid
+                                            uploaded_paths = []
+                                            upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+                                            os.makedirs(upload_dir, exist_ok=True)
+                                            for f in extra_att:
+                                                filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
+                                                filepath = os.path.join(upload_dir, filename)
+                                                with open(filepath, "wb") as out:
+                                                    out.write(f.getbuffer())
+                                                uploaded_paths.append(filename)
+                                            new_att_str = ",".join(uploaded_paths)
+                                            old_att = log.get("attachments", "")
+                                            final_att = (old_att + "," + new_att_str).strip(",") if old_att else new_att_str
+                                            conn_u = get_connection()
+                                            conn_u.execute("UPDATE logbook SET attachments=? WHERE id=?", (final_att, log["id"]))
+                                            conn_u.commit()
+                                            conn_u.close()
+                                            st.success("✅ Đã bổ sung tài liệu!")
+                                            st.rerun()
+                                        else:
+                                            st.warning("⚠️ Chưa chọn file nào!")
     
     with tab_stats:
         conn = get_connection()
