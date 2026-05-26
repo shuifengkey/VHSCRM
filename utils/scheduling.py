@@ -311,6 +311,16 @@ def auto_generate_schedules(ma_hd: str, ky_thang: str, overwrite=False) -> int:
         ).fetchone()
         if exists:
             continue
+
+        # Bỏ qua ngày thi công trước ngày bắt đầu hợp đồng
+        ngay_bat_dau_hd_str = hd.get("ngay_thi_cong_dau") or hd.get("ngay_ky")
+        if ngay_bat_dau_hd_str:
+            try:
+                ngay_bat_dau_hd = date.fromisoformat(ngay_bat_dau_hd_str)
+                if d < ngay_bat_dau_hd:
+                    continue
+            except:
+                pass
             
         # Tìm dịch hại của lần thi công tương ứng (lan_thu) ở tháng gần nhất trước đó
         prev_sch = conn.execute(
