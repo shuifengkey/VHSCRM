@@ -243,6 +243,8 @@ def render():
             st.markdown('<div style="background:white;border:1px solid #e2e8f0;border-radius:14px;padding:20px;">', unsafe_allow_html=True)
             st.markdown("**➕ Tạo Kỳ Thu Mới**")
             st.markdown('<hr style="margin:8px 0 14px">', unsafe_allow_html=True)
+            st.caption("💡 Hệ thống đã tự động ghi nhận doanh thu khi KTV hoàn thành ca. Bạn chỉ dùng form này để dự phòng hoặc điều chỉnh.")
+
 
             conn = get_connection()
             contracts = conn.execute("""

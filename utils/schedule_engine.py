@@ -44,11 +44,36 @@ def generate_next_occurrence(contract: dict, completed_schedule: dict) -> list:
 
 def complete_schedule(schedule_id: int, contract: dict) -> dict:
     """
-    Đánh dấu 1 ca là completed và tự sinh ca kế tiếp.
+    Đánh dấu 1 ca là completed, tự sinh ca kế tiếp và tự động ghi nhận công nợ.
     """
     conn = _get_conn()
     conn.execute("UPDATE schedules SET trang_thai='completed' WHERE id=?", (schedule_id,))
     sched = dict(conn.execute("SELECT * FROM schedules WHERE id=?", (schedule_id,)).fetchone())
+    
+    # Auto debt generation logic
+    dvt = contract.get("don_vi_tinh", "/tháng")
+    gia_tri = float(contract.get("gia_tri_thang") or 0.0)
+    ma_hd = contract["ma_hd"]
+    ma_kh = contract["ma_kh"]
+    ky_thang = sched["ky_thang"]
+
+    if gia_tri > 0:
+        if dvt == "/lần thi công":
+            debt = conn.execute("SELECT id, can_thu FROM debts WHERE ma_hd=? AND ky_thanh_toan=?", (ma_hd, ky_thang)).fetchone()
+            if debt:
+                conn.execute("UPDATE debts SET can_thu = can_thu + ? WHERE id=?", (gia_tri, debt["id"]))
+            else:
+                conn.execute("INSERT INTO debts (ma_hd, ma_kh, ky_thanh_toan, can_thu, da_thu, ghi_chu) VALUES (?, ?, ?, ?, ?, ?)",
+                             (ma_hd, ma_kh, ky_thang, gia_tri, 0.0, "Tự động sinh (theo lần)"))
+        else: # /tháng
+            total_required = int(contract.get("tan_suat") or 1)
+            completed_count = conn.execute("SELECT COUNT(id) FROM schedules WHERE ma_hd=? AND ky_thang=? AND trang_thai='completed'", (ma_hd, ky_thang)).fetchone()[0]
+            if completed_count >= total_required:
+                debt = conn.execute("SELECT id FROM debts WHERE ma_hd=? AND ky_thanh_toan=?", (ma_hd, ky_thang)).fetchone()
+                if not debt:
+                    conn.execute("INSERT INTO debts (ma_hd, ma_kh, ky_thanh_toan, can_thu, da_thu, ghi_chu) VALUES (?, ?, ?, ?, ?, ?)",
+                                 (ma_hd, ma_kh, ky_thang, gia_tri, 0.0, "Tự động sinh (đủ tháng)"))
+
     conn.commit()
     conn.close()
 
