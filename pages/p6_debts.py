@@ -215,7 +215,7 @@ def render():
                 st.success("🎉 Tất cả đã thanh toán đầy đủ!")
             else:
                 debt_opts = {
-                    f"[{r['ky_thanh_toan']}] {r['ten_cty']} — còn {r['con_no']/1e6:.2f}M": dict(r)
+                    f"[{r['ky_thanh_toan']}] {r['ten_cty']} — còn {format_money(r['con_no'])} đ": dict(r)
                     for r in unpaid
                 }
                 sel = st.selectbox("Chọn Kỳ", list(debt_opts.keys()))
@@ -223,9 +223,9 @@ def render():
 
                 st.markdown(f"""
                 <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px;margin:8px 0;font-size:13px;">
-                    💰 Cần thu: <b>{d['can_thu']/1e6:.2f}M</b> &nbsp;·&nbsp;
-                    ✅ Đã thu: <b style="color:#16a34a">{d['da_thu']/1e6:.2f}M</b> &nbsp;·&nbsp;
-                    ⚠️ Còn: <b style="color:#dc2626">{d['con_no']/1e6:.2f}M</b>
+                    💰 Cần thu: <b>{format_money(d['can_thu'])}</b> &nbsp;·&nbsp;
+                    ✅ Đã thu: <b style="color:#16a34a">{format_money(d['da_thu'])}</b> &nbsp;·&nbsp;
+                    ⚠️ Còn: <b style="color:#dc2626">{format_money(d['con_no'])}</b>
                 </div>""", unsafe_allow_html=True)
 
                 if 'last_sel' not in st.session_state or st.session_state.last_sel != sel:
@@ -255,7 +255,7 @@ def render():
                             st.success("✅ Thanh toán HOÀN TẤT!"); st.balloons()
                         else:
                             remain = d["can_thu"] - new_da_thu
-                            st.success(f"✅ Ghi nhận {so_tien/1e6:.2f}M. Còn lại {remain/1e6:.2f}M")
+                            st.success(f"✅ Ghi nhận {format_money(so_tien)}. Còn lại {format_money(remain)}")
                         st.rerun()
                     except Exception as e: st.error(f"❌ {e}")
             st.markdown("</div>", unsafe_allow_html=True)
