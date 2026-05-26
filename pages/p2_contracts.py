@@ -263,7 +263,7 @@ def render():
     # TẠO MỚI
     # =========================================================
     with tab_add:
-        col_form, col_tip = st.columns([3, 1])
+        col_form = st.container()
 
         with col_form:
             conn = get_connection()
@@ -517,38 +517,6 @@ def render():
                                 st.error(f"❌ {e}")
 
             st.markdown("</div>", unsafe_allow_html=True)
-
-        with col_tip:
-            st.markdown("""
-            <div style="background:linear-gradient(160deg,#0f172a,#166534);border-radius:14px;padding:20px;color:white;">
-              <div style="font-size:14px;font-weight:700;margin-bottom:14px;">📐 Cách tính lịch</div>
-
-              <div style="font-size:12px;color:#86efac;font-weight:700;margin-bottom:4px;">NGÀY CỐ ĐỊNH</div>
-              <div style="font-size:11px;color:#cbd5e1;line-height:1.8;margin-bottom:14px;">
-                Tháng 5 bắt đầu ngày 5:<br>
-                · 1 lần → <b>05/05</b><br>
-                · 2 lần → <b>05/05</b> · <b>20/05</b><br>
-                · 3 lần → <b>05</b> · <b>15</b> · <b>25/05</b><br>
-                · 4 lần → <b>05</b>·<b>12</b>·<b>19</b>·<b>26/05</b>
-              </div>
-
-              <div style="font-size:12px;color:#86efac;font-weight:700;margin-bottom:4px;">THỨ CỐ ĐỊNH</div>
-              <div style="font-size:11px;color:#cbd5e1;line-height:1.8;margin-bottom:14px;">
-                Thứ Hai, 2 lần/tháng:<br>
-                → T2 tuần 1 + T2 tuần 3<br><br>
-                Thứ Tư, 3 lần/tháng:<br>
-                → T4 tuần 1 + tuần 3 + tuần 5<br>
-                (phân bổ đều tự động)
-              </div>
-
-              <div style="font-size:12px;color:#fbbf24;font-weight:700;margin-bottom:4px;">⏰ GIỜ CA ĐÊM</div>
-              <div style="font-size:11px;color:#cbd5e1;line-height:1.8;">
-                Nhập 23:00 đến 02:00<br>
-                → Hệ thống hiểu là sang hôm sau<br>
-                → KTV vẫn thấy ca đến 02:00
-              </div>
-            </div>
-            """, unsafe_allow_html=True)
 
     # =========================================================
     # PHÂN TÍCH
