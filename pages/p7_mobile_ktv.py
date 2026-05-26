@@ -100,17 +100,26 @@ def action_dialog(job, log):
         
         st.warning(f"⏱️ Đang thi công ({elapsed} phút)")
         
-        pest_found = st.text_area("Côn trùng phát hiện / Ghi chú", value=log.get("pest_found", ""), height=80)
-        chemical   = st.text_area("Hóa chất sử dụng", value=log.get("chemical_used", ""), height=80)
+        pest_found = st.text_area("Côn trùng phát hiện / Ghi chú", value=log.get("ket_qua", ""), height=80)
+        chemical   = st.text_area("Hóa chất sử dụng", value=log.get("hoa_chat", ""), height=80)
         
         if st.button("✅ HOÀN THÀNH & CHECK-OUT", type="primary", use_container_width=True):
             conn = get_connection()
             conn.execute("""UPDATE logbook 
-                            SET checkout_time=?, pest_found=?, chemical_used=? 
+                            SET checkout_time=?, ket_qua=?, hoa_chat=? 
                             WHERE id=?""",
                          ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), pest_found, chemical, log["id"]))
-            conn.execute("UPDATE schedules SET trang_thai='completed' WHERE id=?", (job["id"],))
             conn.commit(); conn.close()
+            
+            # Dùng engine để hoàn thành ca, tự sinh ca kế tiếp và sinh công nợ
+            from utils.schedule_engine import complete_schedule as cs_fn
+            conn_ct = get_connection()
+            ct_row = conn_ct.execute('SELECT * FROM contracts WHERE ma_hd=?', (job['ma_hd'],)).fetchone()
+            conn_ct.close()
+            
+            if ct_row:
+                cs_fn(job['id'], dict(ct_row))
+                
             st.rerun()
 
 def render():
