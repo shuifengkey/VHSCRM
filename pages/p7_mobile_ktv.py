@@ -74,6 +74,15 @@ MOBILE_CSS = """
     font-weight: 700;
     margin-top: 12px;
 }
+/* Pull button up into the card */
+div[data-testid="stMarkdownContainer"]:has(.btn-pull-up) {
+    margin-bottom: -70px !important;
+}
+div[data-testid="stMarkdownContainer"]:has(.btn-pull-up) + div {
+    padding: 0 20px 20px 20px;
+    position: relative;
+    z-index: 10;
+}
 </style>
 """
 
@@ -274,8 +283,11 @@ def render():
             else:
                 left_border = "border-left: 6px solid #3b82f6;"
 
+            margin_bottom = "0px" if not is_completed else "16px"
+            padding_bottom = "75px" if not is_completed else "20px"
+
             st.markdown(f"""
-            <div class="mobile-card" style="background:{bg_color};border-color:{border_color};{left_border}">
+            <div class="mobile-card" style="background:{bg_color};border-color:{border_color};{left_border}; margin-bottom:{margin_bottom}; padding-bottom:{padding_bottom};">
                 <div class="shift-time">{job['gio_bat_dau']} - {job['gio_ket_thuc']}{date_str}</div>
                 <div class="shift-company">🏢 {job['ten_cty']}</div>{badge_str}
                 <div class="shift-address">
@@ -287,6 +299,7 @@ def render():
             
             # Buttons actions
             if not is_completed:
+                st.markdown("<div class='btn-pull-up'></div>", unsafe_allow_html=True)
                 btn_label = "✅ Hoàn Thành Ca" if is_active else "📍 Bắt Đầu (Check-in)"
                 btn_type = "primary"
                 
