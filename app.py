@@ -137,9 +137,9 @@ conn_main.close()
 # ============================================================
 # TOP NAVBAR
 # ============================================================
-now  = datetime.now()
+now  = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh'))
 conn = get_connection()
-today_str   = date.today().strftime("%Y-%m-%d")
+today_str   = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date().strftime("%Y-%m-%d")
 ca_hom_nay  = conn.execute(
     "SELECT COUNT(*) FROM schedules WHERE ngay_du_kien=? AND trang_thai='scheduled'",
     (today_str,)
@@ -245,7 +245,7 @@ if page != st.session_state.last_main_tab:
 # ============================================================
 if page == "🏠 Tổng Quan":
     conn = get_connection()
-    today = date.today()
+    today = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date()
     today_str = today.strftime("%Y-%m-%d")
 
     total_kh    = conn.execute("SELECT COUNT(*) FROM customers").fetchone()[0]

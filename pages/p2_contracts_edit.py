@@ -1,3 +1,4 @@
+from zoneinfo import ZoneInfo
 import streamlit as st
 from datetime import date, datetime, time, timedelta
 from utils.database import get_connection
@@ -24,9 +25,9 @@ def edit_contract_dialog(ma_hd):
             break
 
     def get_date(d_str):
-        if not d_str: return date.today()
+        if not d_str: return datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date()
         try: return date.fromisoformat(d_str)
-        except: return date.today()
+        except: return datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date()
 
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -112,12 +113,12 @@ def edit_contract_dialog(ma_hd):
             
             # Tính ngày bắt đầu lặp dựa trên lần thi công thứ 1
             first_day = int(selected_days[0])
-            year = date.today().year
-            month = date.today().month
+            year = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date().year
+            month = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date().month
             max_d = calendar.monthrange(year, month)[1]
             d = min(first_day, max_d)
             suggested_date = date(year, month, d)
-            if suggested_date < date.today():
+            if suggested_date < datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date():
                 m = 1 if month == 12 else month + 1
                 y = year + 1 if month == 12 else year
                 max_d_next = calendar.monthrange(y, m)[1]

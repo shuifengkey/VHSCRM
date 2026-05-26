@@ -1,3 +1,4 @@
+from zoneinfo import ZoneInfo
 # pages/p2_contracts.py — Hợp Đồng v4
 import streamlit as st
 import sys, os
@@ -84,7 +85,7 @@ def render():
     # DANH SÁCH
     # =========================================================
     with tab_list:
-        today     = date.today()
+        today     = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date()
         today_str = today.strftime("%Y-%m-%d")
 
         conn = get_connection()
@@ -287,11 +288,11 @@ def render():
                     c1, c2, c3 = st.columns(3)
                     with c1:
                         ma_hd   = st.text_input("Mã Hợp Đồng *", placeholder="VD: HD2025-006")
-                        ngay_ky = st.date_input("Ngày Ký *", value=date.today())
+                        ngay_ky = st.date_input("Ngày Ký *", value=datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date())
                     with c2:
                         kh_opts = {f"{r['ma_kh']} – {r['ten_cty']}": r['ma_kh'] for r in all_kh}
                         kh_sel  = st.selectbox("Khách Hàng *", list(kh_opts.keys()))
-                        ngay_ht = st.date_input("Ngày Hết Hạn", value=date.today().replace(year=date.today().year+1))
+                        ngay_ht = st.date_input("Ngày Hết Hạn", value=datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date().replace(year=datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date().year+1))
                     with c3:
                         loai_khach = st.selectbox("Loại Khách", ["Định kỳ", "Khách lẻ"])
                         if 'fmt_gia_tri' not in st.session_state:
@@ -376,13 +377,13 @@ def render():
                             
                             # Tự động tính ngày đầu tiên dựa trên ngày thi công lần 1
                             first_day = int(selected_days[0])
-                            year = date.today().year
-                            month = date.today().month
+                            year = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date().year
+                            month = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date().month
                             max_d = calendar.monthrange(year, month)[1]
                             d = min(first_day, max_d)
                             suggested_date = date(year, month, d)
                             
-                            if suggested_date < date.today():
+                            if suggested_date < datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date():
                                 m = 1 if month == 12 else month + 1
                                 y = year + 1 if month == 12 else year
                                 max_d_next = calendar.monthrange(y, m)[1]
@@ -422,7 +423,7 @@ def render():
                             with c_date:
                                 from utils.scheduling import LAP_THU_TO_PY
                                 py_wd = LAP_THU_TO_PY[lap_thu_val]
-                                suggestion = date.today()
+                                suggestion = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date()
                                 while suggestion.weekday() != py_wd:
                                     suggestion += timedelta(days=1)
                                 ngay_thi_cong_dau = st.date_input(
@@ -453,7 +454,7 @@ def render():
                         with c_ngay:
                             ngay_thi_cong_dau = st.date_input(
                                 "📅 Ngày Thi Công (Đầu tiên) *",
-                                value=date.today(),
+                                value=datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date(),
                                 help="Ngày cụ thể sẽ thi công cho khách lẻ."
                             )
                         with c_gio:
@@ -503,7 +504,7 @@ def render():
                             "tuan_lap_lai": tuan_lap_lai_val,
                             "gio_bat_dau": gbd, "gio_ket_thuc": gkt,
                         }
-                        ky_preview = date.today().strftime("%Y-%m")
+                        ky_preview = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date().strftime("%Y-%m")
                         prev_html = _preview_schedule(hd_preview, ky_preview)
                         st.markdown(f"""
                         <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;margin:10px 0;">
@@ -545,7 +546,7 @@ def render():
                                       gia_tri, ghi_chu, don_vi_tinh, loai_khach, khu_vuc_xu_ly, loai_con_trung, chu_ky_lap, phuong_phap_xu_ly, tuan_lap_lai_val, ktv_val))
                                 conn.commit(); conn.close()
                                 if gen_now:
-                                    t = date.today()
+                                    t = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date()
                                     n1 = auto_generate_schedules(ma_hd, t.strftime("%Y-%m"))
                                     n2 = 0
                                     if loai_khach == "Định kỳ" or chu_ky_lap != "1_lan":

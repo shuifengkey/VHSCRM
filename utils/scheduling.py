@@ -1,3 +1,4 @@
+from zoneinfo import ZoneInfo
 # utils/scheduling.py — VHS CRM v4 — Logic lập lịch linh hoạt
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -309,7 +310,7 @@ def auto_generate_next_ky(ma_hd: str, ky_hien_tai: str):
 
 def is_job_active_now(ngay_du_kien: str, gio_bat_dau: str, gio_ket_thuc: str) -> bool:
     try:
-        now = datetime.now()
+        now = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh'))
         h_bd, m_bd = map(int, gio_bat_dau.split(":"))
         sch_date = date.fromisoformat(ngay_du_kien)
         start_dt = datetime(sch_date.year, sch_date.month, sch_date.day, h_bd, m_bd)
@@ -370,7 +371,7 @@ def auto_generate_all_future_schedules(months: int = 2) -> int:
         return 0
         
     created = 0
-    target = date.today().replace(day=1)
+    target = datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date().replace(day=1)
     for _ in range(months + 1):
         ky_thang = target.strftime("%Y-%m")
         for ct in cts:
