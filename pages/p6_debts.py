@@ -154,43 +154,41 @@ def render():
             display_no = abs(no) if no < 0 else no
             
             rows_html += f"""
-            <div class="vhs-list-item" style="background:{row_bg};border-color:{border_color};padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-                    <div>
-                        <div style="font-size:15px;font-weight:700;color:#0f172a;">{d['ten_cty']}</div>
-                        <div style="font-size:12px;color:#64748b;margin-top:2px;">
-                            📋 {d['ma_hd']} &nbsp;·&nbsp; 🗓️ Kỳ {d['ky_thanh_toan']}
-                        </div>
-                    </div>
-                    <div style="text-align:right;">
-                        <div style="font-size:16px;font-weight:800;color:{no_color};">{format_money(display_no)} đ</div>
-                        <div style="font-size:11px;color:#94a3b8;">{status_text}</div>
-                    </div>
-                </div>
-                
-                <div style="display:flex;justify-content:space-between;background:#f8fafc;padding:10px;border-radius:8px;margin-bottom:10px;border:1px solid #e2e8f0;">
-                    <div style="text-align:center;">
-                        <div style="font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700;">Cần Thu</div>
-                        <div style="font-size:14px;font-weight:700;color:#0f172a;">{format_money(d['can_thu'])}</div>
-                    </div>
-                    <div style="text-align:center;">
-                        <div style="font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700;">Đã Thu</div>
-                        <div style="font-size:14px;font-weight:700;color:#16a34a;">{format_money(d['da_thu'])}</div>
-                    </div>
-                    <div style="text-align:center;">
-                        <div style="font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700;">Ngày Thu</div>
-                        <div style="font-size:13px;font-weight:600;color:#0f172a;">{d['ngay_thu'][:10] if d['ngay_thu'] else '—'}</div>
-                    </div>
-                </div>
-                
-                <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-bottom:4px;">
-                    <span>Tiến độ thanh toán</span>
-                    <span style="font-weight:700;color:#0f172a;">{pct}%</span>
-                </div>
-                <div style="background:#e2e8f0;border-radius:99px;height:6px;width:100%;">
-                    <div style="background:{'#16a34a' if pct>=100 else '#d97706' if pct>=50 else '#dc2626'};height:6px;border-radius:99px;width:{pct}%;"></div>
-                </div>
-            </div>"""
+<div class="vhs-list-item" style="background:{row_bg};border-color:{border_color};padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <div>
+            <div style="font-size:15px;font-weight:700;color:#0f172a;">{d['ten_cty']}</div>
+            <div style="font-size:12px;color:#64748b;margin-top:2px;">
+                📋 {d['ma_hd']} &nbsp;·&nbsp; 🗓️ Kỳ {d['ky_thanh_toan']}
+            </div>
+        </div>
+        <div style="text-align:right;">
+            <div style="font-size:16px;font-weight:800;color:{no_color};">{format_money(display_no)} đ</div>
+            <div style="font-size:11px;color:#94a3b8;">{status_text}</div>
+        </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;background:#f8fafc;padding:10px;border-radius:8px;margin-bottom:10px;border:1px solid #e2e8f0;">
+        <div style="text-align:center;">
+            <div style="font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700;">Cần Thu</div>
+            <div style="font-size:14px;font-weight:700;color:#0f172a;">{format_money(d['can_thu'])}</div>
+        </div>
+        <div style="text-align:center;">
+            <div style="font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700;">Đã Thu</div>
+            <div style="font-size:14px;font-weight:700;color:#16a34a;">{format_money(d['da_thu'])}</div>
+        </div>
+        <div style="text-align:center;">
+            <div style="font-size:10px;color:#64748b;text-transform:uppercase;font-weight:700;">Ngày Thu</div>
+            <div style="font-size:13px;font-weight:600;color:#0f172a;">{d['ngay_thu'][:10] if d['ngay_thu'] else '—'}</div>
+        </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-bottom:4px;">
+        <span>Tiến độ thanh toán</span>
+        <span style="font-weight:700;color:#0f172a;">{pct}%</span>
+    </div>
+    <div style="background:#e2e8f0;border-radius:99px;height:6px;width:100%;">
+        <div style="background:{'#16a34a' if pct>=100 else '#d97706' if pct>=50 else '#dc2626'};height:6px;border-radius:99px;width:{pct}%;"></div>
+    </div>
+</div>"""
 
         st.markdown(f"""<div>{rows_html}</div>""", unsafe_allow_html=True)
 
