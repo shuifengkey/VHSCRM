@@ -30,9 +30,9 @@ def render():
         else:
             for r in ktvs:
                 with st.container(border=True):
-                    st.markdown("<div class='keep-row'></div>", unsafe_allow_html=True)
                     c1, c2 = st.columns([3, 1], vertical_alignment="center")
                     with c1:
+                        st.markdown("<div class='keep-row'></div>", unsafe_allow_html=True)
                         st.markdown(f"""
 <div style="display:flex;align-items:center;gap:12px;">
     <div style="font-size:32px;">👷</div>

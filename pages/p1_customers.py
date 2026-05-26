@@ -120,9 +120,9 @@ def render():
 </div>
 """, unsafe_allow_html=True)
     
-                        st.markdown("<div class='keep-row'></div>", unsafe_allow_html=True)
                         c_hd, c_act = st.columns([3, 1], vertical_alignment="bottom")
                         with c_hd:
+                            st.markdown("<div class='keep-row'></div>", unsafe_allow_html=True)
                             st.markdown(f'<div style="font-size:12px;font-weight:600;color:{hd_color};margin-top:8px;">📄 {hd_text}</div>', unsafe_allow_html=True)
                         with c_act:
                             render_edit_popover(r, "grid")
