@@ -25,9 +25,9 @@ def render():
             FROM schedules s 
             JOIN customers c ON s.ma_kh=c.ma_kh
             JOIN contracts ct ON s.ma_hd=ct.ma_hd
-            WHERE  s.ngay_du_kien BETWEEN ? AND ?
-            ORDER BY s.gio_bat_dau
-        """, (past3_str, tomorrow_str)).fetchall()
+            WHERE ((s.trang_thai = 'scheduled' AND s.ngay_du_kien <= ?) OR (s.ngay_du_kien = ?))
+            ORDER BY s.ngay_du_kien ASC, s.gio_bat_dau ASC
+        """, (tomorrow_str, today_str)).fetchall()
         conn.close()
 
         # Phân loại upcoming (24h) vs overdue (quá ca)
@@ -41,6 +41,9 @@ def render():
             except: pass
             start_dt = datetime(sch_date.year, sch_date.month, sch_date.day, h_bd, m_bd)
             diff_hours = (start_dt - now_dt).total_seconds() / 3600
+            
+            # Quá ca: quá 24h hoặc quá 2h so với giờ bắt đầu (nếu muốn) 
+            # Nhưng giữ logic cũ: < -24 là overdue, -24 đến 24 là upcoming. Nếu xa hơn tương lai thì không hiện.
             if -24 <= diff_hours <= 24:
                 upcoming_jobs.append(j)
             elif diff_hours < -24:
@@ -55,218 +58,229 @@ def render():
                 <div style="font-size:18px;font-weight:700;color:#0f172a;margin-top:12px;">Không có ca nào trong 24h tới!</div>
             </div>""", unsafe_allow_html=True)
         else:
-            col_sel, col_ktv = st.columns([3,1])
-            with col_sel:
-                def _job_label(j):
-                    sch_date = date.fromisoformat(j["ngay_du_kien"])
-                    h_bd, m_bd = 8, 0
-                    try: h_bd, m_bd = map(int, (j["gio_bat_dau"] or "08:00").split(":"))
-                    except: pass
-                    start_dt = datetime(sch_date.year, sch_date.month, sch_date.day, h_bd, m_bd)
-                    diff_h = (start_dt - now_dt).total_seconds() / 3600
-                    
-                    status_prefix = "[✅ Xong] " if j.get('trang_thai') == 'completed' else ""
-                    prefix = "🚨 QUÁ CA | " if diff_h < -24 and not status_prefix else status_prefix
-                    return f"{prefix}🏢 {j['ten_cty']}  ({j['ngay_du_kien']} {j['gio_bat_dau']}-{j['gio_ket_thuc']})"
-                job_opts = {_job_label(j): j for j in jobs}
-                sel_label = st.selectbox("📋 Chọn Ca Thi Công", list(job_opts.keys()))
-                job = job_opts[sel_label]
-            with col_ktv:
-                conn_t = get_connection()
-                active_techs = [r["ten"] for r in conn_t.execute("SELECT ten FROM technicians WHERE active=1 ORDER BY ten").fetchall()]
-                conn_t.close()
+            conn_t = get_connection()
+            active_techs = [r["ten"] for r in conn_t.execute("SELECT ten FROM technicians WHERE active=1 ORDER BY ten").fetchall()]
+            conn_t.close()
+
+            for job in jobs:
                 current_ktv = job.get('ky_thuat_vien')
-                
-                # Make sure current ktv is in options even if inactive
                 opts = active_techs.copy()
                 if current_ktv and current_ktv not in opts:
                     opts.insert(0, current_ktv)
-                
                 if not opts:
                     opts = ["(Chưa có)"]
-                    
-                ktv = st.selectbox("👷 Tên KTV", opts, index=opts.index(current_ktv) if current_ktv in opts else 0)
-    
-            # Info card
-            is_night = False
-            try: is_night = int(job["gio_ket_thuc"].split(":")[0]) < int(job["gio_bat_dau"].split(":")[0])
-            except: pass
-    
-            night_html = f'<span style="background:#7c3aed20;color:#7c3aed;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;margin-left:8px;">🌙 CA ĐÊM</span>' if is_night else ""
-            # Check overdue
-            _sch_d = date.fromisoformat(job["ngay_du_kien"])
-            _h, _m = 8, 0
-            try: _h, _m = map(int, (job["gio_bat_dau"] or "08:00").split(":"))
-            except: pass
-            _start = datetime(_sch_d.year, _sch_d.month, _sch_d.day, _h, _m)
-            _is_overdue = ((_start - now_dt).total_seconds() / 3600) < -24
-            overdue_html = '<span style="background:#dc2626;color:white;padding:2px 8px;border-radius:10px;font-size:10px;margin-left:6px;font-weight:700;">⚠️ QUÁ CA</span>' if _is_overdue else ""
-    
-            st.markdown(f"""
-            <div style="background:white;border:1px solid #e2e8f0;border-radius:14px;padding:20px;margin:12px 0;box-shadow:0 1px 8px rgba(0,0,0,.06);">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
-                    <div>
-                        <div style="font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px;">
-                            🏢 {job['ten_cty']} {night_html} {overdue_html}
-                        </div>
-                        <div style="font-size:13px;color:#64748b;margin-top:6px;line-height:1.7;">
-                            📋 Hợp đồng: <b>{job['ma_hd']}</b><br>
-                            📍 Địa chỉ: {job['dia_chi'] or '-'}<br>
-                            📞 SĐT: {job['sdt'] or '-'}
-                        </div>
-                        <div style="margin-top:10px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;font-size:12px;color:#0f172a;line-height:1.6;">
-                            <b style="color:#2563eb;">📌 Hạng mục thi công:</b><br>
-                            🏠 <b>Khu vực:</b> {job['khu_vuc_xu_ly'] or '—'}<br>
-                            🕷️ <b>Dịch hại:</b> {(job.get('s_loai_con_trung') or job.get('loai_con_trung')) or '—'}<br>
-                            💊 <b>Phương pháp:</b> {job['phuong_phap_xu_ly'] or '—'}
-                        </div>
-                    </div>
-                    <div style="text-align:center;background:#f0fdf4;border-radius:12px;padding:12px 20px;">
-                        <div style="font-size:11px;color:#16a34a;font-weight:700;">KHUNG GIỜ</div>
-                        <div style="font-size:22px;font-weight:800;color:#0f172a;">{job['gio_bat_dau']}</div>
-                        <div style="font-size:12px;color:#94a3b8;">đến {job['gio_ket_thuc']}</div>
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-    
-            conn = get_connection()
-            log = conn.execute("SELECT * FROM logbook WHERE schedule_id=?", (job["id"],)).fetchone()
-            log = dict(log) if log else None
-            conn.close()
-    
-            # Trạng thái check-in
-            if log and log.get("checkout_time"):
-                dur_str = ""
-                try:
-                    ci = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
-                    co = datetime.fromisoformat(log["checkout_time"]).replace(tzinfo=None)
-                    mins = int((co - ci).total_seconds() / 60)
-                    dur_str = f"{mins // 60}h {mins % 60}m"
+
+                # Info card
+                is_night = False
+                try: is_night = int(job["gio_ket_thuc"].split(":")[0]) < int(job["gio_bat_dau"].split(":")[0])
                 except: pass
-    
+        
+                night_html = f'<span style="background:#7c3aed20;color:#7c3aed;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;margin-left:8px;">🌙 CA ĐÊM</span>' if is_night else ""
+                # Check overdue
+                _sch_d = date.fromisoformat(job["ngay_du_kien"])
+                _h, _m = 8, 0
+                try: _h, _m = map(int, (job["gio_bat_dau"] or "08:00").split(":"))
+                except: pass
+                _start = datetime(_sch_d.year, _sch_d.month, _sch_d.day, _h, _m)
+                _is_overdue = ((_start - now_dt).total_seconds() / 3600) < -24
+                overdue_html = '<span style="background:#dc2626;color:white;padding:2px 8px;border-radius:10px;font-size:10px;margin-left:6px;font-weight:700;">⚠️ QUÁ CA</span>' if _is_overdue else ""
+        
                 st.markdown(f"""
-                <div style="background:#f0fdf4;border:2px solid #16a34a;border-radius:14px;padding:20px;text-align:center;">
-                    <div style="font-size:32px;margin-bottom:8px;">✅</div>
-                    <div style="font-size:16px;font-weight:700;color:#166534;">Ca Đã Hoàn Thành</div>
-                    <div style="font-size:13px;color:#4ade80;margin-top:6px;">
-                        {log['checkin_time'][11:16]} → {log['checkout_time'][11:16]}
-                        {f' · Thời gian: {dur_str}' if dur_str else ''}
+                <div style="background:white;border:1px solid #e2e8f0;border-radius:14px;padding:20px;margin:12px 0 0 0;box-shadow:0 1px 8px rgba(0,0,0,.06);">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+                        <div>
+                            <div style="font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px;">
+                                🏢 {job['ten_cty']} {night_html} {overdue_html}
+                            </div>
+                            <div style="font-size:13px;color:#64748b;margin-top:6px;line-height:1.7;">
+                                📋 Hợp đồng: <b>{job['ma_hd']}</b><br>
+                                📍 Địa chỉ: {job['dia_chi'] or '-'}<br>
+                                📞 SĐT: {job['sdt'] or '-'}
+                            </div>
+                            <div style="margin-top:10px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;font-size:12px;color:#0f172a;line-height:1.6;">
+                                <b style="color:#2563eb;">📌 Hạng mục thi công:</b><br>
+                                🏠 <b>Khu vực:</b> {job['khu_vuc_xu_ly'] or '—'}<br>
+                                🕷️ <b>Dịch hại:</b> {(job.get('s_loai_con_trung') or job.get('loai_con_trung')) or '—'}<br>
+                                💊 <b>Phương pháp:</b> {job['phuong_phap_xu_ly'] or '—'}
+                            </div>
+                        </div>
+                        <div style="text-align:center;background:#f0fdf4;border-radius:12px;padding:12px 20px;">
+                            <div style="font-size:11px;color:#16a34a;font-weight:700;">NGÀY {job['ngay_du_kien']}</div>
+                            <div style="font-size:22px;font-weight:800;color:#0f172a;">{job['gio_bat_dau']}</div>
+                            <div style="font-size:12px;color:#94a3b8;">đến {job['gio_ket_thuc']}</div>
+                        </div>
                     </div>
-                    {'<div style="background:#fef9c3;border-radius:8px;padding:6px 12px;margin-top:8px;font-size:12px;color:#854d0e;">⚠️ Có cảnh báo sai giờ</div>' if log.get('canh_bao_gio') else ''}
                 </div>
                 """, unsafe_allow_html=True)
-                st.markdown(f"**👷 KTV:** {log.get('ky_thuat_vien','-')}  |  **💊 Hóa chất:** {log.get('hoa_chat','-')}  |  **📝 Kết quả:** {log.get('ket_qua','-')}")
-    
-            elif log and log.get("checkin_time"):
-                # Đang thi công
-                ci_dt = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
-                elapsed = int(((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)) - ci_dt).total_seconds() / 60)
-    
-                time_check = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], log["checkin_time"], job["ngay_du_kien"])
-    
-                st.markdown(f"""
-                <div style="background:#fffbeb;border:2px solid #d97706;border-radius:14px;padding:16px;text-align:center;margin-bottom:16px;">
-                    <div style="font-size:14px;color:#854d0e;font-weight:700;">⏱️ ĐANG THI CÔNG</div>
-                    <div style="font-size:28px;font-weight:800;color:#0f172a;">Check-in {log['checkin_time'][11:16]}</div>
-                    <div style="font-size:13px;color:#d97706;">Đã {elapsed} phút · KTV: {log.get('ky_thuat_vien','-')}</div>
-                </div>
-                """, unsafe_allow_html=True)
-    
-                if time_check["violation"]:
-                    st.warning(time_check["message"])
-    
-                with st.form("form_checkout"):
-                    hoa_chat = st.text_area("💊 Hóa Chất Sử Dụng",
-                        value=log.get("hoa_chat",""),
-                        placeholder="VD: Permethrin 0.5% phun tường + Bẫy dính 10 chiếc\nChlorphyrifos 0.25% phun gốc cây...",
-                        height=100)
-                    ket_qua = st.text_area("📊 Kết Quả / Nhận Xét",
-                        placeholder="VD: Phát hiện ổ gián lớn tại khu bếp, đã xử lý. Tình trạng chuột giảm 80% so với lần trước...",
-                        height=80)
-                    attachments = st.file_uploader("📷 Đính kèm Hình ảnh / Tài liệu", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True)
-                    if st.form_submit_button("🚪 CHECK-OUT — KẾT THÚC CA", use_container_width=True):
-                        checkin_time = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
-                        if ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)) - checkin_time).total_seconds() < 300:
-                            st.error("⚠️ Phải thi công ít nhất 5 phút mới được Check-out!")
-                        else:
-                            try:
-                                import os, uuid
-                                uploaded_paths = []
-                                if attachments:
+        
+                conn = get_connection()
+                log = conn.execute("SELECT * FROM logbook WHERE schedule_id=?", (job["id"],)).fetchone()
+                log = dict(log) if log else None
+                conn.close()
+        
+                # Trạng thái check-in
+                if log and log.get("checkout_time"):
+                    dur_str = ""
+                    try:
+                        ci = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
+                        co = datetime.fromisoformat(log["checkout_time"]).replace(tzinfo=None)
+                        mins = int((co - ci).total_seconds() / 60)
+                        dur_str = f"{mins // 60}h {mins % 60}m"
+                    except: pass
+        
+                    st.markdown(f"""
+                    <div style="background:#f0fdf4;border:2px solid #16a34a;border-radius:0 0 14px 14px;border-top:none;padding:12px 20px;text-align:center;margin-bottom:8px;">
+                        <div style="font-size:24px;margin-bottom:4px;">✅</div>
+                        <div style="font-size:14px;font-weight:700;color:#166534;">Ca Đã Hoàn Thành</div>
+                        <div style="font-size:12px;color:#4ade80;margin-top:2px;">
+                            {log['checkin_time'][11:16]} → {log['checkout_time'][11:16]}
+                            {f' · Thời gian: {dur_str}' if dur_str else ''}
+                        </div>
+                        {'<div style="background:#fef9c3;border-radius:8px;padding:4px 8px;margin-top:6px;font-size:11px;color:#854d0e;">⚠️ Có cảnh báo sai giờ</div>' if log.get('canh_bao_gio') else ''}
+                        <div style="font-size:12px;color:#475569;margin-top:8px;"><b>👷 KTV:</b> {log.get('ky_thuat_vien','-')} &nbsp;|&nbsp; <b>💊 Hóa chất:</b> {log.get('hoa_chat','-')} &nbsp;|&nbsp; <b>📝 Kết quả:</b> {log.get('ket_qua','-')}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    with st.expander("📎 Bổ sung tài liệu / Hình ảnh", expanded=False):
+                        with st.form(f"form_attach_{job['id']}"):
+                            extra_att = st.file_uploader("Thêm ảnh/tài liệu", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"extra_file_{job['id']}")
+                            if st.form_submit_button("Lưu bổ sung", use_container_width=True):
+                                if extra_att:
+                                    import os, uuid
+                                    uploaded_paths = []
                                     upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
                                     os.makedirs(upload_dir, exist_ok=True)
-                                    for f in attachments:
+                                    for f in extra_att:
                                         filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
                                         filepath = os.path.join(upload_dir, filename)
                                         with open(filepath, "wb") as out:
                                             out.write(f.getbuffer())
                                         uploaded_paths.append(filename)
-                                attachments_str = ",".join(uploaded_paths) if uploaded_paths else ""
-
-                                conn = get_connection()
-                                conn.execute("UPDATE logbook SET checkout_time=?,hoa_chat=?,ket_qua=?,attachments=? WHERE id=?",
-                                             ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), hoa_chat, ket_qua, attachments_str, log["id"]))
-                                conn.commit()
-                                conn.close()
-                                
-                                # Dùng engine để hoàn thành ca và TỰ SINH ca kế tiếp
-                                from utils.schedule_engine import complete_schedule as cs_fn
-                                conn_ct = __import__('utils.database', fromlist=['get_connection']).get_connection()
-                                ct_row = conn_ct.execute('SELECT * FROM contracts WHERE ma_hd=?',(job['ma_hd'],)).fetchone()
-                                conn_ct.close()
-                                
-                                if ct_row:
-                                    result = cs_fn(job['id'], dict(ct_row))
-                                    if result.get('next_ids'):
-                                        st.info(f"📅 Đã tự động tạo {len(result['next_ids'])} ca kỳ tiếp theo!")
+                                    new_att_str = ",".join(uploaded_paths)
+                                    old_att = log.get("attachments", "")
+                                    final_att = (old_att + "," + new_att_str).strip(",") if old_att else new_att_str
+                                    conn_u = get_connection()
+                                    conn_u.execute("UPDATE logbook SET attachments=? WHERE id=?", (final_att, log["id"]))
+                                    conn_u.commit()
+                                    conn_u.close()
+                                    st.success("✅ Đã bổ sung tài liệu!")
+                                    st.rerun()
                                 else:
-                                    conn_fallback = __import__('utils.database', fromlist=['get_connection']).get_connection()
-                                    conn_fallback.execute("UPDATE schedules SET trang_thai='completed' WHERE id=?", (job['id'],))
-                                    conn_fallback.commit()
-                                    conn_fallback.close()
-                                st.success("✅ Check-out thành công! Ca hoàn thành.")
-                                st.balloons(); st.rerun()
-                            except Exception as e: st.error(f"❌ {e}")
+                                    st.warning("⚠️ Chưa chọn file nào!")
+                    
+                    st.markdown("<div style='margin-bottom:24px;'></div>", unsafe_allow_html=True)
+        
+                elif log and log.get("checkin_time"):
+                    # Đang thi công
+                    ci_dt = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
+                    elapsed = int(((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)) - ci_dt).total_seconds() / 60)
+        
+                    time_check = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], log["checkin_time"], job["ngay_du_kien"])
+        
+                    st.markdown(f"""
+                    <div style="background:#fffbeb;border:2px solid #d97706;border-radius:0 0 14px 14px;border-top:none;padding:16px;text-align:center;margin-bottom:24px;">
+                        <div style="font-size:14px;color:#854d0e;font-weight:700;">⏱️ ĐANG THI CÔNG</div>
+                        <div style="font-size:28px;font-weight:800;color:#0f172a;">Check-in {log['checkin_time'][11:16]}</div>
+                        <div style="font-size:13px;color:#d97706;margin-bottom:12px;">Đã {elapsed} phút · KTV: {log.get('ky_thuat_vien','-')}</div>
+                    """, unsafe_allow_html=True)
+        
+                    if time_check["violation"]:
+                        st.warning(time_check["message"])
+        
+                    with st.form(f"form_checkout_{job['id']}"):
+                        hoa_chat = st.text_area("💊 Hóa Chất Sử Dụng",
+                            value=log.get("hoa_chat",""),
+                            placeholder="VD: Permethrin 0.5% phun tường + Bẫy dính 10 chiếc...",
+                            height=100)
+                        ket_qua = st.text_area("📊 Kết Quả / Nhận Xét",
+                            placeholder="VD: Phát hiện ổ gián lớn tại khu bếp, đã xử lý...",
+                            height=80)
+                        attachments = st.file_uploader("📷 Đính kèm Hình ảnh / Tài liệu", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"file_{job['id']}")
+                        if st.form_submit_button("🚪 CHECK-OUT — KẾT THÚC CA", use_container_width=True):
+                            checkin_time = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
+                            if ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)) - checkin_time).total_seconds() < 300:
+                                st.error("⚠️ Phải thi công ít nhất 5 phút mới được Check-out!")
+                            else:
+                                try:
+                                    import os, uuid
+                                    uploaded_paths = []
+                                    if attachments:
+                                        upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+                                        os.makedirs(upload_dir, exist_ok=True)
+                                        for f in attachments:
+                                            filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
+                                            filepath = os.path.join(upload_dir, filename)
+                                            with open(filepath, "wb") as out:
+                                                out.write(f.getbuffer())
+                                            uploaded_paths.append(filename)
+                                    attachments_str = ",".join(uploaded_paths) if uploaded_paths else ""
     
-            else:
-                # Chưa check-in
-                now_str = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime("%H:%M")
-                time_preview = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), job["ngay_du_kien"])
-    
-                st.markdown(f"""
-                <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:12px;">
-                    <div style="font-size:12px;color:#64748b;">Giờ hiện tại: <b style="color:#0f172a;">{now_str}</b>
-                    &nbsp;·&nbsp; Khung giờ HĐ: <b>{job['gio_bat_dau']} – {job['gio_ket_thuc']}</b>
-                    &nbsp;·&nbsp; {time_preview['message']}</div>
-                </div>
-                """, unsafe_allow_html=True)
-    
-                if not ktv or ktv == "(Chưa có)":
-                    st.warning("⚠️ Vui lòng chọn kỹ thuật viên để check-in!")
+                                    conn = get_connection()
+                                    conn.execute("UPDATE logbook SET checkout_time=?,hoa_chat=?,ket_qua=?,attachments=? WHERE id=?",
+                                                 ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), hoa_chat, ket_qua, attachments_str, log["id"]))
+                                    conn.commit()
+                                    conn.close()
+                                    
+                                    from utils.schedule_engine import complete_schedule as cs_fn
+                                    conn_ct = __import__('utils.database', fromlist=['get_connection']).get_connection()
+                                    ct_row = conn_ct.execute('SELECT * FROM contracts WHERE ma_hd=?',(job['ma_hd'],)).fetchone()
+                                    conn_ct.close()
+                                    
+                                    if ct_row:
+                                        result = cs_fn(job['id'], dict(ct_row))
+                                        if result.get('next_ids'):
+                                            st.info(f"📅 Đã tự động tạo {len(result['next_ids'])} ca kỳ tiếp theo cho {job['ten_cty']}!")
+                                    else:
+                                        conn_fallback = __import__('utils.database', fromlist=['get_connection']).get_connection()
+                                        conn_fallback.execute("UPDATE schedules SET trang_thai='completed' WHERE id=?", (job['id'],))
+                                        conn_fallback.commit()
+                                        conn_fallback.close()
+                                    st.success("✅ Check-out thành công! Ca hoàn thành.")
+                                    st.balloons(); st.rerun()
+                                except Exception as e: st.error(f"❌ {e}")
+                    
+                    st.markdown("</div>", unsafe_allow_html=True)
+        
                 else:
-                    if st.button("📍 CHECK-IN — BẮT ĐẦU CA THI CÔNG", use_container_width=True):
-                        conn = get_connection()
-                        # Check if KTV is already checked in somewhere else
-                        active_other = conn.execute("SELECT c.ten_cty, l.checkin_time FROM logbook l JOIN schedules s ON l.schedule_id=s.id JOIN customers c ON l.ma_kh=c.ma_kh WHERE l.ky_thuat_vien=? AND l.checkout_time IS NULL AND l.schedule_id!=?", (ktv, job["id"])).fetchone()
-                        
-                        if active_other:
-                            conn.close()
-                            st.error(f"❌ KTV **{ktv}** đang thi công tại **{active_other['ten_cty']}** (từ {active_other['checkin_time'][11:16]}). Phải Check-out ca đó trước khi Check-in ca mới!")
-                        else:
-                            try:
-                                tc = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), job["ngay_du_kien"])
-                                conn.execute("""INSERT INTO logbook (schedule_id,ma_kh,ky_thuat_vien,checkin_time,canh_bao_gio)
-                                                VALUES(?,?,?,?,?)""",
-                                             (job["id"],job["ma_kh"],ktv,(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), 1 if tc["violation"] else 0))
-                                conn.execute("UPDATE schedules SET ky_thuat_vien=? WHERE id=?", (ktv, job["id"]))
-                                conn.commit(); conn.close()
-                                if tc["violation"]: st.warning(tc["message"])
-                                st.success(f"✅ Check-in lúc {(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime('%H:%M')} — Chúc làm tốt!")
-                                st.rerun()
-                            except Exception as e: 
+                    # Chưa check-in
+                    now_str = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime("%H:%M")
+                    time_preview = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), job["ngay_du_kien"])
+        
+                    st.markdown(f"""
+                    <div style="background:white;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 14px 14px;padding:16px;margin-bottom:24px;">
+                        <div style="font-size:12px;color:#64748b;margin-bottom:12px;">Giờ hiện tại: <b style="color:#0f172a;">{now_str}</b>
+                        &nbsp;·&nbsp; Khung giờ HĐ: <b>{job['gio_bat_dau']} – {job['gio_ket_thuc']}</b>
+                        &nbsp;·&nbsp; {time_preview['message']}</div>
+                    """, unsafe_allow_html=True)
+        
+                    ktv = st.selectbox("👷 Chọn KTV phụ trách", opts, index=opts.index(current_ktv) if current_ktv in opts else 0, key=f"ktv_sel_{job['id']}")
+                    
+                    if not ktv or ktv == "(Chưa có)":
+                        st.warning("⚠️ Vui lòng chọn kỹ thuật viên để check-in!")
+                    else:
+                        if st.button("📍 CHECK-IN — BẮT ĐẦU CA", use_container_width=True, key=f"btn_ci_{job['id']}"):
+                            conn = get_connection()
+                            active_other = conn.execute("SELECT c.ten_cty, l.checkin_time FROM logbook l JOIN schedules s ON l.schedule_id=s.id JOIN customers c ON l.ma_kh=c.ma_kh WHERE l.ky_thuat_vien=? AND l.checkout_time IS NULL AND l.schedule_id!=?", (ktv, job["id"])).fetchone()
+                            
+                            if active_other:
                                 conn.close()
-                                st.error(f"❌ {e}")
+                                st.error(f"❌ KTV **{ktv}** đang thi công tại **{active_other['ten_cty']}** (từ {active_other['checkin_time'][11:16]}). Phải Check-out ca đó trước khi Check-in ca mới!")
+                            else:
+                                try:
+                                    tc = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), job["ngay_du_kien"])
+                                    conn.execute("""INSERT INTO logbook (schedule_id,ma_kh,ky_thuat_vien,checkin_time,canh_bao_gio)
+                                                    VALUES(?,?,?,?,?)""",
+                                                 (job["id"],job["ma_kh"],ktv,(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), 1 if tc["violation"] else 0))
+                                    conn.execute("UPDATE schedules SET ky_thuat_vien=? WHERE id=?", (ktv, job["id"]))
+                                    conn.commit(); conn.close()
+                                    if tc["violation"]: st.warning(tc["message"])
+                                    st.success(f"✅ Check-in lúc {(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime('%H:%M')} — Chúc làm tốt!")
+                                    st.rerun()
+                                except Exception as e: 
+                                    conn.close()
+                                    st.error(f"❌ {e}")
+                    
+                    st.markdown("</div>", unsafe_allow_html=True)
     
         with tab_history:
             conn = get_connection()

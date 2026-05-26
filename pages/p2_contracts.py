@@ -340,98 +340,52 @@ def render():
                     tuan_lap_lai_val = ""
                     
                     if loai_khach == "Định kỳ":
-                        c_ts, c_kl = st.columns(2)
+                        c_ts, _ = st.columns(2)
                         with c_ts:
                             tan_suat = st.selectbox(
                                 "Số Lần Thi Công / Tháng *",
                                 [1,2,3,4], format_func=lambda x: TAN_SUAT_OPTS[x]
                             )
-                        with c_kl:
-                            kieu_lap = st.radio(
-                                "Kiểu Lịch Lặp *",
-                                ["📅 Ngày cố định hàng tháng", "📆 Thứ cố định trong tuần"],
-                                horizontal=True
-                            )
-                        kieu_lap_val = "ngay_co_dinh" if "Ngày cố định" in kieu_lap else "thu_co_dinh"
-    
-                        # ── NGÀY CỐ ĐỊNH ──
-                        if kieu_lap_val == "ngay_co_dinh":
-                            st.markdown("""
-                            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin:6px 0;font-size:12px;color:#1e40af;">
-                              📅 <b>Ngày cố định:</b> Chọn các ngày thi công cố định trong tháng. Ngày bắt đầu lặp sẽ tự động được tính.
-                            </div>
-                            """, unsafe_allow_html=True)
+                        
+                        st.markdown("""
+                        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin:6px 0;font-size:12px;color:#1e40af;">
+                          ⚙️ <b>Cấu hình chi tiết:</b> Bạn có thể chọn Ngày cố định hoặc Thứ cố định cho từng lần thi công trong tháng.
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        configs = []
+                        for i in range(tan_suat):
+                            st.markdown(f"**Lần {i+1}**")
+                            c_loai, c_val1, c_val2 = st.columns([1,1,1])
+                            with c_loai:
+                                type_sel = st.selectbox("Loại", ["Ngày cố định", "Thứ cố định"], key=f"type_add_{i}", label_visibility="collapsed")
                             
-                            cols = st.columns(min(tan_suat, 4))
-                            selected_days = []
-                            interval = 30 // tan_suat
-                            for i in range(tan_suat):
-                                col_idx = i % 4
-                                with cols[col_idx]:
-                                    default_day = min(1 + interval * i, 31)
-                                    d = st.selectbox(f"Ngày lần {i+1} *", list(range(1, 32)), index=default_day - 1, key=f"ngay_{i}")
-                                    selected_days.append(str(d))
-                            
-                            tuan_lap_lai_val = ",".join(selected_days)
-                            
-                            # Tự động tính ngày đầu tiên dựa trên ngày thi công lần 1
-                            first_day = int(selected_days[0])
-                            year = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().year
-                            month = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().month
-                            max_d = calendar.monthrange(year, month)[1]
-                            d = min(first_day, max_d)
-                            suggested_date = date(year, month, d)
-                            
-                            if suggested_date < (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date():
-                                m = 1 if month == 12 else month + 1
-                                y = year + 1 if month == 12 else year
-                                max_d_next = calendar.monthrange(y, m)[1]
-                                d_next = min(first_day, max_d_next)
-                                suggested_date = date(y, m, d_next)
-
-                            ngay_thi_cong_dau = st.date_input(
-                                "Ngày Bắt Đầu Lặp *",
-                                value=suggested_date,
-                                help="Mốc kỳ đầu tiên. Các tháng sau sẽ lặp vào các ngày đã chọn."
-                            )
-                            lap_thu_val = None
-    
-                        # ── THỨ CỐ ĐỊNH ──
-                        else:
-                            st.markdown("""
-                            <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:10px;padding:10px 14px;margin:6px 0;font-size:12px;color:#5b21b6;">
-                              📆 <b>Thứ cố định:</b> Chọn ngày đầu tiên (phải đúng thứ muốn lặp). Chọn thêm <b>Tuần</b> để hệ thống lặp lại chính xác.
-                            </div>
-                            """, unsafe_allow_html=True)
-    
-                            thu_options = {
-                                "Chủ Nhật": 0, "Thứ Hai": 1, "Thứ Ba": 2,
-                                "Thứ Tư": 3,  "Thứ Năm": 4, "Thứ Sáu": 5, "Thứ Bảy": 6
-                            }
-                            c_thu, c_tuan, c_date = st.columns([1,1,2])
-                            with c_thu:
-                                thu_sel = st.selectbox("Thi Công Vào Thứ *", list(thu_options.keys()))
-                                lap_thu_val = thu_options[thu_sel]
-                            with c_tuan:
-                                tuan_opts = ["1", "2", "3", "4", "Cuối"]
-                                def_tuan = [str(i+1) for i in range(tan_suat)] if tan_suat <= 4 else ["1"]
-                                tuan_sel = st.multiselect("Vào Các Tuần *", tuan_opts, default=def_tuan, max_selections=tan_suat, help=f"Hãy chọn đúng {tan_suat} tuần.")
-                                tuan_lap_lai_val = ",".join(tuan_sel)
-                                if len(tuan_sel) < tan_suat:
-                                    st.warning(f"Vui lòng chọn đủ {tan_suat} tuần!")
-                            with c_date:
-                                from utils.scheduling import LAP_THU_TO_PY
-                                py_wd = LAP_THU_TO_PY[lap_thu_val]
-                                suggestion = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date()
-                                while suggestion.weekday() != py_wd:
-                                    suggestion += timedelta(days=1)
-                                ngay_thi_cong_dau = st.date_input(
-                                    f"Ngày {thu_sel} Đầu Tiên *",
-                                    value=suggestion,
-                                    help=f"Phải là ngày {thu_sel}. Hệ thống dùng ngày này làm mốc kỳ đầu."
-                                )
-                                if ngay_thi_cong_dau.weekday() != py_wd:
-                                    st.warning(f"⚠️ Ngày {ngay_thi_cong_dau.strftime('%d/%m/%Y')} không phải {thu_sel}!")
+                            if type_sel == "Ngày cố định":
+                                with c_val1:
+                                    day_num = st.selectbox("Ngày", list(range(1, 32)), index=min(1 + (30//tan_suat)*i, 31)-1, key=f"day_add_{i}")
+                                configs.append({"type": "ngay", "val": day_num})
+                            else:
+                                thu_options = {
+                                    "Chủ Nhật": 0, "Thứ Hai": 1, "Thứ Ba": 2,
+                                    "Thứ Tư": 3,  "Thứ Năm": 4, "Thứ Sáu": 5, "Thứ Bảy": 6
+                                }
+                                with c_val1:
+                                    thu_sel = st.selectbox("Thứ", list(thu_options.keys()), key=f"thu_add_{i}")
+                                with c_val2:
+                                    tuan_sel = st.selectbox("Tuần", ["1", "2", "3", "4", "Cuối"], index=min(i, 3), key=f"tuan_add_{i}")
+                                configs.append({"type": "thu", "thu": thu_options[thu_sel], "tuan": tuan_sel})
+                        
+                        import json
+                        tuan_lap_lai_val = json.dumps(configs)
+                        kieu_lap_val = "mixed"
+                        lap_thu_val = None
+                        
+                        suggestion = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date()
+                        ngay_thi_cong_dau = st.date_input(
+                            "Kỳ Thi Công Bắt Đầu Lặp *",
+                            value=suggestion,
+                            help="Hệ thống sẽ dựa vào Tháng và Năm của ngày này để bắt đầu sinh lịch."
+                        )
     
                         st.markdown('<hr style="margin:12px 0">', unsafe_allow_html=True)
                         st.markdown("**⏰ Khung Giờ Thi Công**")

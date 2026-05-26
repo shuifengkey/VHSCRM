@@ -84,67 +84,55 @@ def edit_contract_dialog(ma_hd):
             else:
                 tan_suat = list(tan_suat_opts.keys())[list(tan_suat_opts.values()).index(tan_suat_sel)]
         with c_ts2:
-            kieu_opts = ["Ngày cố định", "Thứ cố định"]
-            k_idx = 0 if kieu_lap_val == "ngay_co_dinh" else 1
-            kieu_lap = st.selectbox("Kiểu Lặp", kieu_opts, index=k_idx, key=f"e_kl_{ma_hd}")
-            kieu_lap_val = "ngay_co_dinh" if kieu_lap == "Ngày cố định" else "thu_co_dinh"
+            st.markdown(" ") # Spacer
+            st.markdown("⚙️ **Cấu hình chi tiết**")
 
-        if kieu_lap_val == "ngay_co_dinh":
-            cols = st.columns(min(tan_suat, 4))
-            selected_days = []
-            
-            # Khôi phục các ngày đã lưu nếu có
+        configs_loaded = []
+        import json
+        if kieu_lap_val == "mixed" and tuan_lap_lai_val:
+            try: configs_loaded = json.loads(tuan_lap_lai_val)
+            except: pass
+        elif kieu_lap_val == "ngay_co_dinh" and tuan_lap_lai_val:
             saved_days = [d.strip() for d in str(tuan_lap_lai_val).split(',') if d.strip().isdigit()]
-            interval = 30 // tan_suat
+            for d in saved_days: configs_loaded.append({"type": "ngay", "val": int(d)})
+        elif kieu_lap_val == "thu_co_dinh":
+            weeks = [w.strip() for w in str(tuan_lap_lai_val).split(',') if w.strip()]
+            for w in weeks: configs_loaded.append({"type": "thu", "thu": lap_thu_val or 1, "tuan": w})
+
+        configs_new = []
+        for i in range(tan_suat):
+            conf = configs_loaded[i] if i < len(configs_loaded) else {"type": "ngay", "val": min(1 + (30//tan_suat)*i, 31)}
             
-            for i in range(tan_suat):
-                col_idx = i % 4
-                with cols[col_idx]:
-                    if i < len(saved_days):
-                        default_day = int(saved_days[i])
-                    else:
-                        default_day = min(1 + interval * i, 31)
-                    idx_ngay = min(default_day - 1, 30)
-                    d = st.selectbox(f"Ngày lần {i+1}", list(range(1, 32)), index=idx_ngay, key=f"e_ntt_{ma_hd}_{i}")
-                    selected_days.append(str(d))
+            st.markdown(f"**Lần {i+1}**")
+            c_loai, c_val1, c_val2 = st.columns([1,1,1])
+            with c_loai:
+                type_idx = 0 if conf.get("type") == "ngay" else 1
+                type_sel = st.selectbox("Loại", ["Ngày cố định", "Thứ cố định"], index=type_idx, key=f"e_type_{ma_hd}_{i}", label_visibility="collapsed")
             
-            tuan_lap_lai_val = ",".join(selected_days)
-            
-            # Tính ngày bắt đầu lặp dựa trên lần thi công thứ 1
-            first_day = int(selected_days[0])
-            year = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().year
-            month = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().month
-            max_d = calendar.monthrange(year, month)[1]
-            d = min(first_day, max_d)
-            suggested_date = date(year, month, d)
-            if suggested_date < (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date():
-                m = 1 if month == 12 else month + 1
-                y = year + 1 if month == 12 else year
-                max_d_next = calendar.monthrange(y, m)[1]
-                d_next = min(first_day, max_d_next)
-                suggested_date = date(y, m, d_next)
-            
-            # Gợi ý nhưng có thể cho phép sửa tay nếu muốn (khách lẻ)
-            ngay_thi_cong_dau = st.date_input("Ngày Bắt Đầu Lặp", value=suggested_date, key=f"e_ntcd_{ma_hd}")
-            lap_thu_val = None
-        else:
-            thu_opts = {"Chủ Nhật":0, "Thứ Hai":1, "Thứ Ba":2, "Thứ Tư":3, "Thứ Năm":4, "Thứ Sáu":5, "Thứ Bảy":6}
-            curr_thu = "Chủ Nhật"
-            for k, v in thu_opts.items():
-                if v == lap_thu_val: curr_thu = k
-            
-            c_thu, c_tuan, c_date = st.columns([1,1,2])
-            with c_thu:
-                thu_sel = st.selectbox("Thi Công Thứ", list(thu_opts.keys()), index=list(thu_opts.keys()).index(curr_thu), key=f"e_thu_{ma_hd}")
-                lap_thu_val = thu_opts[thu_sel]
-            with c_tuan:
-                def_tuan = tuan_lap_lai_val.split(",") if tuan_lap_lai_val else ["1"]
-                tuan_sel = st.multiselect("Các Tuần", ["1", "2", "3", "4", "Cuối"], default=def_tuan, max_selections=tan_suat, key=f"e_tuan_{ma_hd}")
-                tuan_lap_lai_val = ",".join(tuan_sel)
-                if len(tuan_sel) < tan_suat:
-                    st.warning(f"Vui lòng chọn đủ {tan_suat} tuần!")
-            with c_date:
-                ngay_thi_cong_dau = st.date_input("Ngày Đầu Tiên", value=ngay_thi_cong_dau, key=f"e_ntcd2_{ma_hd}")
+            if type_sel == "Ngày cố định":
+                with c_val1:
+                    day_num = st.selectbox("Ngày", list(range(1, 32)), index=min(int(conf.get("val", 1))-1, 30), key=f"e_day_{ma_hd}_{i}")
+                configs_new.append({"type": "ngay", "val": day_num})
+            else:
+                thu_options = {"Chủ Nhật": 0, "Thứ Hai": 1, "Thứ Ba": 2, "Thứ Tư": 3, "Thứ Năm": 4, "Thứ Sáu": 5, "Thứ Bảy": 6}
+                curr_thu = 1
+                for k, v in thu_options.items():
+                    if v == conf.get("thu", 1): curr_thu = list(thu_options.values()).index(v)
+                
+                with c_val1:
+                    thu_sel = st.selectbox("Thứ", list(thu_options.keys()), index=curr_thu, key=f"e_thu_{ma_hd}_{i}")
+                with c_val2:
+                    tuan_opts = ["1", "2", "3", "4", "Cuối"]
+                    curr_tuan = 0
+                    if str(conf.get("tuan")) in tuan_opts: curr_tuan = tuan_opts.index(str(conf.get("tuan")))
+                    tuan_sel = st.selectbox("Tuần", tuan_opts, index=curr_tuan, key=f"e_tuan_{ma_hd}_{i}")
+                configs_new.append({"type": "thu", "thu": thu_options[thu_sel], "tuan": tuan_sel})
+                
+        tuan_lap_lai_val = json.dumps(configs_new)
+        kieu_lap_val = "mixed"
+        lap_thu_val = None
+        
+        ngay_thi_cong_dau = st.date_input("Kỳ Thi Công Bắt Đầu Lặp", value=ngay_thi_cong_dau, key=f"e_ntcd_{ma_hd}")
 
         c_bd, c_kt = st.columns(2)
         with c_bd: gbd = st.time_input("Giờ Bắt Đầu", value=gbd_val, key=f"e_gbd_{ma_hd}")

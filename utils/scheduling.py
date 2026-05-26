@@ -146,6 +146,42 @@ def calc_dates_for_month(hd: dict, ky_thang: str) -> list[date]:
         # but for explicit selections the user shouldn't select duplicate days.
         return dates
 
+    # ── MIXED: TÙY CHỈNH TỪNG LẦN ──
+    elif kieu_lap == "mixed":
+        dates = []
+        tuan_lap_lai = hd.get("tuan_lap_lai")
+        if tuan_lap_lai:
+            try:
+                import json
+                configs = json.loads(tuan_lap_lai)
+                for conf in configs[:tan_suat]:
+                    if conf.get("type") == "ngay":
+                        day_num = int(conf.get("val", 1))
+                        try:
+                            d = date(year, month, day_num)
+                        except ValueError:
+                            d = date(year, month, _last_day_of_month(year, month))
+                        dates.append(_clamp_to_month(d, year, month))
+                    elif conf.get("type") == "thu":
+                        lap_thu = int(conf.get("thu", 1)) # 0=CN, 1=T2...
+                        tuan = conf.get("tuan", "1") # "1", "2", "3", "4", "Cuối"
+                        
+                        py_wd = LAP_THU_TO_PY.get(lap_thu, 0)
+                        all_days = _all_weekday_in_month(year, month, py_wd)
+                        if not all_days: continue
+                        
+                        if str(tuan).isdigit():
+                            idx = int(tuan) - 1
+                            if 0 <= idx < len(all_days):
+                                dates.append(all_days[idx])
+                            else:
+                                dates.append(all_days[-1]) # Fallback to last if week not exists
+                        elif str(tuan).lower() == "cuối":
+                            dates.append(all_days[-1])
+            except Exception as e:
+                print(f"Error parsing mixed config: {e}")
+        return sorted(list(set(dates)))
+
     # ── B: THỨ CỐ ĐỊNH ──
     else:
         lap_thu  = hd.get("lap_thu") or 1   # 0=CN,1=T2,...
@@ -219,6 +255,23 @@ def describe_schedule(hd: dict) -> str:
         except:
             day = "?"
         return f"{ts_label}/tháng · Ngày {day} mỗi tháng · {hd['gio_bat_dau']}–{hd['gio_ket_thuc']}"
+    elif kieu == "mixed":
+        tuan_lap_lai = hd.get("tuan_lap_lai")
+        desc = []
+        if tuan_lap_lai:
+            try:
+                import json
+                configs = json.loads(tuan_lap_lai)
+                for i, conf in enumerate(configs[:ts]):
+                    if conf.get("type") == "ngay":
+                        desc.append(f"L{i+1}: Ngày {conf.get('val')}")
+                    elif conf.get("type") == "thu":
+                        thu_name = THU_NAMES.get(int(conf.get("thu", 1)), "?")
+                        desc.append(f"L{i+1}: {thu_name} (T{conf.get('tuan')})")
+            except:
+                pass
+        mixed_str = ", ".join(desc) if desc else "Cấu hình tùy chỉnh"
+        return f"{ts_label}/tháng · {mixed_str} · {hd['gio_bat_dau']}–{hd['gio_ket_thuc']}"
     else:
         thu = THU_NAMES.get(hd.get("lap_thu",1), "?")
         return f"{ts_label}/tháng · {thu} hàng tuần (phân bổ đều) · {hd['gio_bat_dau']}–{hd['gio_ket_thuc']}"
