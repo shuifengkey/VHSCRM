@@ -233,9 +233,25 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ---- Settings: Đổi PIN + Đăng xuất ----
-_nav_s1, _nav_s2 = st.columns([10, 1])
-with _nav_s2:
+# Radio nav — nằm trong một container đặc biệt được CSS hóa thành horizontal nav
+NAV_ITEMS = [
+    "🏠 Tổng Quan",
+    "👥 Khách Hàng",
+    "📄 Hợp Đồng",
+    "📅 Lịch Thi Công",
+    "📱 Logbook",
+    "🖨️ Xuất PDF",
+    "💰 Công Nợ",
+    "👷 Kỹ Thuật Viên",
+    "📲 App KTV",
+]
+
+# Đặt radio ngay dưới navbar (CSS inline lo Desktop, CSS media query lo Mobile)
+st.markdown('<div style="background:#0f172a;padding:0 24px 0 180px;margin-top:-74px;margin-bottom:20px;" class="nav-marker">', unsafe_allow_html=True)
+_c_nav, _c_set = st.columns([15, 1], vertical_alignment="center")
+with _c_nav:
+    page = st.radio("nav", NAV_ITEMS, horizontal=True, label_visibility="collapsed", key="topnav")
+with _c_set:
     with st.popover("⚙️", use_container_width=True):
         st.markdown("##### 🔧 Cài đặt")
         st.divider()
@@ -258,23 +274,6 @@ with _nav_s2:
         if st.button("🚪 Đăng xuất", use_container_width=True, type="primary"):
             st.session_state.authenticated = False
             st.rerun()
-
-# Radio nav — nằm trong một container đặc biệt được CSS hóa thành horizontal nav
-NAV_ITEMS = [
-    "🏠 Tổng Quan",
-    "👥 Khách Hàng",
-    "📄 Hợp Đồng",
-    "📅 Lịch Thi Công",
-    "📱 Logbook",
-    "🖨️ Xuất PDF",
-    "💰 Công Nợ",
-    "👷 Kỹ Thuật Viên",
-    "📲 App KTV",
-]
-
-# Đặt radio ngay dưới navbar (CSS inline lo Desktop, CSS media query lo Mobile)
-st.markdown('<div style="background:#0f172a;padding:0 24px 0 180px;margin-top:-74px;margin-bottom:20px;" class="nav-marker">', unsafe_allow_html=True)
-page = st.radio("nav", NAV_ITEMS, horizontal=True, label_visibility="collapsed", key="topnav")
 st.markdown("</div>", unsafe_allow_html=True)
 
 # JS: Thêm class vào đúng container của radio để CSS dễ style (không dùng appendChild để tránh lỗi React)
