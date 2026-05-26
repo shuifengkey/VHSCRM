@@ -8,7 +8,7 @@ from utils.styles import badge, section_header, COLORS
 from datetime import timezone, datetime, date, timedelta
 
 def render():
-    st.markdown(section_header("Logbook Kỹ Thuật Viên", "Check-in / Check-out · Ghi chú hóa chất · Lịch sử thi công", "📱"), unsafe_allow_html=True)
+    st.markdown(section_header("Work Log Kỹ Thuật Viên", "Check-in / Check-out · Ghi chú hóa chất · Lịch sử thi công", "📓"), unsafe_allow_html=True)
 
     tab_work, tab_history, tab_stats = st.tabs(["🔧  Check-in / Out", "📋  Lịch Sử", "📊  Thống Kê KTV"])
 

@@ -250,7 +250,7 @@ NAV_ITEMS = [
     "👥 Khách Hàng",
     "📄 Hợp Đồng",
     "📅 Lịch Thi Công",
-    "📱 Logbook",
+    "📓 Work Log",
     "🖨️ Xuất PDF",
     "💰 Công Nợ",
     "👷 Kỹ Thuật Viên",
@@ -281,7 +281,7 @@ components.html("""
                     // Tìm Logbook và gắn class để CSS xếp nó lên đầu tiên
                     const labels = radioContainer.querySelectorAll('label');
                     labels.forEach(label => {
-                        if (label.innerText && label.innerText.includes('Logbook')) {
+                        if (label.innerText && label.innerText.includes('Work Log')) {
                             // Đi ngược lên DOM để tìm phần tử con trực tiếp của radiogroup
                             let current = label;
                             while (current && current.parentElement) {
@@ -444,8 +444,8 @@ if page == "🏠 Tổng Quan":
             
         st.markdown("<hr style='margin:12px 0; border:0; border-top:1px solid #f1f5f9;'>", unsafe_allow_html=True)
         def goto_logbook():
-            st.session_state.topnav = "📱 Logbook"
-        st.button("👉 Đi tới Sổ Nhật Ký (Logbook)", use_container_width=True, on_click=goto_logbook)
+            st.session_state.topnav = "📓 Work Log"
+        st.button("👉 Đi tới Work Log", use_container_width=True, on_click=goto_logbook)
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col_b:
@@ -497,7 +497,7 @@ elif page == "📄 Hợp Đồng":
     from pages import p2_contracts; p2_contracts.render()
 elif page == "📅 Lịch Thi Công":
     from pages import p3_scheduling; p3_scheduling.render()
-elif page == "📱 Logbook":
+elif page == "📓 Work Log":
     from pages import p4_logbook; p4_logbook.render()
 elif page == "🖨️ Xuất PDF":
     from pages import p5_pdf; p5_pdf.render()
