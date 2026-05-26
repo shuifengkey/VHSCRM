@@ -245,7 +245,6 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Radio nav — nằm trong một container đặc biệt được CSS hóa thành horizontal nav
 NAV_ITEMS = [
     "🏠 Tổng Quan",
     "👥 Khách Hàng",
@@ -254,61 +253,13 @@ NAV_ITEMS = [
     "📱 Logbook",
     "🖨️ Xuất PDF",
     "💰 Công Nợ",
-    "👷 Kỹ Thuật Viên"
+    "👷 Kỹ Thuật Viên",
+    "⚙️ Cài đặt"
 ]
 
 # Đặt radio ngay dưới navbar (CSS inline lo Desktop, CSS media query lo Mobile)
-st.markdown('''
-<style>
-/* Đảm bảo cột menu (1) chiếm phần lớn, cột cài đặt (2) cố định 65px để không đè lên nhau */
-.element-container:has(.nav-marker) + .element-container div[data-testid="column"]:nth-of-type(1) {
-    flex: 1 1 calc(100% - 75px) !important;
-    width: calc(100% - 75px) !important;
-}
-.element-container:has(.nav-marker) + .element-container div[data-testid="column"]:nth-of-type(2) {
-    flex: 0 0 65px !important;
-    width: 65px !important;
-    min-width: 65px !important;
-}
-/* Trên mobile Streamlit tự chuyển column thành dòng dọc, ta ép nó nằm ngang */
-@media (max-width: 768px) {
-    .element-container:has(.nav-marker) + .element-container div[data-testid="stHorizontalBlock"] {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        align-items: center !important;
-    }
-}
-</style>
-<div style="background:#0f172a;padding:0 24px 0 180px;margin-top:-74px;margin-bottom:20px;" class="nav-marker">
-''', unsafe_allow_html=True)
-_c_nav, _c_set = st.columns([15, 1], vertical_alignment="center")
-with _c_nav:
-    page = st.radio("nav", NAV_ITEMS, horizontal=True, label_visibility="collapsed", key="topnav")
-with _c_set:
-    with st.popover("⚙️", use_container_width=True):
-        st.markdown("##### 🔧 Cài đặt")
-        st.divider()
-        st.markdown("**🔑 Đổi mã PIN**")
-        with st.form("form_change_pin"):
-            old_pin = st.text_input("PIN hiện tại", type="password", max_chars=6, placeholder="••••••")
-            new_pin = st.text_input("PIN mới", type="password", max_chars=6, placeholder="••••••")
-            new_pin2 = st.text_input("Nhập lại PIN mới", type="password", max_chars=6, placeholder="••••••")
-            if st.form_submit_button("💾 Lưu PIN mới", use_container_width=True):
-                if not _verify_pin(old_pin):
-                    st.error("❌ PIN hiện tại không đúng!")
-                elif len(new_pin) < 4:
-                    st.error("❌ PIN mới phải có ít nhất 4 ký tự!")
-                elif new_pin != new_pin2:
-                    st.error("❌ PIN mới không khớp!")
-                else:
-                    _change_pin(new_pin)
-                    st.success("✅ Đã đổi PIN thành công!")
-        st.divider()
-        if st.button("🚪 Đăng xuất", use_container_width=True, type="primary"):
-            st.session_state.authenticated = False
-            st.session_state.auth_role = None
-            st.rerun()
+st.markdown('<div style="background:#0f172a;padding:0 24px 0 180px;margin-top:-74px;margin-bottom:20px;" class="nav-marker">', unsafe_allow_html=True)
+page = st.radio("nav", NAV_ITEMS, horizontal=True, label_visibility="collapsed", key="topnav")
 st.markdown("</div>", unsafe_allow_html=True)
 
 # JS: Thêm class vào đúng container của radio để CSS dễ style (không dùng appendChild để tránh lỗi React)
@@ -554,3 +505,32 @@ elif page == "💰 Công Nợ":
     from pages import p6_debts; p6_debts.render()
 elif page == "👷 Kỹ Thuật Viên":
     from pages import p7_technicians; p7_technicians.render()
+elif page == "⚙️ Cài đặt":
+    st.markdown("### 🔧 Cài đặt hệ thống")
+    st.markdown("Quản lý tài khoản và bảo mật.")
+    st.divider()
+    
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        st.markdown("**🔑 Đổi mã PIN**")
+        with st.form("form_change_pin"):
+            old_pin = st.text_input("PIN hiện tại", type="password", max_chars=6, placeholder="••••••")
+            new_pin = st.text_input("PIN mới", type="password", max_chars=6, placeholder="••••••")
+            new_pin2 = st.text_input("Nhập lại PIN mới", type="password", max_chars=6, placeholder="••••••")
+            if st.form_submit_button("💾 Lưu PIN mới", use_container_width=True):
+                if not _verify_pin(old_pin):
+                    st.error("❌ PIN hiện tại không đúng!")
+                elif len(new_pin) < 4:
+                    st.error("❌ PIN mới phải có ít nhất 4 ký tự!")
+                elif new_pin != new_pin2:
+                    st.error("❌ PIN mới không khớp!")
+                else:
+                    _change_pin(new_pin)
+                    st.success("✅ Đã đổi PIN thành công!")
+                    
+    with col2:
+        st.markdown("**🚪 Tài khoản**")
+        if st.button("Đăng xuất khỏi hệ thống", type="primary"):
+            st.session_state.authenticated = False
+            st.session_state.auth_role = None
+            st.rerun()
