@@ -23,18 +23,25 @@ if "auto_scheduled" not in st.session_state:
 
 st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
 
-def inject_countdown_banner(conn):
+@st.cache_data(ttl=60)
+def _get_upcoming_jobs(today_str, tomorrow_str):
+    conn = get_connection()
+    jobs = conn.execute('''
+        SELECT s.ngay_du_kien, s.gio_bat_dau, c.ten_cty
+        FROM schedules s JOIN customers c ON s.ma_kh = c.ma_kh
+        WHERE s.trang_thai = 'scheduled' 
+          AND s.ngay_du_kien IN (?, ?)
+    ''', (today_str, tomorrow_str)).fetchall()
+    conn.close()
+    return [dict(j) for j in jobs]
+
+def inject_countdown_banner():
     try:
         now_vn = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7))
         today_str = now_vn.strftime('%Y-%m-%d')
         tomorrow_str = (now_vn + timedelta(days=1)).strftime('%Y-%m-%d')
         
-        jobs = conn.execute('''
-            SELECT s.ngay_du_kien, s.gio_bat_dau, c.ten_cty
-            FROM schedules s JOIN customers c ON s.ma_kh = c.ma_kh
-            WHERE s.trang_thai = 'scheduled' 
-              AND s.ngay_du_kien IN (?, ?)
-        ''', (today_str, tomorrow_str)).fetchall()
+        jobs = _get_upcoming_jobs(today_str, tomorrow_str)
         
         upcoming = []
         for j in jobs:
@@ -128,9 +135,10 @@ def inject_countdown_banner(conn):
     except Exception as e:
         pass
 
-conn_main = get_connection()
-inject_countdown_banner(conn_main)
-conn_main.close()
+# Chạy countdown banner
+inject_countdown_banner()
+if "conn_main" in locals():
+    conn_main.close()
 
 # ============================================================
 # TOP NAVBAR
