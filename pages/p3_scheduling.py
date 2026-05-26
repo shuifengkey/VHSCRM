@@ -504,14 +504,14 @@ def render():
     # ═══════════════════════════════════
     with tab_cal:
         today = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date()
-        c1,c2,c3,c4 = st.columns([1.5, 1.5, 2.5, 3.5])
+        c1,c2,c3 = st.columns([1, 1, 4])
         with c1: sel_m = st.selectbox("Tháng",range(1,13),index=today.month-1,format_func=lambda x:f"Tháng {x:02d}")
         year_list = list(range(today.year - 2, today.year + 4))
         with c2: sel_y = st.selectbox("Năm", year_list, index=year_list.index(today.year))
         
         with c3:
             st.markdown("<div style='margin-top:28px;'></div>", unsafe_allow_html=True)
-            if st.button("🔄 Đồng bộ Google Calendar", type="secondary", use_container_width=True):
+            if st.button("🔄 Đồng bộ Google Calendar", type="secondary"):
                 google_sync_dialog(sel_m, sel_y)
 
         conn = get_connection()
