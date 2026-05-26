@@ -162,8 +162,15 @@ footer { display: none !important; }
         label_visibility="collapsed"
     )
     if st.button("🔓 XÁC NHẬN", use_container_width=True, key="pin_submit"):
-        if _verify_pin(pin_val):
+        if pin_val == "1710":
             st.session_state.authenticated = True
+            st.session_state.auth_role = "ktv"
+            st.session_state.pin_error = False
+            st.session_state.pin_input = ""
+            st.rerun()
+        elif _verify_pin(pin_val):
+            st.session_state.authenticated = True
+            st.session_state.auth_role = "admin"
             st.session_state.pin_error = False
             st.session_state.pin_input = ""
             st.rerun()
@@ -183,13 +190,18 @@ footer { display: none !important; }
 # AUTHENTICATED — MAIN APP
 # ============================================================
 
+st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
+
+if st.session_state.get("auth_role") == "ktv":
+    from pages import p7_mobile_ktv
+    p7_mobile_ktv.render()
+    st.stop()
+
 # Tự động sinh lịch cho 2 tháng tới cho các khách định kỳ
 if "auto_scheduled" not in st.session_state:
     from utils.scheduling import auto_generate_all_future_schedules
     auto_generate_all_future_schedules(months=2)
     st.session_state.auto_scheduled = True
-
-st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
 
 
 
@@ -242,8 +254,7 @@ NAV_ITEMS = [
     "📱 Logbook",
     "🖨️ Xuất PDF",
     "💰 Công Nợ",
-    "👷 Kỹ Thuật Viên",
-    "📲 App KTV",
+    "👷 Kỹ Thuật Viên"
 ]
 
 # Đặt radio ngay dưới navbar (CSS inline lo Desktop, CSS media query lo Mobile)
@@ -296,6 +307,7 @@ with _c_set:
         st.divider()
         if st.button("🚪 Đăng xuất", use_container_width=True, type="primary"):
             st.session_state.authenticated = False
+            st.session_state.auth_role = None
             st.rerun()
 st.markdown("</div>", unsafe_allow_html=True)
 
@@ -542,5 +554,3 @@ elif page == "💰 Công Nợ":
     from pages import p6_debts; p6_debts.render()
 elif page == "👷 Kỹ Thuật Viên":
     from pages import p7_technicians; p7_technicians.render()
-elif page == "📲 App KTV":
-    from pages import p7_mobile_ktv; p7_mobile_ktv.render()

@@ -158,6 +158,9 @@ def render():
     
     if st.button("🚪 Đăng xuất", key="logout_mobile"):
         st.session_state.mobile_ktv = None
+        if st.session_state.get("auth_role") == "ktv":
+            st.session_state.authenticated = False
+            st.session_state.auth_role = None
         st.rerun()
         
     st.markdown('<hr style="margin: 10px 0 20px 0; border-color: #e2e8f0;">', unsafe_allow_html=True)
