@@ -511,7 +511,8 @@ def render():
         
         with c3:
             st.markdown("<div style='margin-top:28px;'></div>", unsafe_allow_html=True)
-            if st.button("🔄 Đồng bộ Google Calendar", type="secondary", use_container_width=True):
+            st.markdown("<style>div[data-testid='column'] button { white-space: nowrap; }</style>", unsafe_allow_html=True)
+            if st.button("🔄 Đồng bộ Google", type="secondary", use_container_width=True):
                 google_sync_dialog(sel_m, sel_y)
 
         conn = get_connection()
