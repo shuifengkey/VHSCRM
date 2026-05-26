@@ -183,23 +183,27 @@ def init_db():
 
     # --- Auto Migration for existing databases ---
     try: c.execute("ALTER TABLE contracts ADD COLUMN don_vi_tinh TEXT DEFAULT '/tháng'")
-    except sqlite3.OperationalError: pass
+    except Exception: pass
     try: c.execute("ALTER TABLE contracts ADD COLUMN loai_khach TEXT DEFAULT 'Định kỳ'")
-    except sqlite3.OperationalError: pass
+    except Exception: pass
     try: c.execute("ALTER TABLE contracts ADD COLUMN khu_vuc_xu_ly TEXT")
-    except sqlite3.OperationalError: pass
+    except Exception: pass
     try: c.execute("ALTER TABLE contracts ADD COLUMN loai_con_trung TEXT")
-    except sqlite3.OperationalError: pass
+    except Exception: pass
     try: c.execute("ALTER TABLE schedules ADD COLUMN ky_thuat_vien TEXT")
-    except sqlite3.OperationalError: pass
+    except Exception: pass
     try: c.execute("ALTER TABLE contracts ADD COLUMN tuan_lap_lai TEXT")
-    except sqlite3.OperationalError: pass
+    except Exception: pass
     try: c.execute("ALTER TABLE schedules ADD COLUMN loai_con_trung TEXT")
-    except sqlite3.OperationalError: pass
+    except Exception: pass
     try: c.execute("ALTER TABLE logbook ADD COLUMN attachments TEXT")
-    except sqlite3.OperationalError: pass
+    except Exception: pass
+    try: c.execute("ALTER TABLE logbook ADD COLUMN ket_qua TEXT")
+    except Exception: pass
+    try: c.execute("ALTER TABLE logbook ADD COLUMN hoa_chat TEXT")
+    except Exception: pass
     try: c.execute("ALTER TABLE contracts ADD COLUMN ky_thuat_vien TEXT")
-    except sqlite3.OperationalError: pass
+    except Exception: pass
     
     conn.commit()
     conn.close()
