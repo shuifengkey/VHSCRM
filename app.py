@@ -506,7 +506,7 @@ elif page == "🖨️ Xuất PDF":
 elif page == "⚙️ Cài đặt":
     st.markdown("### 🔧 Cài đặt hệ thống")
     
-    t1, t2, t3 = st.tabs(["🔒 Bảo mật & Tài khoản", "👷 Quản lý Kỹ Thuật Viên", "📅 Đồng bộ Outlook"])
+    t1, t2, t3 = st.tabs(["🔒 Bảo mật & Tài khoản", "👷 Quản lý Kỹ Thuật Viên", "📅 Đồng bộ Google Calendar"])
     
     with t1:
         st.markdown("Quản lý tài khoản và bảo mật.")
