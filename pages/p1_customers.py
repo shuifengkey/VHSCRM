@@ -12,7 +12,17 @@ def render():
 
     tab_list, tab_add, tab_detail = st.tabs(["📋  Danh Sách", "➕  Thêm Mới", "📊  Phân Tích"])
     
+    st.markdown("""
+    <style>
+    div[data-testid="stElementContainer"]:has(.align-right) + div[data-testid="stElementContainer"] {
+        display: flex;
+        justify-content: flex-end;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
     def render_edit_popover(r, suffix):
+        st.markdown("<div class='align-right'></div>", unsafe_allow_html=True)
         with st.popover("✏️"):
             with st.form(f"edit_{r['ma_kh']}_{suffix}"):
                 ten = st.text_input("Tên công ty", value=r["ten_cty"], key=f"ten_{r['ma_kh']}_{suffix}")
