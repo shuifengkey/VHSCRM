@@ -171,12 +171,15 @@ st.markdown(f"""
 
 # Radio nav — nằm trong một container đặc biệt được CSS hóa thành horizontal nav
 NAV_ITEMS = [
-    "🏠 Tổng",
-    "👥 Khách",
-    "📄 HĐ",
-    "📅 Lịch",
+    "🏠 Tổng Quan",
+    "👥 Khách Hàng",
+    "📄 Hợp Đồng",
+    "📅 Lịch Thi Công",
     "📱 Logbook",
-    "⚙️ Menu"
+    "🖨️ Xuất PDF",
+    "💰 Công Nợ",
+    "👷 Kỹ Thuật Viên",
+    "📲 App KTV",
 ]
 
 # Đặt radio ngay dưới navbar (CSS sẽ position nó bên trong navbar trên Desktop, và ở bottom trên Mobile)
@@ -184,23 +187,16 @@ st.markdown('<div class="vhs-nav-radio-container">', unsafe_allow_html=True)
 page = st.radio("nav", NAV_ITEMS, horizontal=True, label_visibility="collapsed", key="topnav")
 st.markdown("</div>", unsafe_allow_html=True)
 
-# JS: Đưa radio vào đúng vị trí: ở Mobile -> body (để fixed bottom không bị lỗi), ở Desktop -> #vhs-nav-items
+# JS: Đưa radio vào đúng vị trí ở Mobile -> body (để fixed bottom không bị lỗi). Trên desktop để CSS margin-top tự lo.
 components.html("""
 <script>
 (function() {
     const parentDoc = window.parent.document;
     const nav = parentDoc.querySelector('.vhs-nav-radio-container');
-    const desktopContainer = parentDoc.getElementById('vhs-nav-items');
     
-    if (nav) {
-        if (window.innerWidth <= 768) {
-            if (nav.parentElement !== parentDoc.body) {
-                parentDoc.body.appendChild(nav);
-            }
-        } else {
-            if (desktopContainer && nav.parentElement !== desktopContainer) {
-                desktopContainer.appendChild(nav);
-            }
+    if (nav && window.innerWidth <= 768) {
+        if (nav.parentElement !== parentDoc.body) {
+            parentDoc.body.appendChild(nav);
         }
     }
 })();
@@ -220,7 +216,7 @@ if page != st.session_state.last_main_tab:
 # ============================================================
 # DASHBOARD
 # ============================================================
-if page == "🏠 Tổng":
+if page == "🏠 Tổng Quan":
     conn = get_connection()
     today = date.today()
     today_str = today.strftime("%Y-%m-%d")
@@ -393,44 +389,19 @@ if page == "🏠 Tổng":
         """, unsafe_allow_html=True)
     conn.close()
 
-elif page == "🏠 Tổng":
-    pass # Already handled above as Dashboard
-elif page == "👥 Khách":
+elif page == "👥 Khách Hàng":
     from pages import p1_customers; p1_customers.render()
-elif page == "📄 HĐ":
+elif page == "📄 Hợp Đồng":
     from pages import p2_contracts; p2_contracts.render()
-elif page == "📅 Lịch":
+elif page == "📅 Lịch Thi Công":
     from pages import p3_scheduling; p3_scheduling.render()
 elif page == "📱 Logbook":
     from pages import p4_logbook; p4_logbook.render()
-elif page == "⚙️ Menu":
-    if not st.session_state.current_subpage:
-        st.markdown('<div style="padding:10px;font-size:20px;font-weight:800;color:#0f172a;margin-bottom:15px;">⚙️ Menu Ứng Dụng</div>', unsafe_allow_html=True)
-        
-        m1, m2 = st.columns(2)
-        with m1:
-            if st.button("💰 Công Nợ", use_container_width=True):
-                st.session_state.current_subpage = "Công Nợ"
-                st.rerun()
-            if st.button("🖨️ Xuất PDF", use_container_width=True):
-                st.session_state.current_subpage = "Xuất PDF"
-                st.rerun()
-        with m2:
-            if st.button("👷 Kỹ Thuật Viên", use_container_width=True):
-                st.session_state.current_subpage = "Kỹ Thuật Viên"
-                st.rerun()
-            if st.button("📲 App KTV (Mobile)", use_container_width=True):
-                st.session_state.current_subpage = "App KTV"
-                st.rerun()
-    else:
-        st.markdown(f'<div style="margin-bottom:15px;">', unsafe_allow_html=True)
-        if st.button("⬅️ Quay lại Menu", type="secondary"):
-            st.session_state.current_subpage = None
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        sp = st.session_state.current_subpage
-        if sp == "Công Nợ": from pages import p6_debts; p6_debts.render()
-        elif sp == "Xuất PDF": from pages import p5_pdf; p5_pdf.render()
-        elif sp == "Kỹ Thuật Viên": from pages import p7_technicians; p7_technicians.render()
-        elif sp == "App KTV": from pages import p7_mobile_ktv; p7_mobile_ktv.render()
+elif page == "🖨️ Xuất PDF":
+    from pages import p5_pdf; p5_pdf.render()
+elif page == "💰 Công Nợ":
+    from pages import p6_debts; p6_debts.render()
+elif page == "👷 Kỹ Thuật Viên":
+    from pages import p7_technicians; p7_technicians.render()
+elif page == "📲 App KTV":
+    from pages import p7_mobile_ktv; p7_mobile_ktv.render()

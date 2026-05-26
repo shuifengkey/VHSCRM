@@ -205,6 +205,16 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
 ::-webkit-scrollbar-track { background: #f1f5f9; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 
+/* ── NAV CONTAINER DESKTOP ── */
+.vhs-nav-radio-container {
+    background: #0f172a;
+    padding: 0 24px 0 180px;
+    margin-top: -74px;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1000;
+}
+
 /* ── MOBILE ── */
 @media (max-width: 768px) {
     .vhs-nav { display: none !important; }
@@ -213,10 +223,12 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
     .vhs-nav-radio-container {
         position: fixed;
         bottom: 0; left: 0; right: 0;
-        background: white;
+        background: white !important;
         border-top: 1px solid #e2e8f0;
         z-index: 9999;
         padding: 6px 6px 16px 6px !important;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
         box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
     }
     .stRadio { width: 100% !important; margin: 0 !important; }
