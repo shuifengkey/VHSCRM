@@ -107,7 +107,7 @@ def edit_contract_dialog(ma_hd):
             c_loai, c_val1, c_val2 = st.columns([1,1,1])
             with c_loai:
                 type_idx = 0 if conf.get("type") == "ngay" else 1
-                type_sel = st.selectbox("Loại", ["Ngày cố định", "Thứ cố định"], index=type_idx, key=f"e_type_{ma_hd}_{i}", label_visibility="collapsed")
+                type_sel = st.selectbox("Loại", ["Ngày cố định", "Thứ cố định"], index=type_idx, key=f"e_type_{ma_hd}_{i}", label_visibility="hidden")
             
             if type_sel == "Ngày cố định":
                 with c_val1:

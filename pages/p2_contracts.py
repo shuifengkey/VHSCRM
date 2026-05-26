@@ -359,7 +359,7 @@ def render():
                             st.markdown(f"**Lần {i+1}**")
                             c_loai, c_val1, c_val2 = st.columns([1,1,1])
                             with c_loai:
-                                type_sel = st.selectbox("Loại", ["Ngày cố định", "Thứ cố định"], key=f"type_add_{i}", label_visibility="collapsed")
+                                type_sel = st.selectbox("Loại", ["Ngày cố định", "Thứ cố định"], key=f"type_add_{i}", label_visibility="hidden")
                             
                             if type_sel == "Ngày cố định":
                                 with c_val1:
