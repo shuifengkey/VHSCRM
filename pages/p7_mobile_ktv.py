@@ -250,7 +250,7 @@ def render():
             elif is_active: badge_html = '<div class="status-badge" style="background:#f59e0b;color:white;">⏱️ Đang thi công</div>'
             elif is_overdue: badge_html = '<div class="status-badge" style="background:#ef4444;color:white;">⚠️ Quá ca</div>'
             
-            badge_str = f"\\n                {badge_html}" if badge_html else ""
+            badge_str = f" {badge_html}" if badge_html else ""
             st.markdown(f"""
             <div class="mobile-card" style="background:{bg_color};border-color:{border_color};">
                 <div class="shift-time">{job['gio_bat_dau']} - {job['gio_ket_thuc']}</div>
