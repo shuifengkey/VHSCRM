@@ -86,7 +86,7 @@ def get_connection():
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
-def init_db():
+def _do_init_db():
     conn = get_connection()
     c = conn.cursor()
     c.execute("""CREATE TABLE IF NOT EXISTS technicians (
@@ -214,6 +214,17 @@ def init_db():
     
     conn.commit()
     conn.close()
+
+if st:
+    @st.cache_data
+    def _run_init_db_once():
+        _do_init_db()
+else:
+    def _run_init_db_once():
+        _do_init_db()
+
+def init_db():
+    _run_init_db_once()
 
 def seed_demo_data():
     conn = get_connection()

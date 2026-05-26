@@ -169,10 +169,10 @@ def render():
     
     conn = get_connection()
     q = f"""SELECT s.*, c.ten_cty, c.dia_chi, c.sdt,
-                   (SELECT COUNT(*) FROM logbook l WHERE l.schedule_id=s.id) as has_log,
-                   (SELECT checkout_time FROM logbook l WHERE l.schedule_id=s.id ORDER BY id DESC LIMIT 1) as co_time
+                   l.checkout_time as co_time, l.checkin_time, l.ket_qua, l.hoa_chat, l.id as log_id
             FROM schedules s
             JOIN customers c ON s.ma_kh = c.ma_kh
+            LEFT JOIN logbook l ON l.schedule_id = s.id
             WHERE  s.ngay_du_kien BETWEEN ? AND ?
             ORDER BY s.ngay_du_kien ASC, s.gio_bat_dau ASC"""
     all_jobs = conn.execute(q, (past3_str, tomorrow_str)).fetchall()
@@ -199,8 +199,8 @@ def render():
         st.markdown(f"<div style='font-weight:700;color:#64748b;margin-bottom:12px;'>BẠN CÓ {len(my_jobs)} CA SẮP TỚI</div>", unsafe_allow_html=True)
         
         for job in my_jobs:
-            log = conn.execute("SELECT * FROM logbook WHERE schedule_id=? ORDER BY id DESC LIMIT 1", (job["id"],)).fetchone()
-            log = dict(log) if log else None
+            # Dữ liệu log đã được JOIN sẵn từ câu lệnh SQL chính
+            log = {"id": job["log_id"], "checkin_time": job["checkin_time"], "checkout_time": job["co_time"], "ket_qua": job["ket_qua"], "hoa_chat": job["hoa_chat"]} if job["log_id"] else None
             
             # Phân tích trạng thái
             is_completed = bool(job.get("co_time") or job.get("trang_thai") == "completed")
