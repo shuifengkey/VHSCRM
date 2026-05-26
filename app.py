@@ -251,9 +251,8 @@ NAV_ITEMS = [
     "📄 Hợp Đồng",
     "📅 Lịch Thi Công",
     "📓 Work Log",
-    "🖨️ Xuất PDF",
     "💰 Công Nợ",
-    "👷 Kỹ Thuật Viên",
+    "🖨️ Xuất PDF",
     "⚙️ Cài đặt"
 ]
 
@@ -499,38 +498,42 @@ elif page == "📅 Lịch Thi Công":
     from pages import p3_scheduling; p3_scheduling.render()
 elif page == "📓 Work Log":
     from pages import p4_logbook; p4_logbook.render()
-elif page == "🖨️ Xuất PDF":
-    from pages import p5_pdf; p5_pdf.render()
 elif page == "💰 Công Nợ":
     from pages import p6_debts; p6_debts.render()
-elif page == "👷 Kỹ Thuật Viên":
-    from pages import p7_technicians; p7_technicians.render()
+elif page == "🖨️ Xuất PDF":
+    from pages import p5_pdf; p5_pdf.render()
 elif page == "⚙️ Cài đặt":
     st.markdown("### 🔧 Cài đặt hệ thống")
-    st.markdown("Quản lý tài khoản và bảo mật.")
-    st.divider()
     
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        st.markdown("**🔑 Đổi mã PIN**")
-        with st.form("form_change_pin"):
-            old_pin = st.text_input("PIN hiện tại", type="password", max_chars=6, placeholder="••••••")
-            new_pin = st.text_input("PIN mới", type="password", max_chars=6, placeholder="••••••")
-            new_pin2 = st.text_input("Nhập lại PIN mới", type="password", max_chars=6, placeholder="••••••")
-            if st.form_submit_button("💾 Lưu PIN mới", use_container_width=True):
-                if not _verify_pin(old_pin):
-                    st.error("❌ PIN hiện tại không đúng!")
-                elif len(new_pin) < 4:
-                    st.error("❌ PIN mới phải có ít nhất 4 ký tự!")
-                elif new_pin != new_pin2:
-                    st.error("❌ PIN mới không khớp!")
-                else:
-                    _change_pin(new_pin)
-                    st.success("✅ Đã đổi PIN thành công!")
-                    
-    with col2:
-        st.markdown("**🚪 Tài khoản**")
-        if st.button("Đăng xuất khỏi hệ thống", type="primary"):
-            st.session_state.authenticated = False
-            st.session_state.auth_role = None
-            st.rerun()
+    t1, t2 = st.tabs(["🔒 Bảo mật & Tài khoản", "👷 Quản lý Kỹ Thuật Viên"])
+    
+    with t1:
+        st.markdown("Quản lý tài khoản và bảo mật.")
+        st.divider()
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            st.markdown("**🔑 Đổi mã PIN**")
+            with st.form("form_change_pin"):
+                old_pin = st.text_input("PIN hiện tại", type="password", max_chars=6, placeholder="••••••")
+                new_pin = st.text_input("PIN mới", type="password", max_chars=6, placeholder="••••••")
+                new_pin2 = st.text_input("Nhập lại PIN mới", type="password", max_chars=6, placeholder="••••••")
+                if st.form_submit_button("💾 Lưu PIN mới", use_container_width=True):
+                    if not _verify_pin(old_pin):
+                        st.error("❌ PIN hiện tại không đúng!")
+                    elif len(new_pin) < 4:
+                        st.error("❌ PIN mới phải có ít nhất 4 ký tự!")
+                    elif new_pin != new_pin2:
+                        st.error("❌ PIN mới không khớp!")
+                    else:
+                        _change_pin(new_pin)
+                        st.success("✅ Đã đổi PIN thành công!")
+                        
+        with col2:
+            st.markdown("**🚪 Tài khoản**")
+            if st.button("Đăng xuất khỏi hệ thống", type="primary"):
+                st.session_state.authenticated = False
+                st.session_state.auth_role = None
+                st.rerun()
+
+    with t2:
+        from pages import p7_technicians; p7_technicians.render()
