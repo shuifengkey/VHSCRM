@@ -296,9 +296,12 @@ def render():
                     with c3:
                         loai_khach = st.selectbox("Loại Khách", ["Định kỳ", "Khách lẻ"])
                         if 'fmt_gia_tri' not in st.session_state:
-                            st.session_state.fmt_gia_tri = "3.500.000"
+                            st.session_state.fmt_gia_tri = ""
                         def format_currency():
                             val = st.session_state.raw_gia_tri
+                            if not val.strip():
+                                st.session_state.fmt_gia_tri = ""
+                                return
                             try:
                                 num = int(val.replace(".", "").replace(",", "").strip())
                                 st.session_state.fmt_gia_tri = f"{num:,}".replace(",", ".")
@@ -306,7 +309,7 @@ def render():
 
                         c_gia, c_dvt = st.columns(2)
                         with c_gia:
-                            gia_tri_str = st.text_input("Giá Trị (VNĐ) *", key="raw_gia_tri", value=st.session_state.fmt_gia_tri, on_change=format_currency)
+                            gia_tri_str = st.text_input("Giá Trị (VNĐ) *", key="raw_gia_tri", value=st.session_state.fmt_gia_tri, placeholder="3.500.000", on_change=format_currency)
                         with c_dvt:
                             don_vi_tinh = st.selectbox("Đơn Vị", ["/tháng", "/lần thi công"])
     
