@@ -180,9 +180,9 @@ def render():
             start_dt = datetime(sch_date.year, sch_date.month, sch_date.day, h_bd, m_bd)
             diff_hours = (start_dt - now).total_seconds() / 3600
 
-            if -24 <= diff_hours <= 24:
+            if 0 <= diff_hours <= 24:
                 upcoming_jobs.append(j)
-            elif diff_hours < -24:
+            elif diff_hours < 0:
                 overdue_jobs.append(j)
                 
         def get_sort_key(job):
