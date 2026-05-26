@@ -227,6 +227,32 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# ---- Settings: Đổi PIN + Đăng xuất ----
+_nav_s1, _nav_s2 = st.columns([10, 1])
+with _nav_s2:
+    with st.popover("⚙️", use_container_width=True):
+        st.markdown("##### 🔧 Cài đặt")
+        st.divider()
+        st.markdown("**🔑 Đổi mã PIN**")
+        with st.form("form_change_pin"):
+            old_pin = st.text_input("PIN hiện tại", type="password", max_chars=6, placeholder="••••••")
+            new_pin = st.text_input("PIN mới", type="password", max_chars=6, placeholder="••••••")
+            new_pin2 = st.text_input("Nhập lại PIN mới", type="password", max_chars=6, placeholder="••••••")
+            if st.form_submit_button("💾 Lưu PIN mới", use_container_width=True):
+                if not _verify_pin(old_pin):
+                    st.error("❌ PIN hiện tại không đúng!")
+                elif len(new_pin) < 4:
+                    st.error("❌ PIN mới phải có ít nhất 4 ký tự!")
+                elif new_pin != new_pin2:
+                    st.error("❌ PIN mới không khớp!")
+                else:
+                    _change_pin(new_pin)
+                    st.success("✅ Đã đổi PIN thành công!")
+        st.divider()
+        if st.button("🚪 Đăng xuất", use_container_width=True, type="primary"):
+            st.session_state.authenticated = False
+            st.rerun()
+
 # Radio nav — nằm trong một container đặc biệt được CSS hóa thành horizontal nav
 NAV_ITEMS = [
     "🏠 Tổng Quan",
