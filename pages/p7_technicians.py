@@ -2,9 +2,7 @@ import streamlit as st
 from utils.database import get_connection
 
 def render():
-    st.markdown('<div class="main-header"><h2>⚙️ Cài Đặt</h2></div>', unsafe_allow_html=True)
-
-    tab_list, tab_add, tab_outlook = st.tabs(["📋 Danh Sách KTV", "➕ Thêm KTV", "📅 Đồng bộ Outlook"])
+    tab_list, tab_add = st.tabs(["📋 Danh Sách KTV", "➕ Thêm KTV"])
 
     # ===== DANH SÁCH =====
     with tab_list:
@@ -94,29 +92,4 @@ def render():
                         st.error(f"Lỗi: {e}")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # ===== ĐỒNG BỘ OUTLOOK =====
-    with tab_outlook:
-        st.markdown('<div class="vhs-card">', unsafe_allow_html=True)
-        st.markdown("### Cấu hình Microsoft Graph API")
-        st.info("Nhập Client ID và Tenant ID từ ứng dụng Azure (Microsoft Entra ID) để đồng bộ lịch thi công sang Outlook Calendar.")
-        
-        conn = get_connection()
-        settings_rows = conn.execute("SELECT key_name, value_data FROM settings WHERE key_name IN ('outlook_client_id', 'outlook_tenant_id')").fetchall()
-        settings_dict = {r['key_name']: r['value_data'] for r in settings_rows}
-        
-        with st.form("form_outlook_settings"):
-            client_id = st.text_input("Client ID", value=settings_dict.get('outlook_client_id', ''))
-            tenant_id = st.text_input("Tenant ID", value=settings_dict.get('outlook_tenant_id', ''))
-            
-            if st.form_submit_button("💾 Lưu Cấu Hình", type="primary"):
-                conn_save = get_connection()
-                conn_save.execute("INSERT OR REPLACE INTO settings (id, key_name, value_data) VALUES ((SELECT id FROM settings WHERE key_name='outlook_client_id'), 'outlook_client_id', ?)", (client_id,))
-                conn_save.execute("INSERT OR REPLACE INTO settings (id, key_name, value_data) VALUES ((SELECT id FROM settings WHERE key_name='outlook_tenant_id'), 'outlook_tenant_id', ?)", (tenant_id,))
-                conn_save.commit()
-                conn_save.close()
-                st.success("Đã lưu cấu hình Outlook!")
-                st.rerun()
-                
-        conn.close()
-        st.markdown("</div>", unsafe_allow_html=True)
 

@@ -505,7 +505,7 @@ elif page == "🖨️ Xuất PDF":
 elif page == "⚙️ Cài đặt":
     st.markdown("### 🔧 Cài đặt hệ thống")
     
-    t1, t2 = st.tabs(["🔒 Bảo mật & Tài khoản", "👷 Quản lý Kỹ Thuật Viên"])
+    t1, t2, t3 = st.tabs(["🔒 Bảo mật & Tài khoản", "👷 Quản lý Kỹ Thuật Viên", "📅 Đồng bộ Outlook"])
     
     with t1:
         st.markdown("Quản lý tài khoản và bảo mật.")
@@ -537,3 +537,28 @@ elif page == "⚙️ Cài đặt":
 
     with t2:
         from pages import p7_technicians; p7_technicians.render()
+        
+    with t3:
+        st.markdown('<div class="vhs-card">', unsafe_allow_html=True)
+        st.markdown("### Cấu hình Microsoft Graph API")
+        st.info("Nhập Client ID và Tenant ID từ ứng dụng Azure (Microsoft Entra ID) để đồng bộ lịch thi công sang Outlook Calendar.")
+        
+        conn = get_connection()
+        settings_rows = conn.execute("SELECT key_name, value_data FROM settings WHERE key_name IN ('outlook_client_id', 'outlook_tenant_id')").fetchall()
+        settings_dict = {r['key_name']: r['value_data'] for r in settings_rows}
+        
+        with st.form("form_outlook_settings"):
+            client_id = st.text_input("Client ID", value=settings_dict.get('outlook_client_id', ''))
+            tenant_id = st.text_input("Tenant ID", value=settings_dict.get('outlook_tenant_id', ''))
+            
+            if st.form_submit_button("💾 Lưu Cấu Hình", type="primary"):
+                conn_save = get_connection()
+                conn_save.execute("INSERT OR REPLACE INTO settings (id, key_name, value_data) VALUES ((SELECT id FROM settings WHERE key_name='outlook_client_id'), 'outlook_client_id', ?)", (client_id,))
+                conn_save.execute("INSERT OR REPLACE INTO settings (id, key_name, value_data) VALUES ((SELECT id FROM settings WHERE key_name='outlook_tenant_id'), 'outlook_tenant_id', ?)", (tenant_id,))
+                conn_save.commit()
+                conn_save.close()
+                st.success("Đã lưu cấu hình Outlook!")
+                st.rerun()
+                
+        conn.close()
+        st.markdown("</div>", unsafe_allow_html=True)
