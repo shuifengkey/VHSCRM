@@ -264,9 +264,9 @@ if page == "🏠 Tổng Quan":
             st.markdown('<div style="text-align:center;padding:24px;color:#94a3b8;font-size:13px;">✨ Không có ca nào hôm nay</div>', unsafe_allow_html=True)
             
         st.markdown("<hr style='margin:12px 0; border:0; border-top:1px solid #f1f5f9;'>", unsafe_allow_html=True)
-        if st.button("➡️ Đi tới Sổ Nhật Ký (Logbook)", use_container_width=True):
+        def goto_logbook():
             st.session_state.topnav = "📱 Logbook"
-            st.rerun()
+        st.button("👉 Đi tới Sổ Nhật Ký (Logbook)", use_container_width=True, on_click=goto_logbook)
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col_b:
