@@ -35,41 +35,6 @@ def _get_upcoming_jobs(today_str, tomorrow_str):
     conn.close()
     return [dict(j) for j in jobs]
 
-def inject_countdown_banner():
-    try:
-        now_vn = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7))
-        today_str = now_vn.strftime('%Y-%m-%d')
-        tomorrow_str = (now_vn + timedelta(days=1)).strftime('%Y-%m-%d')
-        
-        jobs = _get_upcoming_jobs(today_str, tomorrow_str)
-        
-        upcoming = []
-        for j in jobs:
-            try:
-                job_dt_str = f"{j['ngay_du_kien']} {j['gio_bat_dau']}"
-                job_dt = datetime.strptime(job_dt_str, '%Y-%m-%d %H:%M')
-                job_dt = job_dt.replace(tzinfo=timezone(timedelta(hours=7)))
-                delta = (job_dt - now_vn).total_seconds()
-                
-                # Trong vòng 6 tiếng (21600 giây)
-                if 0 < delta <= 21600:
-                    upcoming.append({
-                        "ten_cty": j['ten_cty'],
-                        "gio_bat_dau": j['gio_bat_dau'],
-                        "timestamp": job_dt.timestamp() * 1000 # JS uses milliseconds
-                    })
-            except Exception:
-                pass
-                
-        if upcoming:
-            upcoming.sort(key=lambda x: x["timestamp"])
-            best = upcoming[0]
-            
-            js_code = f"""
-            <script>
-            (function() {{
-                const targetTime = {best['timestamp']};
-                const cty = "{best['ten_cty']}";
                 const gio = "{best['gio_bat_dau']}";
                 
                 const parentDoc = window.parent.document;
@@ -143,17 +108,22 @@ if "conn_main" in locals():
 # ============================================================
 # TOP NAVBAR
 # ============================================================
+@st.cache_data(ttl=15)
+def _get_navbar_stats(today_str):
+    conn = get_connection()
+    ca = conn.execute(
+        "SELECT COUNT(*) FROM schedules WHERE ngay_du_kien=? AND trang_thai='scheduled'",
+        (today_str,)
+    ).fetchone()[0]
+    no = conn.execute(
+        "SELECT COALESCE(SUM(can_thu-da_thu),0) FROM debts WHERE can_thu>da_thu"
+    ).fetchone()[0]
+    conn.close()
+    return ca, no
+
 now  = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7))
-conn = get_connection()
-today_str   = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().strftime("%Y-%m-%d")
-ca_hom_nay  = conn.execute(
-    "SELECT COUNT(*) FROM schedules WHERE ngay_du_kien=? AND trang_thai='scheduled'",
-    (today_str,)
-).fetchone()[0]
-tong_no     = conn.execute(
-    "SELECT COALESCE(SUM(can_thu-da_thu),0) FROM debts WHERE can_thu>da_thu"
-).fetchone()[0]
-conn.close()
+today_str   = now.date().strftime("%Y-%m-%d")
+ca_hom_nay, tong_no = _get_navbar_stats(today_str)
 
 # Brand + status HTML
 st.markdown(f"""
