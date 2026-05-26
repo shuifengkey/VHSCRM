@@ -15,6 +15,46 @@ ST_LBL = {"completed":"Xong","scheduled":"Chờ TC","skipped":"Bỏ qua"}
 TS_LABEL = {1:"1 Lần/tháng", 2:"2 Lần", 3:"3 Lần", 4:"4 Lần"}
 THU_OPTS = {1:"Thứ 2",2:"Thứ 3",3:"Thứ 4",4:"Thứ 5",5:"Thứ 6",6:"Thứ 7",0:"Chủ Nhật"}
 
+@st.dialog("💰 Nhập Thu Tiền Trước")
+def advance_payment_dialog(ma_hd, ma_kh, ky_thang, ten_cty):
+    st.write(f"Thu tiền trước cho khách **{ten_cty}** — Kỳ: **{ky_thang}**")
+    
+    if 'fmt_adv_pay' not in st.session_state:
+        st.session_state.fmt_adv_pay = ""
+        
+    def fmt_cb():
+        val = st.session_state.raw_adv_pay
+        if not val.strip(): st.session_state.fmt_adv_pay = ""; return
+        try:
+            num = int(val.replace(".", "").replace(",", "").strip())
+            st.session_state.fmt_adv_pay = f"{num:,}".replace(",", ".")
+        except: pass
+
+    amount_str = st.text_input("Số tiền khách đưa (VNĐ)", key="raw_adv_pay", value=st.session_state.fmt_adv_pay, on_change=fmt_cb)
+    
+    if st.button("💳 Xác nhận Thu", use_container_width=True):
+        try:
+            amount = int(amount_str.replace(".", "").replace(",", "").strip()) if amount_str else 0
+            if amount <= 0:
+                st.warning("Vui lòng nhập số tiền hợp lệ")
+                return
+                
+            conn = get_connection()
+            debt = conn.execute("SELECT id FROM debts WHERE ma_hd=? AND ky_thanh_toan=?", (ma_hd, ky_thang)).fetchone()
+            now_iso = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().isoformat()
+            if debt:
+                conn.execute("UPDATE debts SET da_thu = da_thu + ?, ngay_thu=? WHERE id=?", 
+                            (amount, now_iso, debt["id"]))
+            else:
+                conn.execute("INSERT INTO debts (ma_hd, ma_kh, ky_thanh_toan, can_thu, da_thu, ghi_chu, ngay_thu) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                             (ma_hd, ma_kh, ky_thang, 0, amount, "Thu trước", now_iso))
+            conn.commit(); conn.close()
+            st.success("✅ Đã ghi nhận thu tiền trước!")
+            st.session_state.fmt_adv_pay = ""
+            st.rerun()
+        except Exception as e:
+            st.error(f"Lỗi: {e}")
+
 @st.dialog("🔄 Đồng bộ Google Calendar")
 def google_sync_dialog(thang, nam):
     import json
@@ -233,6 +273,9 @@ def render():
 </div>
 </div>
 """, unsafe_allow_html=True)
+                    if st.button("💰 Thu Tiền Trước", key=f"adv_btn_over_{j['id']}", use_container_width=True):
+                        advance_payment_dialog(j['ma_hd'], j['ma_kh'], j['ky_thang'], j['ten_cty'])
+                    st.markdown('<div style="margin-bottom:12px;"></div>', unsafe_allow_html=True)
 
             # --- Upcoming ---
             if upcoming_jobs:
@@ -266,6 +309,9 @@ def render():
 </div>
 </div>
 """, unsafe_allow_html=True)
+                    if st.button("💰 Thu Tiền Trước", key=f"adv_btn_upc_{j['id']}", use_container_width=True):
+                        advance_payment_dialog(j['ma_hd'], j['ma_kh'], j['ky_thang'], j['ten_cty'])
+                    st.markdown('<div style="margin-bottom:12px;"></div>', unsafe_allow_html=True)
 
     # ═══════════════════════════════════
     # THEO THÁNG / HĐ
