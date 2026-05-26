@@ -13,7 +13,8 @@ def render():
     tab_overview, tab_detail, tab_manage = st.tabs(["📊  Tổng Quan", "📋  Chi Tiết", "⚙️  Quản Lý"])
 
     def format_money(val):
-        if val >= 1_000_000: return f"{val/1e6:.2f}M"
+        if val == 0: return "0"
+        if abs(val) >= 1_000_000: return f"{val/1e6:.2f}M"
         return f"{val/1000:,.0f}k"
 
     with tab_overview:
@@ -145,9 +146,13 @@ def render():
         for d in debts:
             no = d["can_thu"] - d["da_thu"]
             pct = int(d["da_thu"]/d["can_thu"]*100) if d["can_thu"] else 100
-            row_bg = "#fff5f5" if no > 0 else "white"
-            no_color = "#dc2626" if no > 0 else "#16a34a"
-            border_color = "#fecaca" if no > 0 else "#e2e8f0"
+            
+            row_bg = "#fff5f5" if no > 0 else ("#f0fdf4" if no < 0 else "white")
+            no_color = "#dc2626" if no > 0 else ("#0284c7" if no < 0 else "#16a34a")
+            border_color = "#fecaca" if no > 0 else ("#bae6fd" if no < 0 else "#e2e8f0")
+            status_text = 'Còn Nợ' if no > 0 else ('Trả Trước' if no < 0 else 'Đã Xong')
+            display_no = abs(no) if no < 0 else no
+            
             rows_html += f"""
             <div class="vhs-list-item" style="background:{row_bg};border-color:{border_color};padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
@@ -158,8 +163,8 @@ def render():
                         </div>
                     </div>
                     <div style="text-align:right;">
-                        <div style="font-size:16px;font-weight:800;color:{no_color};">{format_money(no)} đ</div>
-                        <div style="font-size:11px;color:#94a3b8;">{'Còn Nợ' if no > 0 else 'Đã Xong'}</div>
+                        <div style="font-size:16px;font-weight:800;color:{no_color};">{format_money(display_no)} đ</div>
+                        <div style="font-size:11px;color:#94a3b8;">{status_text}</div>
                     </div>
                 </div>
                 
