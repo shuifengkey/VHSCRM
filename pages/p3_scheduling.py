@@ -184,6 +184,16 @@ def render():
                 upcoming_jobs.append(j)
             elif diff_hours < -24:
                 overdue_jobs.append(j)
+                
+        def get_sort_key(job):
+            d = job["ngay_du_kien"]
+            h, m = 0, 0
+            try: h, m = map(int, (job["gio_bat_dau"] or "00:00").split(":"))
+            except: pass
+            return (d, h, m)
+
+        upcoming_jobs.sort(key=get_sort_key)
+        overdue_jobs.sort(key=get_sort_key)
 
         if not upcoming_jobs and not overdue_jobs:
             st.markdown("""
