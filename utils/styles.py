@@ -253,6 +253,12 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         display: flex !important;
         scroll-snap-align: start;
     }
+    
+    /* Đưa Logbook (vị trí thứ 5) lên đầu tiên trên Mobile */
+    .vhs-nav-st-radio .stRadio [role="radiogroup"] > div:nth-child(5),
+    .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] > div:nth-child(5) {
+        order: -1 !important;
+    }
     .vhs-nav-st-radio .stRadio [role="radiogroup"] > div > label,
     .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] > div > label {
         display: flex !important;
