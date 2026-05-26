@@ -238,8 +238,8 @@ def render():
                         st.session_state.fmt_so_tien = f"{num:,}".replace(",", ".")
                     except: pass
 
-                so_tien_str = st.text_input("Số Tiền Thu Thêm (VNĐ)",
-                    key="raw_so_tien", value=st.session_state.fmt_so_tien, on_change=fmt_tien)
+                so_tien_str = st.text_input("Số Tiền Khách Trả (VNĐ)",
+                    key="raw_so_tien", value=st.session_state.fmt_so_tien, on_change=fmt_tien, help="Nhập số tiền khách thanh toán cho khoản nợ này")
 
                 if st.button("💳 Xác Nhận Thu Tiền", use_container_width=True):
                     try:
