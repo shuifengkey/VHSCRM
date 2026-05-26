@@ -265,8 +265,17 @@ def render():
                     date_str = f" <span style='font-size:16px;color:#64748b;'>({_d.strftime('%d/%m')})</span>"
                 except: pass
 
+            if is_completed:
+                left_border = "border-left: 6px solid #94a3b8;"
+            elif is_active:
+                left_border = "border-left: 6px solid #f59e0b;"
+            elif is_overdue:
+                left_border = "border-left: 6px solid #ef4444;"
+            else:
+                left_border = "border-left: 6px solid #3b82f6;"
+
             st.markdown(f"""
-            <div class="mobile-card" style="background:{bg_color};border-color:{border_color};">
+            <div class="mobile-card" style="background:{bg_color};border-color:{border_color};{left_border}">
                 <div class="shift-time">{job['gio_bat_dau']} - {job['gio_ket_thuc']}{date_str}</div>
                 <div class="shift-company">🏢 {job['ten_cty']}</div>{badge_str}
                 <div class="shift-address">
