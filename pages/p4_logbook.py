@@ -25,9 +25,9 @@ def render():
             FROM schedules s 
             JOIN customers c ON s.ma_kh=c.ma_kh
             JOIN contracts ct ON s.ma_hd=ct.ma_hd
-            WHERE ((s.trang_thai = 'scheduled' AND s.ngay_du_kien <= ?) OR (s.ngay_du_kien = ?))
+            WHERE s.trang_thai = 'scheduled' AND s.ngay_du_kien <= ?
             ORDER BY s.ngay_du_kien ASC, s.gio_bat_dau ASC
-        """, (tomorrow_str, today_str)).fetchall()
+        """, (tomorrow_str,)).fetchall()
         conn.close()
 
         # Phân loại upcoming (24h) vs overdue (quá ca)
