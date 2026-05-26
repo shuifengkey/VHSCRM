@@ -181,14 +181,40 @@ def render():
     all_jobs = conn.execute(q, (past3_str, tomorrow_str)).fetchall()
     
     my_jobs = []
+    today_str = now_dt.strftime("%Y-%m-%d")
+    yesterday_str = (now_dt - timedelta(days=1)).strftime("%Y-%m-%d")
+    
     for r in all_jobs:
         job = dict(r)
+        assigned_ktv = job.get("ky_thuat_vien")
         
-        # Kiểm tra tính hợp lệ của ca (hoặc nếu đã hoàn thành thì vẫn hiển thị)
-        if job["co_time"] or is_job_active_now(job["ngay_du_kien"], job["gio_bat_dau"], job["gio_ket_thuc"]):
-            # Lọc theo KTV
-            if job.get("ky_thuat_vien") == ktv or not job.get("ky_thuat_vien") or (job.get("ky_thuat_vien") == ktv and job["co_time"]):
-                my_jobs.append(job)
+        # 1. Chỉ lấy ca của mình hoặc ca chưa ai nhận
+        if assigned_ktv and assigned_ktv != ktv:
+            continue
+            
+        is_completed = bool(job.get("co_time") or job.get("trang_thai") == "completed")
+        sch_date = job["ngay_du_kien"]
+        
+        # 2. Quyết định hiển thị
+        show_job = False
+        
+        if sch_date >= today_str:
+            # Ca hôm nay hoặc tương lai (ngày mai) -> luôn hiện
+            show_job = True
+        elif not is_completed and sch_date >= yesterday_str:
+            # Ca hôm qua chưa hoàn thành (bị quá hạn) -> hiện để xử lý
+            show_job = True
+        elif is_completed:
+            # Nếu ca đã hoàn thành, chỉ hiện trên app nếu nó được hoàn thành trong ngày hôm nay
+            co_date_str = job["co_time"][:10] if job.get("co_time") else ""
+            if co_date_str == today_str or sch_date == today_str:
+                show_job = True
+        elif job.get("checkin_time") and not is_completed:
+            # Ca đang thi công từ mấy hôm trước (quên checkout) -> luôn hiện
+            show_job = True
+
+        if show_job:
+            my_jobs.append(job)
 
     if not my_jobs:
         st.markdown("""
