@@ -15,6 +15,20 @@ section[data-testid="stSidebar"] { display: none !important; }
 #MainMenu, footer, header { visibility: hidden; }
 .stDeployButton { display: none; }
 
+/* ── VHS STANDARDIZED UI ── */
+.vhs-card {
+    background: white !important; border: 1px solid #e2e8f0 !important; border-radius: 14px !important; padding: 24px !important; box-shadow: 0 1px 4px rgba(0,0,0,.04) !important;
+}
+.vhs-list-item {
+    background: white !important; border: 1px solid #e2e8f0 !important; border-radius: 12px !important; padding: 16px !important; margin-bottom: 12px !important;
+}
+.vhs-sub-card {
+    background: #f8fafc !important; border: 1px solid #e2e8f0 !important; border-radius: 10px !important; padding: 12px !important; margin-top: 10px !important;
+}
+.vhs-text-title { font-size: 16px !important; font-weight: 700 !important; color: #0f172a !important; }
+.vhs-text-subtitle { font-size: 13px !important; color: #64748b !important; }
+.vhs-text-caption { font-size: 11px !important; color: #94a3b8 !important; }
+
 /* ── TOP NAVBAR ── */
 .vhs-nav {
     position: sticky; top: 0; z-index: 999;

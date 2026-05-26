@@ -88,7 +88,7 @@ def render():
 
         if not upcoming_jobs and not overdue_jobs:
             st.markdown("""
-            <div style="text-align:center;padding:56px;background:white;border:1px solid #e2e8f0;border-radius:14px;">
+            <div class="vhs-card" style="text-align:center;padding:56px;">
               <div style="font-size:52px;">✅</div>
               <div style="font-size:17px;font-weight:700;color:#0f172a;margin-top:10px;">Không có ca nào trong 24h tới!</div>
             </div>""", unsafe_allow_html=True)
@@ -102,7 +102,7 @@ def render():
                     except: pass
 
                     st.markdown(f"""
-<div style="background:#fef2f2;border-left:5px solid #dc2626;border-radius:0 12px 12px 0;padding:14px 18px;margin-bottom:10px;">
+<div class="vhs-list-item" style="background:#fef2f2;border-left:5px solid #dc2626;border-radius:0 12px 12px 0;">
 <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
 <div>
 <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px;">
@@ -136,7 +136,7 @@ def render():
                     bg      = "#eff6ff"
 
                     st.markdown(f"""
-<div style="background:{bg};border-left:5px solid {border};border-radius:0 12px 12px 0;padding:14px 18px;margin-bottom:10px;">
+<div class="vhs-list-item" style="background:{bg};border-left:5px solid {border};border-radius:0 12px 12px 0;">
 <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
 <div>
 <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px;">
@@ -219,7 +219,7 @@ def render():
             # Header kỳ
             kieu_txt = "📅 Ngày cố định" if hd["kieu_lap"]=="ngay_co_dinh" else f"📆 {THU_OPTS.get(hd['lap_thu'],'?')} hàng tuần"
             st.markdown(f"""
-            <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:14px 18px;margin-bottom:14px;">
+            <div class="vhs-list-item">
               <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
                 <div>
                   <div style="font-size:15px;font-weight:700;color:#0f172a;">Kỳ {ky_sel} — {hd['ten_cty']}</div>

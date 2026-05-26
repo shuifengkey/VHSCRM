@@ -111,7 +111,7 @@ def render():
     with tab_add:
         col_form, col_preview = st.columns([2, 1])
         with col_form:
-            st.markdown('<div style="background:white;border:1px solid #e2e8f0;border-radius:14px;padding:24px;">', unsafe_allow_html=True)
+            st.markdown('<div class="vhs-card">', unsafe_allow_html=True)
             st.markdown("**📝 Thông Tin Khách Hàng Mới**")
             st.markdown('<hr style="margin:12px 0">', unsafe_allow_html=True)
             if st.session_state.get("add_kh_success"):

@@ -66,7 +66,7 @@ def render():
 
     # ===== THÊM MỚI =====
     with tab_add:
-        st.markdown('<div style="background:white;border:1px solid #e2e8f0;border-radius:14px;padding:24px;">', unsafe_allow_html=True)
+        st.markdown('<div class="vhs-card">', unsafe_allow_html=True)
         st.markdown("**📝 Thông Tin Kỹ Thuật Viên Mới**")
         with st.form("form_add_ktv", clear_on_submit=True):
             c1, c2 = st.columns(2)

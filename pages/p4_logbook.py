@@ -53,7 +53,7 @@ def render():
 
         if not jobs:
             st.markdown("""
-            <div style="text-align:center;padding:60px;background:white;border:1px solid #e2e8f0;border-radius:16px;">
+            <div class="vhs-card" style="text-align:center;padding:60px;">
                 <div style="font-size:56px;">🎉</div>
                 <div style="font-size:18px;font-weight:700;color:#0f172a;margin-top:12px;">Không có ca nào trong 24h tới!</div>
             </div>""", unsafe_allow_html=True)
@@ -86,7 +86,7 @@ def render():
                 overdue_html = '<span style="background:#dc2626;color:white;padding:2px 8px;border-radius:10px;font-size:10px;margin-left:6px;font-weight:700;">⚠️ QUÁ CA</span>' if _is_overdue else ""
         
                 st.markdown(f"""
-                <div style="background:white;border:1px solid #e2e8f0;border-radius:14px;padding:20px;margin:12px 0 0 0;box-shadow:0 1px 8px rgba(0,0,0,.06);">
+                <div class="vhs-card" style="padding:20px;margin:12px 0 0 0;box-shadow:0 1px 8px rgba(0,0,0,.06);">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
                         <div>
                             <div style="font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px;">

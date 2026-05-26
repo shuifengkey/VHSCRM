@@ -35,7 +35,7 @@ def render():
 
         # Thanh progress tổng
         st.markdown(f"""
-        <div style="background:white;border:1px solid #e2e8f0;border-radius:14px;padding:20px;margin:16px 0;">
+        <div class="vhs-card" style="padding:20px;margin:16px 0;">
             <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;color:#0f172a;margin-bottom:10px;">
                 <span>Tiến độ thu nợ tổng thể</span>
                 <span style="color:{'#16a34a' if rate>=80 else '#d97706' if rate>=50 else '#dc2626'};">{rate}%</span>
@@ -86,7 +86,7 @@ def render():
                 st.plotly_chart(fig, use_container_width=True, config={"displayModeBar":False})
 
         with col_top:
-            st.markdown('<div style="background:white;border:1px solid #e2e8f0;border-radius:14px;padding:18px;">', unsafe_allow_html=True)
+            st.markdown('<div class="vhs-card" style="padding:18px;">', unsafe_allow_html=True)
             st.markdown('<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:12px;">🔴 Top Nợ Nhiều Nhất</div>', unsafe_allow_html=True)
             top_debtors = conn.execute("""
                 SELECT d.ma_kh, c.ten_cty, SUM(d.can_thu-d.da_thu) no
@@ -145,7 +145,7 @@ def render():
             no_color = "#dc2626" if no > 0 else "#16a34a"
             border_color = "#fecaca" if no > 0 else "#e2e8f0"
             rows_html += f"""
-            <div style="background:{row_bg};border:1px solid {border_color};border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+            <div class="vhs-list-item" style="background:{row_bg};border-color:{border_color};padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
                     <div>
                         <div style="font-size:15px;font-weight:700;color:#0f172a;">{d['ten_cty']}</div>
@@ -189,7 +189,7 @@ def render():
         col_pay, col_new = st.columns([1,1])
 
         with col_pay:
-            st.markdown('<div style="background:white;border:1px solid #e2e8f0;border-radius:14px;padding:20px;">', unsafe_allow_html=True)
+            st.markdown('<div class="vhs-card" style="padding:20px;">', unsafe_allow_html=True)
             st.markdown("**✅ Ghi Nhận Thanh Toán**")
             st.markdown('<hr style="margin:8px 0 14px">', unsafe_allow_html=True)
 
@@ -240,7 +240,7 @@ def render():
             st.markdown("</div>", unsafe_allow_html=True)
 
         with col_new:
-            st.markdown('<div style="background:white;border:1px solid #e2e8f0;border-radius:14px;padding:20px;">', unsafe_allow_html=True)
+            st.markdown('<div class="vhs-card" style="padding:20px;">', unsafe_allow_html=True)
             st.markdown("**➕ Tạo Kỳ Thu Mới**")
             st.markdown('<hr style="margin:8px 0 14px">', unsafe_allow_html=True)
             st.caption("💡 Hệ thống đã tự động ghi nhận doanh thu khi KTV hoàn thành ca. Bạn chỉ dùng form này để dự phòng hoặc điều chỉnh.")

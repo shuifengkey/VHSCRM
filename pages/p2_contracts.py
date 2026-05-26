@@ -160,7 +160,7 @@ def render():
                 c_info, c_action = st.columns([5, 1], vertical_alignment="center")
                 with c_info:
                     st.markdown(f"""
-                    <div style="background:{sb};border-left:5px solid {sc};border-radius:12px;padding:16px;margin-bottom:12px;">
+                    <div class="vhs-list-item" style="border-left:5px solid {sc}; padding:16px;">
                       <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;">
                         <div>
                           <div style="font-size:16px;font-weight:700;color:#0f172a;">{r['ten_cty']}</div>
@@ -201,7 +201,7 @@ def render():
 
                 # Progress bar
                 st.markdown(f"""
-                <div style="background:white;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-top:10px;">
+                <div class="vhs-sub-card" style="background:white;">
                   <div style="display:flex;justify-content:space-between;font-size:12px;color:#64748b;margin-bottom:5px;">
                     <span>Vòng đời hợp đồng</span>
                     <span><b style="color:#0f172a;">{pct_life}%</b> đã trôi qua</span>
@@ -217,7 +217,7 @@ def render():
                 ky_hien_tai = today.strftime("%Y-%m")
                 prev_html   = _preview_schedule(dict(r), ky_hien_tai)
                 st.markdown(f"""
-                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-top:10px;">
+                <div class="vhs-sub-card">
                   <div style="font-size:12px;font-weight:700;color:#0f172a;margin-bottom:8px;">
                     📅 Dự kiến lịch tháng {ky_hien_tai}
                   </div>
@@ -275,7 +275,7 @@ def render():
             if not all_kh:
                 st.warning("⚠️ Chưa có khách hàng. Bạn cần thêm Khách Hàng trước!")
             else:
-                st.markdown('<div style="background:white;border:1px solid #e2e8f0;border-radius:14px;padding:24px;">', unsafe_allow_html=True)
+                st.markdown('<div class="vhs-card">', unsafe_allow_html=True)
                 st.markdown("**📋 Thông Tin Hợp Đồng**")
                 st.markdown('<hr style="margin:8px 0 16px">', unsafe_allow_html=True)
 
