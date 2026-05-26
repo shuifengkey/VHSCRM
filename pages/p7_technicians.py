@@ -14,7 +14,7 @@ def render():
         else:
             for r in ktvs:
                 with st.container(border=True):
-                    c1, c2 = st.columns([3, 1])
+                    c1, c2 = st.columns([5, 1], vertical_alignment="center")
                     with c1:
                         st.markdown(f"""
 <div style="display:flex;align-items:center;gap:12px;">
@@ -33,7 +33,7 @@ def render():
 """, unsafe_allow_html=True)
                     
                     with c2:
-                        with st.popover("✏️ Sửa"):
+                        with st.popover("✏️"):
                             with st.form(f"form_edit_{r['ma_ktv']}"):
                                 st.markdown("##### ✏️ Sửa Thông Tin")
                                 e_ten = st.text_input("Tên KTV", value=r['ten'])
@@ -41,13 +41,11 @@ def render():
                                 e_act = st.selectbox("Trạng thái", ["Đang làm việc", "Đã nghỉ"], index=0 if r['active'] else 1)
                                 
                                 if st.form_submit_button("💾 Lưu Cập Nhật", type="primary", use_container_width=True):
-                                    if e_sdt and not e_sdt.isdigit():
-                                        st.error("⚠️ Số điện thoại chỉ được nhập số!")
-                                    else:
-                                        conn_edit = get_connection()
-                                        conn_edit.execute("UPDATE technicians SET ten=?, sdt=?, active=? WHERE ma_ktv=?",
-                                                          (e_ten, e_sdt, 1 if e_act=="Đang làm việc" else 0, r['ma_ktv']))
-                                        conn_edit.commit(); conn_edit.close()
+                                    e_sdt_clean = ''.join(filter(str.isdigit, e_sdt)) if e_sdt else ""
+                                    conn_edit = get_connection()
+                                    conn_edit.execute("UPDATE technicians SET ten=?, sdt=?, active=? WHERE ma_ktv=?",
+                                                      (e_ten, e_sdt_clean, 1 if e_act=="Đang làm việc" else 0, r['ma_ktv']))
+                                    conn_edit.commit(); conn_edit.close()
                                         st.success("Đã cập nhật!"); st.rerun()
                                 
                                 st.divider()
@@ -78,13 +76,12 @@ def render():
             if st.form_submit_button("➕ Thêm KTV", use_container_width=True):
                 if not ma_ktv or not ten:
                     st.error("⚠️ Mã KTV và Tên KTV là bắt buộc!")
-                elif sdt and not sdt.isdigit():
-                    st.error("⚠️ Số điện thoại chỉ được nhập số!")
                 else:
+                    sdt_clean = ''.join(filter(str.isdigit, sdt)) if sdt else ""
                     try:
                         conn2 = get_connection()
                         conn2.execute("INSERT INTO technicians (ma_ktv, ten, sdt, active) VALUES (?,?,?,?)",
-                                      (ma_ktv.strip(), ten.strip(), sdt.strip(), 1 if active=="Đang làm việc" else 0))
+                                      (ma_ktv.strip(), ten.strip(), sdt_clean, 1 if active=="Đang làm việc" else 0))
                         conn2.commit(); conn2.close()
                         st.success(f"✅ Đã thêm KTV {ten}!")
                         st.rerun()

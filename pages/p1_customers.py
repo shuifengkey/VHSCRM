@@ -13,7 +13,7 @@ def render():
     tab_list, tab_add, tab_detail = st.tabs(["📋  Danh Sách", "➕  Thêm Mới", "📊  Phân Tích"])
     
     def render_edit_popover(r, suffix):
-        with st.popover("✏️ Sửa"):
+        with st.popover("✏️"):
             with st.form(f"edit_{r['ma_kh']}_{suffix}"):
                 ten = st.text_input("Tên công ty", value=r["ten_cty"], key=f"ten_{r['ma_kh']}_{suffix}")
                 dd  = st.text_input("Đại diện", value=r["dai_dien"] or "", key=f"dd_{r['ma_kh']}_{suffix}")
@@ -22,14 +22,12 @@ def render():
                 gc  = st.text_area("Ghi chú", value=r["ghi_chu"] or "", key=f"gc_{r['ma_kh']}_{suffix}", height=60)
                 
                 if st.form_submit_button("💾 Lưu Cập Nhật", type="primary", use_container_width=True):
-                    if sp and not sp.isdigit():
-                        st.error("⚠️ Số điện thoại chỉ được nhập số!")
-                    else:
-                        try:
-                            conn2 = get_connection()
-                            conn2.execute("UPDATE customers SET ten_cty=?,dai_dien=?,sdt=?,dia_chi=?,ghi_chu=? WHERE ma_kh=?",
-                                          (ten,dd,sp,da,gc,r["ma_kh"]))
-                            conn2.commit(); conn2.close()
+                    sp_clean = ''.join(filter(str.isdigit, sp)) if sp else ""
+                    try:
+                        conn2 = get_connection()
+                        conn2.execute("UPDATE customers SET ten_cty=?,dai_dien=?,sdt=?,dia_chi=?,ghi_chu=? WHERE ma_kh=?",
+                                      (ten,dd,sp_clean,da,gc,r["ma_kh"]))
+                        conn2.commit(); conn2.close()
                             st.success("✅ Đã cập nhật!"); st.rerun()
                         except Exception as e: st.error(e)
                 
@@ -106,7 +104,7 @@ def render():
 </div>
 """, unsafe_allow_html=True)
     
-                        c_hd, c_act = st.columns([3, 1], vertical_alignment="bottom")
+                        c_hd, c_act = st.columns([5, 1], vertical_alignment="bottom")
                         with c_hd:
                             st.markdown(f'<div style="font-size:12px;font-weight:600;color:{hd_color};margin-top:8px;">📄 {hd_text}</div>', unsafe_allow_html=True)
                         with c_act:
@@ -120,7 +118,7 @@ def render():
                 hd_color = "#16a34a" if r["so_hd"] else "#94a3b8"
 
                 with st.container(border=True):
-                    lc1, lc2, lc3, lc4, lc5 = st.columns([2, 1.5, 1.5, 1, 0.5], vertical_alignment="center")
+                    lc1, lc2, lc3, lc4, lc5 = st.columns([2, 1.5, 1.5, 1, 0.7], vertical_alignment="center")
                     with lc1:
                         st.markdown(f'<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><b style="color:#0f172a;font-size:14px;">{r["ten_cty"]}</b><br><span style="font-size:11px;color:#64748b;">{r["ma_kh"]}</span></div>', unsafe_allow_html=True)
                     with lc2:
@@ -161,15 +159,14 @@ def render():
 
                 submitted = st.form_submit_button("➕ Tạo Khách Hàng Mới", use_container_width=True)
                 if submitted:
-                    if not ma_kh or not ten or not sdt:
-                        st.error("⚠️ Mã KH, Tên công ty và Số điện thoại là bắt buộc!")
-                    elif sdt and not sdt.isdigit():
-                        st.error("⚠️ Số điện thoại chỉ được nhập số!")
+                    if not ma_kh or not ten:
+                        st.error("⚠️ Mã KH và Tên công ty là bắt buộc!")
                     else:
+                        sdt_clean = ''.join(filter(str.isdigit, sdt)) if sdt else ""
                         try:
                             conn = get_connection()
                             conn.execute("INSERT INTO customers (ma_kh,ten_cty,dai_dien,sdt,dia_chi,phan_khuc,ghi_chu) VALUES (?,?,?,?,?,?,?)",
-                                         (ma_kh.strip(), ten.strip(), dai_dien, sdt, dia_chi, pk, ghi_chu))
+                                         (ma_kh.strip(), ten.strip(), dai_dien, sdt_clean, dia_chi, pk, ghi_chu))
                             conn.commit(); conn.close()
                             st.session_state.add_kh_success = f"✅ Đã thêm **{ten}** ({ma_kh})"
                             st.rerun()

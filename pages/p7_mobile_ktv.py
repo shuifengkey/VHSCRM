@@ -242,12 +242,11 @@ def render():
             _start = datetime(_sch_d.year, _sch_d.month, _sch_d.day, _h, _m)
             is_overdue = ((_start - now_dt).total_seconds() / 3600) < -24 and not is_completed
             
-            bg_color = "#dcfce7" if is_completed else ("#fffbeb" if is_active else ("#fef2f2" if is_overdue else "white"))
-            border_color = "#22c55e" if is_completed else ("#f59e0b" if is_active else ("#ef4444" if is_overdue else "#e2e8f0"))
+            bg_color = "#f8fafc" if is_completed else ("#fffbeb" if is_active else ("#fef2f2" if is_overdue else "white"))
+            border_color = "#e2e8f0" if is_completed else ("#f59e0b" if is_active else ("#ef4444" if is_overdue else "#e2e8f0"))
             
             badge_html = ""
-            if is_completed: badge_html = '<div class="status-badge" style="background:#22c55e;color:white;">✅ Đã hoàn thành</div>'
-            elif is_active: badge_html = '<div class="status-badge" style="background:#f59e0b;color:white;">⏱️ Đang thi công</div>'
+            if is_active: badge_html = '<div class="status-badge" style="background:#f59e0b;color:white;">⏱️ Đang thi công</div>'
             elif is_overdue: badge_html = '<div class="status-badge" style="background:#ef4444;color:white;">⚠️ Quá ca</div>'
             
             badge_str = f"\\n                {badge_html}" if badge_html else ""
@@ -265,11 +264,9 @@ def render():
             # Buttons actions
             if not is_completed:
                 btn_label = "✅ Hoàn Thành Ca" if is_active else "📍 Bắt Đầu (Check-in)"
-                btn_type = "secondary" if is_active else "primary"
+                btn_type = "primary"
                 
                 if st.button(btn_label, key=f"btn_{job['id']}", type=btn_type, use_container_width=True):
                     action_dialog(job, log)
-            else:
-                st.markdown("<div style='text-align:center; padding:10px; background:#dcfce7; color:#166534; border-radius:10px; font-weight:bold; margin-bottom: 20px;'>✅ Đã Check-out</div>", unsafe_allow_html=True)
                 
     conn.close()
