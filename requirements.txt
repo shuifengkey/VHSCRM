@@ -9,3 +9,7 @@ Pillow
 
 msal
 requests
+
+google-auth
+google-auth-oauthlib
+google-api-python-client
