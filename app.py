@@ -197,11 +197,12 @@ if st.session_state.get("auth_role") == "ktv":
     p7_mobile_ktv.render()
     st.stop()
 
-# Tự động sinh lịch cho 2 tháng tới cho các khách định kỳ
-if "auto_scheduled" not in st.session_state:
+# Tự động sinh lịch mỗi lần load app (tháng trước + tháng này + tháng tới)
+if "auto_scheduled_month" not in st.session_state or st.session_state.auto_scheduled_month != date.today().strftime("%Y-%m"):
     from utils.scheduling import auto_generate_all_future_schedules
     auto_generate_all_future_schedules(months=2)
-    st.session_state.auto_scheduled = True
+    st.session_state.auto_scheduled_month = date.today().strftime("%Y-%m")
+
 
 
 

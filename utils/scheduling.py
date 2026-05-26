@@ -421,27 +421,33 @@ def check_time_violation(gio_bat_dau_hd: str, gio_ket_thuc_hd: str,
 
 def auto_generate_all_future_schedules(months: int = 2) -> int:
     """
-    Sinh lịch tự động cho các hợp đồng định kỳ (tháng hiện hành + 'months' tháng tiếp theo).
-    Hàm này được gọi một lần khi app khởi động để đảm bảo luôn có sẵn lịch mà không cần bấm thủ công.
+    Sinh lịch tự động cho tất cả hợp đồng định kỳ active.
+    Bao gồm: tháng trước, tháng này, và 'months' tháng tiếp theo.
+    Được gọi mỗi lần app load (1 lần/ngày để tránh load nặng).
     """
     from utils.database import get_connection
     conn = get_connection()
-    cts = conn.execute("SELECT ma_hd FROM contracts WHERE trang_thai='active' AND (loai_khach='Định kỳ' OR chu_ky_lap != '1_lan')").fetchall()
+    cts = conn.execute(
+        "SELECT ma_hd FROM contracts WHERE trang_thai='active' AND loai_khach != 'Khách lẻ'"
+    ).fetchall()
     conn.close()
     
     if not cts:
         return 0
         
     created = 0
-    target = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().replace(day=1)
-    for _ in range(months + 1):
-        ky_thang = target.strftime("%Y-%m")
+    today = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date()
+    
+    # Bắt đầu từ tháng TRƯỚC để đảm bảo HĐ ký giữa tháng không bị thiếu
+    start = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
+    
+    for i in range(months + 2):  # tháng trước + tháng này + months tháng tới
+        ky_thang = start.strftime("%Y-%m")
         for ct in cts:
             try:
                 created += auto_generate_schedules(ct["ma_hd"], ky_thang, overwrite=False)
             except:
                 pass
-        # Chuyển sang tháng tiếp theo
-        target = (target + timedelta(days=32)).replace(day=1)
+        start = (start + timedelta(days=32)).replace(day=1)
             
     return created

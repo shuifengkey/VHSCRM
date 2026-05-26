@@ -502,13 +502,16 @@ def render():
                                       gia_tri, ghi_chu, don_vi_tinh, loai_khach, khu_vuc_xu_ly, loai_con_trung, chu_ky_lap, phuong_phap_xu_ly, tuan_lap_lai_val, ktv_val))
                                 conn.commit(); conn.close()
                                 if gen_now:
+                                    from utils.scheduling import auto_generate_all_future_schedules
+                                    # Reset session state để force re-generate ở lần load tiếp
+                                    st.session_state.pop("auto_scheduled_month", None)
+                                    # Sinh lịch ngay cho HĐ mới: tháng trước + tháng này + 2 tháng tới
                                     t = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date()
-                                    n1 = auto_generate_schedules(ma_hd, t.strftime("%Y-%m"))
-                                    n2 = 0
-                                    if loai_khach == "Định kỳ" or chu_ky_lap != "1_lan":
-                                        ky_next = (t.replace(day=1)+timedelta(days=32)).strftime("%Y-%m")
-                                        n2 = auto_generate_schedules(ma_hd, ky_next)
-                                    n = n1 + n2
+                                    start = (t.replace(day=1) - timedelta(days=1)).replace(day=1)
+                                    n = 0
+                                    for _ in range(4):  # tháng trước + tháng này + 2 tháng tới
+                                        n += auto_generate_schedules(ma_hd, start.strftime("%Y-%m"))
+                                        start = (start + timedelta(days=32)).replace(day=1)
                                     st.session_state.add_hd_success = f"✅ Tạo HĐ **{ma_hd}** + sinh {n} ca!"
                                 else:
                                     st.session_state.add_hd_success = f"✅ Tạo HĐ **{ma_hd}** thành công!"
