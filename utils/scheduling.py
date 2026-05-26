@@ -438,10 +438,10 @@ def auto_generate_all_future_schedules(months: int = 2) -> int:
     created = 0
     today = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date()
     
-    # Bắt đầu từ tháng TRƯỚC để đảm bảo HĐ ký giữa tháng không bị thiếu
-    start = (today.replace(day=1) - timedelta(days=1)).replace(day=1)
+    # Bắt đầu từ tháng hiện tại → 2 tháng tới
+    start = today.replace(day=1)
     
-    for i in range(months + 2):  # tháng trước + tháng này + months tháng tới
+    for i in range(months + 1):  # tháng này + months tháng tới
         ky_thang = start.strftime("%Y-%m")
         for ct in cts:
             try:
