@@ -68,13 +68,19 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
 .stRadio > label { display: none !important; }
 .stRadio > div {
     display: flex !important; flex-direction: row !important;
-    flex-wrap: nowrap !important; gap: 2px !important;
+    flex-wrap: nowrap !important; gap: 8px !important;
+    justify-content: space-between !important;
 }
 .stRadio > div > label {
+    flex: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
     background: transparent !important;
     color: #94a3b8 !important;
     border: none !important; border-radius: 8px !important;
-    padding: 6px 13px !important;
+    padding: 8px 10px !important;
     font-size: 13px !important; font-weight: 500 !important;
     cursor: pointer !important;
     white-space: nowrap !important;
@@ -270,6 +276,8 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         flex: 0 0 auto !important;
         display: flex !important;
         scroll-snap-align: start;
+        margin: 0 4px 0 0 !important;
+        padding: 0 !important;
     }
     
     /* Đưa Logbook lên đầu tiên trên Mobile */
