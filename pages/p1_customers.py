@@ -28,8 +28,8 @@ def render():
                         conn2.execute("UPDATE customers SET ten_cty=?,dai_dien=?,sdt=?,dia_chi=?,ghi_chu=? WHERE ma_kh=?",
                                       (ten,dd,sp_clean,da,gc,r["ma_kh"]))
                         conn2.commit(); conn2.close()
-                            st.success("✅ Đã cập nhật!"); st.rerun()
-                        except Exception as e: st.error(e)
+                        st.success("✅ Đã cập nhật!"); st.rerun()
+                    except Exception as e: st.error(e)
                 
                 st.markdown("---")
                 msg_del = "Xác nhận xóa (bao gồm cả HĐ và Lịch)" if r["so_hd"] else "Xác nhận xóa Khách Hàng này"

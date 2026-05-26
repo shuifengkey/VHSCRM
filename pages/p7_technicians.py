@@ -46,7 +46,7 @@ def render():
                                     conn_edit.execute("UPDATE technicians SET ten=?, sdt=?, active=? WHERE ma_ktv=?",
                                                       (e_ten, e_sdt_clean, 1 if e_act=="Đang làm việc" else 0, r['ma_ktv']))
                                     conn_edit.commit(); conn_edit.close()
-                                        st.success("Đã cập nhật!"); st.rerun()
+                                    st.success("Đã cập nhật!"); st.rerun()
                                 
                                 st.divider()
                                 xac_nhan_xoa = st.checkbox("Xác nhận xóa KTV này", key=f"del_chk_{r['ma_ktv']}")
