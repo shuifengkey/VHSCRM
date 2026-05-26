@@ -209,12 +209,17 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
 .nav-marker { display: none; }
 .vhs-nav-st-radio,
 .element-container:has(.nav-marker) + .element-container {
-    background: #0f172a;
+    background: transparent !important;
     padding: 0 24px 0 180px;
-    margin-top: -74px;
+    margin-top: -64px; /* Adjusting slightly so it centers perfectly in the 54px nav */
     margin-bottom: 20px;
     position: relative;
     z-index: 1000;
+    pointer-events: none; /* Let clicks pass through to status pills */
+}
+.vhs-nav-st-radio .stRadio,
+.element-container:has(.nav-marker) + .element-container .stRadio {
+    pointer-events: auto; /* Re-enable clicks on the nav items */
 }
 
 /* ── MOBILE ── */
@@ -233,9 +238,16 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         margin-top: 0 !important;
         margin-bottom: 0 !important;
         box-shadow: 0 -4px 24px rgba(0,0,0,0.08) !important;
+        pointer-events: auto; /* Ensure mobile is clickable */
     }
-    .stRadio { width: 100% !important; margin: 0 !important; }
-    .stRadio [role="radiogroup"] {
+    
+    /* Scoped mobile styling for the nav radio only */
+    .vhs-nav-st-radio .stRadio,
+    .element-container:has(.nav-marker) + .element-container .stRadio { 
+        width: 100% !important; margin: 0 !important; 
+    }
+    .vhs-nav-st-radio .stRadio [role="radiogroup"],
+    .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] {
         display: flex !important;
         width: 100% !important;
         gap: 0px !important;
@@ -246,15 +258,19 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         scroll-snap-type: x mandatory;
     }
     /* Ẩn thanh cuộn */
-    .stRadio [role="radiogroup"]::-webkit-scrollbar { display: none; }
-    .stRadio [role="radiogroup"] { -ms-overflow-style: none; scrollbar-width: none; }
+    .vhs-nav-st-radio .stRadio [role="radiogroup"]::-webkit-scrollbar,
+    .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"]::-webkit-scrollbar { display: none; }
+    .vhs-nav-st-radio .stRadio [role="radiogroup"],
+    .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] { -ms-overflow-style: none; scrollbar-width: none; }
 
-    .stRadio [role="radiogroup"] > div {
+    .vhs-nav-st-radio .stRadio [role="radiogroup"] > div,
+    .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] > div {
         flex: 0 0 auto !important;
         display: flex !important;
         scroll-snap-align: start;
     }
-    .stRadio [role="radiogroup"] > div > label {
+    .vhs-nav-st-radio .stRadio [role="radiogroup"] > div > label,
+    .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] > div > label {
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
@@ -267,19 +283,23 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
         border: none !important;
         white-space: nowrap !important;
         min-width: 0 !important;
-        margin-right: 2px !important; /* Adding a tiny margin if they want gap 0 but don't want them entirely merged. Wait, user specifically said =0. Let's strictly use 0. */
+        margin-right: 2px !important; 
         margin: 0 !important;
     }
-    .stRadio [role="radiogroup"] > div > label:hover {
+    .vhs-nav-st-radio .stRadio [role="radiogroup"] > div > label:hover,
+    .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] > div > label:hover {
         background: #e2e8f0 !important;
     }
-    .stRadio [role="radiogroup"] [data-checked="true"],
-    .stRadio [role="radiogroup"] label:has(input:checked) {
+    .vhs-nav-st-radio .stRadio [role="radiogroup"] [data-checked="true"],
+    .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] [data-checked="true"],
+    .vhs-nav-st-radio .stRadio [role="radiogroup"] label:has(input:checked),
+    .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] label:has(input:checked) {
         background: #16a34a !important;
         color: white !important;
         box-shadow: 0 4px 10px rgba(22,163,74,0.3) !important;
     }
-    .stRadio [role="radiogroup"] p {
+    .vhs-nav-st-radio .stRadio [role="radiogroup"] p,
+    .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] p {
         font-size: 15px !important;
         font-weight: 700 !important;
         margin: 0 !important;
