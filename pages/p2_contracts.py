@@ -157,25 +157,30 @@ def render():
                 f"| {r.get('loai_khach', 'Định kỳ')} ({freq_str})  "
                 f"{'🌙 ' if is_night else ''}| {st_txt}"
             ):
-                st.markdown(f"""
-                <div style="background:{sb};border-left:5px solid {sc};border-radius:0 12px 12px 0;padding:16px;margin-bottom:12px;">
-                  <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-                    <div>
-                      <div style="font-size:16px;font-weight:700;color:#0f172a;">{r['ten_cty']}</div>
-                      <div style="font-size:12px;color:#64748b;margin-top:3px;">
-                        👤 {r['dai_dien'] or '—'} · 📞 {r['sdt'] or '—'}
-                      </div>
-                      <div style="font-size:12px;color:#2563eb;margin-top:6px;font-weight:600;">
-                        🗓️ {sched_desc}
+                c_info, c_action = st.columns([5, 1], vertical_alignment="center")
+                with c_info:
+                    st.markdown(f"""
+                    <div style="background:{sb};border-left:5px solid {sc};border-radius:12px;padding:16px;margin-bottom:12px;">
+                      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+                        <div>
+                          <div style="font-size:16px;font-weight:700;color:#0f172a;">{r['ten_cty']}</div>
+                          <div style="font-size:12px;color:#64748b;margin-top:3px;">
+                            👤 {r['dai_dien'] or '—'} · 📞 {r['sdt'] or '—'}
+                          </div>
+                          <div style="font-size:12px;color:#2563eb;margin-top:6px;font-weight:600;">
+                            🗓️ {sched_desc}
+                          </div>
+                        </div>
+                        <div style="text-align:right;">
+                          <div style="font-size:24px;font-weight:800;color:{sc};">{f"{int(r['gia_tri_thang']):,.0f}".replace(",", ".")} đ</div>
+                          <div style="font-size:11px;color:#94a3b8;">{r.get('don_vi_tinh', '/tháng')}</div>
+                        </div>
                       </div>
                     </div>
-                    <div style="text-align:right;">
-                      <div style="font-size:24px;font-weight:800;color:{sc};">{f"{int(r['gia_tri_thang']):,.0f}".replace(",", ".")} đ</div>
-                      <div style="font-size:11px;color:#94a3b8;">{r.get('don_vi_tinh', '/tháng')}</div>
-                    </div>
-                  </div>
-                </div>
-                """, unsafe_allow_html=True)
+                    """, unsafe_allow_html=True)
+                with c_action:
+                    if st.button("✏️ Sửa", key=f"btn_edit_dialog_{r['ma_hd']}", use_container_width=True):
+                        edit_contract_dialog(r['ma_hd'])
 
                 # 4 stat boxes
                 col1,col2,col3,col4 = st.columns(4)
@@ -253,10 +258,6 @@ def render():
                         if st.button("❌ Hủy", key=f"no_{r['ma_hd']}"):
                             st.session_state[f"confirm_del_{r['ma_hd']}"] = False
                             st.rerun()
-                col_btn_edit, _ = st.columns([1, 4])
-                with col_btn_edit:
-                    if st.button("✏️ Sửa Hợp Đồng", key=f"btn_edit_dialog_{r['ma_hd']}"):
-                        edit_contract_dialog(r['ma_hd'])
 
     # =========================================================
     # TẠO MỚI

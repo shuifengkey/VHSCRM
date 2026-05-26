@@ -15,34 +15,34 @@ def render():
             st.info("Chưa có kỹ thuật viên nào.")
         else:
             for r in ktvs:
-                with st.container():
-                    st.markdown(f"""
-                    <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:12px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;">
-                            <div>
-                                <div style="font-size:16px;font-weight:700;color:#0f172a;">{r['ten']} <span style="font-size:12px;color:#64748b;font-weight:normal;">({r['ma_ktv']})</span></div>
-                                <div style="font-size:13px;color:#64748b;margin-top:4px;">📞 {r['sdt'] or 'Chưa cập nhật'}</div>
-                            </div>
-                            <div>
-                                <span style="padding:4px 10px;border-radius:99px;font-size:12px;font-weight:600;
-                                      background:{'#dcfce7' if r['active'] else '#fee2e2'};color:{'#166534' if r['active'] else '#991b1b'};">
-                                    {'Đang làm việc' if r['active'] else 'Đã nghỉ'}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                with st.container(border=True):
+                    c1, c2 = st.columns([4, 1], vertical_alignment="center")
+                    with c1:
+                        st.markdown(f"""
+<div style="display:flex;align-items:center;gap:12px;">
+    <div style="font-size:32px;">👷</div>
+    <div>
+        <div style="font-size:16px;font-weight:700;color:#0f172a;">{r['ten']} <span style="font-size:12px;color:#64748b;font-weight:normal;">({r['ma_ktv']})</span></div>
+        <div style="font-size:13px;color:#64748b;margin-top:4px;">
+            📞 {r['sdt'] or 'Chưa cập nhật'} &nbsp;|&nbsp; 
+            <span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;
+                  background:{'#dcfce7' if r['active'] else '#fee2e2'};color:{'#166534' if r['active'] else '#991b1b'};">
+                {'Đang làm việc' if r['active'] else 'Đã nghỉ'}
+            </span>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
                     
-                    with st.expander(f"✏️ Sửa / Xóa {r['ma_ktv']}"):
-                        with st.form(f"form_edit_{r['ma_ktv']}"):
-                            c1, c2, c3 = st.columns(3)
-                            with c1: e_ten = st.text_input("Tên KTV", value=r['ten'])
-                            with c2: e_sdt = st.text_input("SĐT", value=r['sdt'] or "")
-                            with c3: e_act = st.selectbox("Trạng thái", ["Đang làm việc", "Đã nghỉ"], index=0 if r['active'] else 1)
-                            
-                            col_save, col_del = st.columns([1,1])
-                            with col_save:
-                                if st.form_submit_button("💾 Lưu"):
+                    with c2:
+                        with st.popover("✏️ Sửa", use_container_width=True):
+                            with st.form(f"form_edit_{r['ma_ktv']}"):
+                                st.markdown("##### ✏️ Sửa Thông Tin")
+                                e_ten = st.text_input("Tên KTV", value=r['ten'])
+                                e_sdt = st.text_input("SĐT", value=r['sdt'] or "")
+                                e_act = st.selectbox("Trạng thái", ["Đang làm việc", "Đã nghỉ"], index=0 if r['active'] else 1)
+                                
+                                if st.form_submit_button("💾 Lưu Cập Nhật", type="primary", use_container_width=True):
                                     if e_sdt and not e_sdt.isdigit():
                                         st.error("⚠️ Số điện thoại chỉ được nhập số!")
                                     else:
@@ -51,16 +51,17 @@ def render():
                                                           (e_ten, e_sdt, 1 if e_act=="Đang làm việc" else 0, r['ma_ktv']))
                                         conn_edit.commit(); conn_edit.close()
                                         st.success("Đã cập nhật!"); st.rerun()
-                            with col_del:
+                                
+                                st.divider()
                                 xac_nhan_xoa = st.checkbox("Xác nhận xóa KTV này", key=f"del_chk_{r['ma_ktv']}")
-                                if st.form_submit_button("🗑️ Xóa"):
+                                if st.form_submit_button("🗑️ Xóa", use_container_width=True):
                                     if xac_nhan_xoa:
                                         conn_del = get_connection()
                                         conn_del.execute("DELETE FROM technicians WHERE ma_ktv=?", (r['ma_ktv'],))
                                         conn_del.commit(); conn_del.close()
-                                        st.success("Đã xóa!"); st.rerun()
+                                        st.success("Đã xóa KTV!"); st.rerun()
                                     else:
-                                        st.warning("Vui lòng check xác nhận xóa!")
+                                        st.warning("Vui lòng check 'Xác nhận xóa'!")
         conn.close()
 
     # ===== THÊM MỚI =====
