@@ -80,6 +80,10 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
     white-space: nowrap !important;
     transition: all .15s !important;
 }
+.element-container:has(.nav-marker) + .element-container .stRadio > div > label p {
+    text-transform: uppercase !important;
+    font-weight: 600 !important;
+}
 /* Hide the radio button circle itself */
 .stRadio > div > label > div:first-child {
     display: none !important;
