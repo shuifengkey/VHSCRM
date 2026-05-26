@@ -188,20 +188,39 @@ page = st.radio("nav", NAV_ITEMS, horizontal=True, label_visibility="collapsed",
 st.markdown("</div>", unsafe_allow_html=True)
 
 # JS: Thêm class vào đúng container của radio để CSS dễ style (không dùng appendChild để tránh lỗi React)
+# Và tag mục Logbook để đẩy lên đầu trên Mobile
 components.html("""
 <script>
 (function() {
     const parentDoc = window.parent.document;
-    const navMark = parentDoc.querySelector('.nav-marker');
-    if (navMark) {
-        const mdContainer = navMark.closest('.element-container');
-        if (mdContainer) {
-            const radioContainer = mdContainer.nextElementSibling;
-            if (radioContainer) {
-                radioContainer.classList.add('vhs-nav-st-radio');
+    
+    function updateNav() {
+        const navMark = parentDoc.querySelector('.nav-marker');
+        if (navMark) {
+            const mdContainer = navMark.closest('.element-container');
+            if (mdContainer) {
+                const radioContainer = mdContainer.nextElementSibling;
+                if (radioContainer) {
+                    radioContainer.classList.add('vhs-nav-st-radio');
+                    
+                    // Tìm Logbook và gắn class để CSS xếp nó lên đầu tiên
+                    const labels = radioContainer.querySelectorAll('label');
+                    labels.forEach(label => {
+                        if (label.innerText.includes('Logbook')) {
+                            const itemDiv = label.parentElement;
+                            if (itemDiv && itemDiv.parentElement && itemDiv.parentElement.getAttribute('role') === 'radiogroup') {
+                                itemDiv.classList.add('mobile-logbook-item');
+                            }
+                        }
+                    });
+                }
             }
         }
     }
+    
+    // Chạy định kỳ để đảm bảo không bị mất class khi React render lại
+    setInterval(updateNav, 500);
+    updateNav();
 })();
 </script>
 """, height=0, width=0)
