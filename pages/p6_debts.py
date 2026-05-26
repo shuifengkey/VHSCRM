@@ -261,11 +261,6 @@ def render():
             st.markdown("</div>", unsafe_allow_html=True)
 
         with col_new:
-            st.markdown('<div class="vhs-card" style="padding:20px;">', unsafe_allow_html=True)
-            st.markdown("**➕ Tạo Kỳ Thu Mới**")
-            st.markdown('<hr style="margin:8px 0 14px">', unsafe_allow_html=True)
-            st.caption("💡 Hệ thống đã tự động ghi nhận doanh thu khi KTV hoàn thành ca. Bạn chỉ dùng form này để dự phòng hoặc điều chỉnh.")
-            
             if st.button("🧹 Quét Chốt Sổ Cuối Tháng", type="primary", use_container_width=True, help="Tự động ép sinh công nợ cho các hợp đồng theo tháng kể cả khi KTV quên check-out đủ số ca"):
                 from utils.month_end_sweep import run_month_end_sweep
                 res = run_month_end_sweep()
@@ -274,7 +269,14 @@ def render():
                 else:
                     st.info(f"✨ Kỳ {res['ky_thang']} đã được chốt đầy đủ, không sót.")
                 st.rerun()
+            
+            st.markdown('<div style="height:10px;"></div>', unsafe_allow_html=True)
 
+            st.markdown('<div class="vhs-card" style="padding:20px;">', unsafe_allow_html=True)
+            st.markdown("**💰 Thu Tiền Trước (Chưa có trong danh sách nợ)**")
+            st.markdown('<hr style="margin:8px 0 14px">', unsafe_allow_html=True)
+            st.caption("💡 Dùng khi khách thanh toán trước khi thi công hoặc trả trước cho kỳ tới.")
+            
             conn = get_connection()
             contracts = conn.execute("""
                 SELECT ct.ma_hd, ct.ma_kh, c.ten_cty, ct.gia_tri_thang
@@ -284,48 +286,41 @@ def render():
             conn.close()
 
             hd_opts = {f"{r['ma_hd']} – {r['ten_cty']}": dict(r) for r in contracts}
-            hd_sel  = st.selectbox("Hợp Đồng", list(hd_opts.keys()), key="new_debt_hd")
+            hd_sel  = st.selectbox("Chọn Hợp Đồng", list(hd_opts.keys()), key="adv_debt_hd")
 
-            if 'last_hd_sel' not in st.session_state or st.session_state.last_hd_sel != hd_sel:
-                st.session_state.last_hd_sel = hd_sel
-                hd = hd_opts.get(hd_sel, {})
-                st.session_state.fmt_ct = f"{int(hd.get('gia_tri_thang', 0)):,}".replace(",", ".")
-                st.session_state.fmt_dt = "0"
+            if 'last_adv_hd_sel' not in st.session_state or st.session_state.last_adv_hd_sel != hd_sel:
+                st.session_state.last_adv_hd_sel = hd_sel
+                st.session_state.fmt_adv_dt = "0"
             
-            def fmt_ct_cb():
-                val = st.session_state.raw_ct
-                if not val.strip(): st.session_state.fmt_ct = ""; return
+            def fmt_adv_dt_cb():
+                val = st.session_state.raw_adv_dt
+                if not val.strip(): st.session_state.fmt_adv_dt = ""; return
                 try:
                     num = int(val.replace(".", "").replace(",", "").strip())
-                    st.session_state.fmt_ct = f"{num:,}".replace(",", ".")
+                    st.session_state.fmt_adv_dt = f"{num:,}".replace(",", ".")
                 except: pass
 
-            def fmt_dt_cb():
-                val = st.session_state.raw_dt
-                if not val.strip(): st.session_state.fmt_dt = ""; return
-                try:
-                    num = int(val.replace(".", "").replace(",", "").strip())
-                    st.session_state.fmt_dt = f"{num:,}".replace(",", ".")
-                except: pass
-
-            c1,c2 = st.columns(2)
-            with c1:
-                ky = st.text_input("Kỳ (YYYY-MM)", value=(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().strftime("%Y-%m"))
-                ct_str = st.text_input("Cần Thu (VNĐ)", key="raw_ct", value=st.session_state.fmt_ct, on_change=fmt_ct_cb)
-            with c2:
-                dt_str = st.text_input("Đã Thu (VNĐ)", key="raw_dt", value=st.session_state.fmt_dt, on_change=fmt_dt_cb)
-                gc = st.text_input("Ghi Chú", key="new_debt_gc")
+            ky = st.text_input("Kỳ thu (YYYY-MM)", value=(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().strftime("%Y-%m"), help="Hệ thống mặc định là tháng hiện tại")
+            dt_str = st.text_input("Số Tiền Khách Đưa (VNĐ)", key="raw_adv_dt", value=st.session_state.fmt_adv_dt, on_change=fmt_adv_dt_cb)
             
-            if st.button("➕ Tạo Kỳ Thu", use_container_width=True):
+            if st.button("➕ Xác Nhận Thu Trước", use_container_width=True):
                 try:
-                    ct = int(ct_str.replace(".", "").replace(",", "").strip()) if ct_str else 0
                     dt = int(dt_str.replace(".", "").replace(",", "").strip()) if dt_str else 0
-                    hd = hd_opts[hd_sel]
-                    
-                    conn = get_connection()
-                    conn.execute("INSERT INTO debts (ma_hd,ma_kh,ky_thanh_toan,can_thu,da_thu,ghi_chu) VALUES(?,?,?,?,?,?)",
-                                 (hd["ma_hd"],hd["ma_kh"],ky,ct,dt,gc))
-                    conn.commit(); conn.close()
-                    st.success(f"✅ Đã tạo kỳ {ky}"); st.rerun()
+                    if dt <= 0:
+                        st.warning("Vui lòng nhập số tiền hợp lệ!")
+                    else:
+                        hd = hd_opts[hd_sel]
+                        conn = get_connection()
+                        now_iso = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().isoformat()
+                        
+                        existing = conn.execute("SELECT id FROM debts WHERE ma_hd=? AND ky_thanh_toan=?", (hd["ma_hd"], ky)).fetchone()
+                        if existing:
+                            conn.execute("UPDATE debts SET da_thu = da_thu + ?, ngay_thu=? WHERE id=?", 
+                                         (dt, now_iso, existing["id"]))
+                        else:
+                            conn.execute("INSERT INTO debts (ma_hd,ma_kh,ky_thanh_toan,can_thu,da_thu,ghi_chu,ngay_thu) VALUES(?,?,?,?,?,?,?)",
+                                         (hd["ma_hd"],hd["ma_kh"],ky,0,dt,"Thu trước",now_iso))
+                        conn.commit(); conn.close()
+                        st.success(f"✅ Đã ghi nhận thu trước {format_money(dt)} cho kỳ {ky}"); st.rerun()
                 except Exception as e: st.error(f"❌ {e}")
             st.markdown("</div>", unsafe_allow_html=True)
