@@ -4,7 +4,7 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from utils.database import get_connection
 from utils.pdf_generator import generate_bao_gia, generate_hop_dong, generate_phieu_xac_nhan
-from datetime import timezone, datetime
+from datetime import timezone, date, datetime, timedelta
 
 def render():
     st.title("🖨️ Xuất Chứng Từ PDF Tự Động")

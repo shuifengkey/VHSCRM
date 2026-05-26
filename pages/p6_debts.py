@@ -4,7 +4,7 @@ import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from utils.database import get_connection
 from utils.styles import badge, section_header, stat_row, COLORS
-from datetime import timezone, date
+from datetime import timezone, date, datetime, timedelta
 import plotly.graph_objects as go
 
 def render():

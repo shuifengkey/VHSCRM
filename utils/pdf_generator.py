@@ -1,7 +1,7 @@
 # utils/pdf_generator.py
 # Sinh PDF tự động bằng ReportLab - Báo giá, Hợp đồng, Phiếu xác nhận dịch vụ
 import io
-from datetime import timezone, datetime
+from datetime import timezone, date, datetime, timedelta
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import cm
