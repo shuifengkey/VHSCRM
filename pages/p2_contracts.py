@@ -58,7 +58,7 @@ def _time_input_row(label_bd, label_kt, key_bd, key_kt,
 def _preview_schedule(hd_dict: dict, ky_thang: str):
     """Hiển thị preview các ngày thi công cho kỳ cho trước."""
     dates = calc_dates_for_month(hd_dict, ky_thang)
-    thu_map = {0:"CN",1:"T2",2:"T3",3:"T4",4:"T5",5:"T6",6:"T7"}
+    thu_map = {0:"T2", 1:"T3", 2:"T4", 3:"T5", 4:"T6", 5:"T7", 6:"CN"}
     pills = "".join(
         f'<div style="background:#dbeafe;color:#1e40af;border-radius:10px;'
         f'padding:8px 12px;font-size:12px;font-weight:700;text-align:center;min-width:90px;">'
