@@ -19,8 +19,7 @@ THU_OPTS = {1:"Thứ 2",2:"Thứ 3",3:"Thứ 4",4:"Thứ 5",5:"Thứ 6",6:"Thứ
 def outlook_sync_dialog(thang, nam):
     from utils.outlook_sync import get_cached_token, initiate_device_flow, complete_device_flow, push_event_to_outlook
     conn = get_connection()
-    c = conn.cursor()
-    settings = dict(c.execute("SELECT key_name, value_data FROM settings").fetchall())
+    settings = dict(conn.execute("SELECT key_name, value_data FROM settings").fetchall())
     conn.close()
     
     client_id = settings.get("outlook_client_id")

@@ -101,9 +101,7 @@ def render():
         st.info("Nhập Client ID và Tenant ID từ ứng dụng Azure (Microsoft Entra ID) để đồng bộ lịch thi công sang Outlook Calendar.")
         
         conn = get_connection()
-        c = conn.cursor()
-        c.execute("SELECT key_name, value_data FROM settings WHERE key_name IN ('outlook_client_id', 'outlook_tenant_id')")
-        settings_rows = c.fetchall()
+        settings_rows = conn.execute("SELECT key_name, value_data FROM settings WHERE key_name IN ('outlook_client_id', 'outlook_tenant_id')").fetchall()
         settings_dict = {r['key_name']: r['value_data'] for r in settings_rows}
         
         with st.form("form_outlook_settings"):
