@@ -254,7 +254,11 @@ def render():
                             &nbsp;·&nbsp; {time_preview['message']}</div>
                         """, unsafe_allow_html=True)
         
-                        ktv = st.selectbox("👷 Chọn KTV phụ trách", opts, index=opts.index(current_ktv) if current_ktv in opts else 0, key=f"ktv_sel_{job['id']}")
+                        c_lbl, c_sel = st.columns([2, 3], vertical_alignment="center")
+                        with c_lbl:
+                            st.markdown("<div style='font-size:14px;font-weight:600;color:#334155;text-transform:uppercase;'>👷 Chọn KTV phụ trách</div>", unsafe_allow_html=True)
+                        with c_sel:
+                            ktv = st.selectbox("👷 Chọn KTV phụ trách", opts, index=opts.index(current_ktv) if current_ktv in opts else 0, key=f"ktv_sel_{job['id']}", label_visibility="collapsed")
                     
                         if not ktv or ktv == "(Chưa có)":
                             st.warning("⚠️ Vui lòng chọn kỹ thuật viên để check-in!")
