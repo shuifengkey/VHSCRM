@@ -16,7 +16,7 @@ def render():
         else:
             for r in ktvs:
                 with st.container(border=True):
-                    c1, c2 = st.columns([4, 1], vertical_alignment="center")
+                    c1, c2 = st.columns([3, 1])
                     with c1:
                         st.markdown(f"""
 <div style="display:flex;align-items:center;gap:12px;">
