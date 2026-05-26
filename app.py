@@ -206,10 +206,15 @@ components.html("""
                     // Tìm Logbook và gắn class để CSS xếp nó lên đầu tiên
                     const labels = radioContainer.querySelectorAll('label');
                     labels.forEach(label => {
-                        if (label.innerText.includes('Logbook')) {
-                            const itemDiv = label.parentElement;
-                            if (itemDiv && itemDiv.parentElement && itemDiv.parentElement.getAttribute('role') === 'radiogroup') {
-                                itemDiv.classList.add('mobile-logbook-item');
+                        if (label.innerText && label.innerText.includes('Logbook')) {
+                            // Đi ngược lên DOM để tìm phần tử con trực tiếp của radiogroup
+                            let current = label;
+                            while (current && current.parentElement) {
+                                if (current.parentElement.getAttribute('role') === 'radiogroup') {
+                                    current.classList.add('mobile-logbook-item');
+                                    break;
+                                }
+                                current = current.parentElement;
                             }
                         }
                     });
