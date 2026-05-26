@@ -182,27 +182,22 @@ NAV_ITEMS = [
     "📲 App KTV",
 ]
 
-# Đặt radio ngay dưới navbar (CSS sẽ position nó bên trong navbar trên Desktop, và ở bottom trên Mobile)
-st.markdown('<div class="vhs-nav-radio-container">', unsafe_allow_html=True)
+# Đặt radio ngay dưới navbar (CSS sẽ lo liệu việc hiển thị fixed bottom trên mobile và inline trên desktop)
+st.markdown('<div class="nav-marker"></div>', unsafe_allow_html=True)
 page = st.radio("nav", NAV_ITEMS, horizontal=True, label_visibility="collapsed", key="topnav")
-st.markdown("</div>", unsafe_allow_html=True)
 
-# JS: Tìm chính xác container của radio để đưa ra ngoài body (cố định trên mobile)
+# JS: Thêm class vào đúng container của radio để CSS dễ style (không dùng appendChild để tránh lỗi React)
 components.html("""
 <script>
 (function() {
     const parentDoc = window.parent.document;
-    const navMark = parentDoc.querySelector('.vhs-nav-radio-container');
-    
-    if (navMark && window.innerWidth <= 768) {
+    const navMark = parentDoc.querySelector('.nav-marker');
+    if (navMark) {
         const mdContainer = navMark.closest('.element-container');
         if (mdContainer) {
             const radioContainer = mdContainer.nextElementSibling;
             if (radioContainer) {
-                radioContainer.classList.add('mobile-fixed-nav');
-                if (radioContainer.parentElement !== parentDoc.body) {
-                    parentDoc.body.appendChild(radioContainer);
-                }
+                radioContainer.classList.add('vhs-nav-st-radio');
             }
         }
     }

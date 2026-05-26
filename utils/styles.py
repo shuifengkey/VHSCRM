@@ -206,7 +206,9 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 
 /* ── NAV CONTAINER DESKTOP ── */
-.vhs-nav-radio-container {
+.nav-marker { display: none; }
+.vhs-nav-st-radio,
+.element-container:has(.nav-marker) + .element-container {
     background: #0f172a;
     padding: 0 24px 0 180px;
     margin-top: -74px;
@@ -220,7 +222,8 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
     .vhs-nav { display: none !important; }
     .block-container { padding: 0 .5rem 80px !important; }
     
-    .mobile-fixed-nav {
+    .vhs-nav-st-radio,
+    .element-container:has(.nav-marker) + .element-container {
         position: fixed !important;
         bottom: 0 !important; left: 0 !important; right: 0 !important;
         background: white !important;
