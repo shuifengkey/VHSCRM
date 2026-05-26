@@ -244,7 +244,15 @@ def render():
             st.markdown("**➕ Tạo Kỳ Thu Mới**")
             st.markdown('<hr style="margin:8px 0 14px">', unsafe_allow_html=True)
             st.caption("💡 Hệ thống đã tự động ghi nhận doanh thu khi KTV hoàn thành ca. Bạn chỉ dùng form này để dự phòng hoặc điều chỉnh.")
-
+            
+            if st.button("🧹 Quét Chốt Sổ Cuối Tháng", type="primary", use_container_width=True, help="Tự động ép sinh công nợ cho các hợp đồng theo tháng kể cả khi KTV quên check-out đủ số ca"):
+                from utils.month_end_sweep import run_month_end_sweep
+                res = run_month_end_sweep()
+                if res["generated"] > 0 or res["warnings"] > 0:
+                    st.success(f"✅ Đã quét xong kỳ {res['ky_thang']}! Sinh {res['generated']} công nợ ({res['warnings']} cảnh báo thiếu ca).")
+                else:
+                    st.info(f"✨ Kỳ {res['ky_thang']} đã được chốt đầy đủ, không sót.")
+                st.rerun()
 
             conn = get_connection()
             contracts = conn.execute("""

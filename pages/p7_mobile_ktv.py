@@ -164,19 +164,18 @@ def render():
                    (SELECT checkout_time FROM logbook l WHERE l.schedule_id=s.id ORDER BY id DESC LIMIT 1) as co_time
             FROM schedules s
             JOIN customers c ON s.ma_kh = c.ma_kh
-            WHERE s.trang_thai != 'completed' AND s.ngay_du_kien BETWEEN ? AND ?
+            WHERE  s.ngay_du_kien BETWEEN ? AND ?
             ORDER BY s.ngay_du_kien ASC, s.gio_bat_dau ASC"""
     all_jobs = conn.execute(q, (past3_str, tomorrow_str)).fetchall()
     
     my_jobs = []
     for r in all_jobs:
         job = dict(r)
-        if job["co_time"]: continue # Bỏ qua ca đã hoàn thành
         
-        # Kiểm tra tính hợp lệ của ca
-        if is_job_active_now(job["ngay_du_kien"], job["gio_bat_dau"], job["gio_ket_thuc"]):
+        # Kiểm tra tính hợp lệ của ca (hoặc nếu đã hoàn thành thì vẫn hiển thị)
+        if job["co_time"] or is_job_active_now(job["ngay_du_kien"], job["gio_bat_dau"], job["gio_ket_thuc"]):
             # Lọc theo KTV
-            if job.get("ky_thuat_vien") == ktv or not job.get("ky_thuat_vien"):
+            if job.get("ky_thuat_vien") == ktv or not job.get("ky_thuat_vien") or (job.get("ky_thuat_vien") == ktv and job["co_time"]):
                 my_jobs.append(job)
 
     if not my_jobs:
@@ -195,20 +194,22 @@ def render():
             log = dict(log) if log else None
             
             # Phân tích trạng thái
-            is_active = bool(log and not log.get("checkout_time"))
+            is_completed = bool(job.get("co_time") or job.get("trang_thai") == "completed")
+            is_active = bool(log and not log.get("checkout_time")) and not is_completed
             
             _sch_d = date.fromisoformat(job["ngay_du_kien"])
             _h, _m = 8, 0
             try: _h, _m = map(int, (job["gio_bat_dau"] or "08:00").split(":"))
             except: pass
             _start = datetime(_sch_d.year, _sch_d.month, _sch_d.day, _h, _m)
-            is_overdue = ((_start - now_dt).total_seconds() / 3600) < -24
+            is_overdue = ((_start - now_dt).total_seconds() / 3600) < -24 and not is_completed
             
-            bg_color = "#fffbeb" if is_active else ("#fef2f2" if is_overdue else "white")
-            border_color = "#f59e0b" if is_active else ("#ef4444" if is_overdue else "#e2e8f0")
+            bg_color = "#dcfce7" if is_completed else ("#fffbeb" if is_active else ("#fef2f2" if is_overdue else "white"))
+            border_color = "#22c55e" if is_completed else ("#f59e0b" if is_active else ("#ef4444" if is_overdue else "#e2e8f0"))
             
             badge_html = ""
-            if is_active: badge_html = '<div class="status-badge" style="background:#f59e0b;color:white;">⏱️ Đang thi công</div>'
+            if is_completed: badge_html = '<div class="status-badge" style="background:#22c55e;color:white;">✅ Đã hoàn thành</div>'
+            elif is_active: badge_html = '<div class="status-badge" style="background:#f59e0b;color:white;">⏱️ Đang thi công</div>'
             elif is_overdue: badge_html = '<div class="status-badge" style="background:#ef4444;color:white;">⚠️ Quá ca</div>'
             
             badge_str = f"\\n                {badge_html}" if badge_html else ""
@@ -224,10 +225,13 @@ def render():
             """, unsafe_allow_html=True)
             
             # Buttons actions
-            btn_label = "✅ Hoàn Thành Ca" if is_active else "📍 Bắt Đầu (Check-in)"
-            btn_type = "secondary" if is_active else "primary"
-            
-            if st.button(btn_label, key=f"btn_{job['id']}", type=btn_type, use_container_width=True):
-                action_dialog(job, log)
+            if not is_completed:
+                btn_label = "✅ Hoàn Thành Ca" if is_active else "📍 Bắt Đầu (Check-in)"
+                btn_type = "secondary" if is_active else "primary"
+                
+                if st.button(btn_label, key=f"btn_{job['id']}", type=btn_type, use_container_width=True):
+                    action_dialog(job, log)
+            else:
+                st.markdown("<div style='text-align:center; padding:10px; background:#dcfce7; color:#166534; border-radius:10px; font-weight:bold; margin-bottom: 20px;'>✅ Đã Check-out</div>", unsafe_allow_html=True)
                 
     conn.close()

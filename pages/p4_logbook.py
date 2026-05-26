@@ -25,7 +25,7 @@ def render():
             FROM schedules s 
             JOIN customers c ON s.ma_kh=c.ma_kh
             JOIN contracts ct ON s.ma_hd=ct.ma_hd
-            WHERE s.trang_thai != 'completed' AND s.ngay_du_kien BETWEEN ? AND ?
+            WHERE  s.ngay_du_kien BETWEEN ? AND ?
             ORDER BY s.gio_bat_dau
         """, (past3_str, tomorrow_str)).fetchall()
         conn.close()
@@ -64,8 +64,10 @@ def render():
                     except: pass
                     start_dt = datetime(sch_date.year, sch_date.month, sch_date.day, h_bd, m_bd)
                     diff_h = (start_dt - now_dt).total_seconds() / 3600
-                    prefix = "⚠️ QUÁ CA | " if diff_h < -24 else ""
-                    return f"{prefix}🏢 {j['ten_cty']}  ({j['ngay_du_kien']} {j['gio_bat_dau']}–{j['gio_ket_thuc']})"
+                    
+                    status_prefix = "[✅ Xong] " if j.get('trang_thai') == 'completed' else ""
+                    prefix = "🚨 QUÁ CA | " if diff_h < -24 and not status_prefix else status_prefix
+                    return f"{prefix}🏢 {j['ten_cty']}  ({j['ngay_du_kien']} {j['gio_bat_dau']}-{j['gio_ket_thuc']})"
                 job_opts = {_job_label(j): j for j in jobs}
                 sel_label = st.selectbox("📋 Chọn Ca Thi Công", list(job_opts.keys()))
                 job = job_opts[sel_label]
