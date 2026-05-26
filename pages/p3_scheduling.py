@@ -504,7 +504,7 @@ def render():
     # ═══════════════════════════════════
     with tab_cal:
         today = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date()
-        c1,c2,c3,_ = st.columns([1, 1, 1, 3], vertical_alignment="bottom")
+        c1,c2,c3,_ = st.columns([1, 1, 1, 2], vertical_alignment="bottom")
         with c1: sel_m = st.selectbox("Tháng",range(1,13),index=today.month-1,format_func=lambda x:f"Tháng {x:02d}")
         year_list = list(range(today.year - 2, today.year + 4))
         with c2: sel_y = st.selectbox("Năm", year_list, index=year_list.index(today.year))
