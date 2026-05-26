@@ -197,7 +197,7 @@ def render():
                                 placeholder="VD: Phát hiện ổ gián lớn tại khu bếp, đã xử lý...",
                                 height=80)
                             attachments = st.file_uploader("📷 Đính kèm Hình ảnh / Tài liệu", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"file_{job['id']}")
-                            if st.form_submit_button("🚪 CHECK-OUT — KẾT THÚC CA", use_container_width=True):
+                            if st.form_submit_button("🚪 CHECK-OUT — KẾT THÚC CA", type="primary", use_container_width=True):
                                 checkin_time = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
                                 if ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)) - checkin_time).total_seconds() < 300:
                                     st.error("⚠️ Phải thi công ít nhất 5 phút mới được Check-out!")
@@ -263,7 +263,7 @@ def render():
                         if not ktv or ktv == "(Chưa có)":
                             st.warning("⚠️ Vui lòng chọn kỹ thuật viên để check-in!")
                         else:
-                            if st.button("📍 CHECK-IN — BẮT ĐẦU CA", use_container_width=True, key=f"btn_ci_{job['id']}"):
+                            if st.button("📍 CHECK-IN — BẮT ĐẦU CA", type="primary", use_container_width=True, key=f"btn_ci_{job['id']}"):
                                 conn = get_connection()
                                 active_other = conn.execute("SELECT c.ten_cty, l.checkin_time FROM logbook l JOIN schedules s ON l.schedule_id=s.id JOIN customers c ON l.ma_kh=c.ma_kh WHERE l.ky_thuat_vien=? AND l.checkout_time IS NULL AND l.schedule_id!=?", (ktv, job["id"])).fetchone()
                             
