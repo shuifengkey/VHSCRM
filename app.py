@@ -187,16 +187,23 @@ st.markdown('<div class="vhs-nav-radio-container">', unsafe_allow_html=True)
 page = st.radio("nav", NAV_ITEMS, horizontal=True, label_visibility="collapsed", key="topnav")
 st.markdown("</div>", unsafe_allow_html=True)
 
-# JS: Đưa radio vào đúng vị trí ở Mobile -> body (để fixed bottom không bị lỗi). Trên desktop để CSS margin-top tự lo.
+# JS: Tìm chính xác container của radio để đưa ra ngoài body (cố định trên mobile)
 components.html("""
 <script>
 (function() {
     const parentDoc = window.parent.document;
-    const nav = parentDoc.querySelector('.vhs-nav-radio-container');
+    const navMark = parentDoc.querySelector('.vhs-nav-radio-container');
     
-    if (nav && window.innerWidth <= 768) {
-        if (nav.parentElement !== parentDoc.body) {
-            parentDoc.body.appendChild(nav);
+    if (navMark && window.innerWidth <= 768) {
+        const mdContainer = navMark.closest('.element-container');
+        if (mdContainer) {
+            const radioContainer = mdContainer.nextElementSibling;
+            if (radioContainer) {
+                radioContainer.classList.add('mobile-fixed-nav');
+                if (radioContainer.parentElement !== parentDoc.body) {
+                    parentDoc.body.appendChild(radioContainer);
+                }
+            }
         }
     }
 })();

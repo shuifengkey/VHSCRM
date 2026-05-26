@@ -220,16 +220,16 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
     .vhs-nav { display: none !important; }
     .block-container { padding: 0 .5rem 80px !important; }
     
-    .vhs-nav-radio-container {
-        position: fixed;
-        bottom: 0; left: 0; right: 0;
+    .mobile-fixed-nav {
+        position: fixed !important;
+        bottom: 0 !important; left: 0 !important; right: 0 !important;
         background: white !important;
-        border-top: 1px solid #e2e8f0;
-        z-index: 9999;
+        border-top: 1px solid #e2e8f0 !important;
+        z-index: 999999 !important;
         padding: 6px 6px 16px 6px !important;
         margin-top: 0 !important;
         margin-bottom: 0 !important;
-        box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
+        box-shadow: 0 -4px 24px rgba(0,0,0,0.08) !important;
     }
     .stRadio { width: 100% !important; margin: 0 !important; }
     .stRadio [role="radiogroup"] {
