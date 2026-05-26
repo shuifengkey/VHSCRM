@@ -66,19 +66,12 @@ section[data-testid="stSidebar"] { display: none !important; }
 div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
 .stRadio { margin: 0 !important; }
 .stRadio > label { display: none !important; }
-.stRadio [role="radiogroup"] {
+.stRadio > div {
     display: flex !important; flex-direction: row !important;
     flex-wrap: nowrap !important; gap: 8px !important;
     justify-content: space-between !important;
-    width: 100% !important;
 }
-/* Ensure the wrapper div takes up flex 1 */
-.stRadio [role="radiogroup"] > div {
-    flex: 1 !important;
-    display: flex !important;
-}
-/* Then style the label to stretch inside the wrapper */
-.stRadio [role="radiogroup"] > div > label {
+.stRadio > div > label {
     flex: 1 !important;
     display: flex !important;
     align-items: center !important;
@@ -92,28 +85,24 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
     cursor: pointer !important;
     white-space: nowrap !important;
     transition: all .15s !important;
-    width: 100% !important;
 }
-.element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] > div > label p {
+.element-container:has(.nav-marker) + .element-container .stRadio > div > label p {
     text-transform: uppercase !important;
     font-weight: 600 !important;
 }
 /* Hide the radio button circle itself */
-.stRadio [role="radiogroup"] > div > label > div:first-child {
+.stRadio > div > label > div:first-child {
     display: none !important;
 }
-.stRadio [role="radiogroup"] > div > label:hover {
+.stRadio > div > label:hover {
     background: rgba(255,255,255,.07) !important;
     color: #e2e8f0 !important;
 }
-.stRadio [role="radiogroup"] [data-checked="true"],
-.stRadio [role="radiogroup"] label:has(input:checked) {
-    background: #16a34a !important; 
-    color: white !important;
-}
-.stRadio [role="radiogroup"] [data-checked="true"] p,
-.stRadio [role="radiogroup"] label:has(input:checked) p,
-.stRadio [role="radiogroup"] label:has(input:checked) div {
+.stRadio > div > label[data-baseweb="radio"] input:checked + div,
+.stRadio input:checked ~ div { color: white !important; }
+/* Active nav item */
+.stRadio > div label:has(input:checked) {
+    background: #16a34a !important;
     color: white !important;
 }
 
@@ -315,8 +304,6 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
     .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] > div > label:hover {
         background: #e2e8f0 !important;
     }
-    .vhs-nav-st-radio .stRadio [role="radiogroup"] [data-checked="true"],
-    .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] [data-checked="true"],
     .vhs-nav-st-radio .stRadio [role="radiogroup"] label:has(input:checked),
     .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] label:has(input:checked) {
         background: #16a34a !important;
