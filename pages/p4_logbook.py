@@ -372,9 +372,37 @@ def render():
                                 f'<div style="display:flex;">{att_html}</div>' if att_html else ''
                                 }
                             </div>
+                            </div>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
+                    
+                    with st.expander("📎 Bổ sung tài liệu / Hình ảnh", expanded=False):
+                        with st.form(f"hist_form_attach_{log['id']}"):
+                            extra_att = st.file_uploader("Thêm ảnh/tài liệu", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"hist_extra_file_{log['id']}")
+                            if st.form_submit_button("Lưu bổ sung", use_container_width=True):
+                                if extra_att:
+                                    import os, uuid
+                                    uploaded_paths = []
+                                    upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+                                    os.makedirs(upload_dir, exist_ok=True)
+                                    for f in extra_att:
+                                        filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
+                                        filepath = os.path.join(upload_dir, filename)
+                                        with open(filepath, "wb") as out:
+                                            out.write(f.getbuffer())
+                                        uploaded_paths.append(filename)
+                                    new_att_str = ",".join(uploaded_paths)
+                                    old_att = log.get("attachments", "")
+                                    final_att = (old_att + "," + new_att_str).strip(",") if old_att else new_att_str
+                                    conn_u = get_connection()
+                                    conn_u.execute("UPDATE logbook SET attachments=? WHERE id=?", (final_att, log["id"]))
+                                    conn_u.commit()
+                                    conn_u.close()
+                                    st.success("✅ Đã bổ sung tài liệu!")
+                                    st.rerun()
+                                else:
+                                    st.warning("⚠️ Chưa chọn file nào!")
     
     with tab_stats:
         conn = get_connection()
