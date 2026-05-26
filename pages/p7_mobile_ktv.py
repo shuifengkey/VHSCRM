@@ -75,10 +75,10 @@ MOBILE_CSS = """
     margin-top: 12px;
 }
 /* Pull button up into the card */
-div[data-testid="stMarkdownContainer"]:has(.btn-pull-up) {
+div[data-testid="stElementContainer"]:has(.btn-pull-up) {
     margin-bottom: -70px !important;
 }
-div[data-testid="stMarkdownContainer"]:has(.btn-pull-up) + div {
+div[data-testid="stElementContainer"]:has(.btn-pull-up) + div[data-testid="stElementContainer"] {
     padding: 0 20px 20px 20px;
     position: relative;
     z-index: 10;
