@@ -223,12 +223,24 @@ def render():
                     ⚠️ Còn: <b style="color:#dc2626">{d['con_no']/1e6:.2f}M</b>
                 </div>""", unsafe_allow_html=True)
 
-                so_tien = st.number_input("Số Tiền Thu Thêm (VNĐ)",
-                    min_value=0.0, max_value=float(d["con_no"]),
-                    value=float(d["con_no"]), step=100_000.0)
+                if 'last_sel' not in st.session_state or st.session_state.last_sel != sel:
+                    st.session_state.last_sel = sel
+                    st.session_state.fmt_so_tien = f"{int(d['con_no']):,}".replace(",", ".")
+
+                def fmt_tien():
+                    val = st.session_state.raw_so_tien
+                    if not val.strip(): st.session_state.fmt_so_tien = ""; return
+                    try:
+                        num = int(val.replace(".", "").replace(",", "").strip())
+                        st.session_state.fmt_so_tien = f"{num:,}".replace(",", ".")
+                    except: pass
+
+                so_tien_str = st.text_input("Số Tiền Thu Thêm (VNĐ)",
+                    key="raw_so_tien", value=st.session_state.fmt_so_tien, on_change=fmt_tien)
 
                 if st.button("💳 Xác Nhận Thu Tiền", use_container_width=True):
                     try:
+                        so_tien = int(so_tien_str.replace(".", "").replace(",", "").strip()) if so_tien_str else 0
                         conn = get_connection()
                         new_da_thu = d["da_thu"] + so_tien
                         conn.execute("UPDATE debts SET da_thu=?,ngay_thu=? WHERE id=?",
@@ -266,23 +278,49 @@ def render():
             """).fetchall()
             conn.close()
 
-            with st.form("form_new_debt"):
-                hd_opts = {f"{r['ma_hd']} – {r['ten_cty']}": dict(r) for r in contracts}
-                hd_sel  = st.selectbox("Hợp Đồng", list(hd_opts.keys()))
+            hd_opts = {f"{r['ma_hd']} – {r['ten_cty']}": dict(r) for r in contracts}
+            hd_sel  = st.selectbox("Hợp Đồng", list(hd_opts.keys()), key="new_debt_hd")
+
+            if 'last_hd_sel' not in st.session_state or st.session_state.last_hd_sel != hd_sel:
+                st.session_state.last_hd_sel = hd_sel
                 hd = hd_opts.get(hd_sel, {})
-                c1,c2 = st.columns(2)
-                with c1:
-                    ky = st.text_input("Kỳ (YYYY-MM)", value=(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().strftime("%Y-%m"))
-                    ct = st.number_input("Cần Thu (VNĐ)", value=float(hd.get("gia_tri_thang",0)), step=100_000.0)
-                with c2:
-                    dt = st.number_input("Đã Thu (VNĐ)", value=0.0, step=100_000.0)
-                    gc = st.text_input("Ghi Chú")
-                if st.form_submit_button("➕ Tạo Kỳ Thu", use_container_width=True):
-                    try:
-                        conn = get_connection()
-                        conn.execute("INSERT INTO debts (ma_hd,ma_kh,ky_thanh_toan,can_thu,da_thu,ghi_chu) VALUES(?,?,?,?,?,?)",
-                                     (hd["ma_hd"],hd["ma_kh"],ky,ct,dt,gc))
-                        conn.commit(); conn.close()
-                        st.success(f"✅ Đã tạo kỳ {ky}"); st.rerun()
-                    except Exception as e: st.error(f"❌ {e}")
+                st.session_state.fmt_ct = f"{int(hd.get('gia_tri_thang', 0)):,}".replace(",", ".")
+                st.session_state.fmt_dt = "0"
+            
+            def fmt_ct_cb():
+                val = st.session_state.raw_ct
+                if not val.strip(): st.session_state.fmt_ct = ""; return
+                try:
+                    num = int(val.replace(".", "").replace(",", "").strip())
+                    st.session_state.fmt_ct = f"{num:,}".replace(",", ".")
+                except: pass
+
+            def fmt_dt_cb():
+                val = st.session_state.raw_dt
+                if not val.strip(): st.session_state.fmt_dt = ""; return
+                try:
+                    num = int(val.replace(".", "").replace(",", "").strip())
+                    st.session_state.fmt_dt = f"{num:,}".replace(",", ".")
+                except: pass
+
+            c1,c2 = st.columns(2)
+            with c1:
+                ky = st.text_input("Kỳ (YYYY-MM)", value=(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().strftime("%Y-%m"))
+                ct_str = st.text_input("Cần Thu (VNĐ)", key="raw_ct", value=st.session_state.fmt_ct, on_change=fmt_ct_cb)
+            with c2:
+                dt_str = st.text_input("Đã Thu (VNĐ)", key="raw_dt", value=st.session_state.fmt_dt, on_change=fmt_dt_cb)
+                gc = st.text_input("Ghi Chú", key="new_debt_gc")
+            
+            if st.button("➕ Tạo Kỳ Thu", use_container_width=True):
+                try:
+                    ct = int(ct_str.replace(".", "").replace(",", "").strip()) if ct_str else 0
+                    dt = int(dt_str.replace(".", "").replace(",", "").strip()) if dt_str else 0
+                    hd = hd_opts[hd_sel]
+                    
+                    conn = get_connection()
+                    conn.execute("INSERT INTO debts (ma_hd,ma_kh,ky_thanh_toan,can_thu,da_thu,ghi_chu) VALUES(?,?,?,?,?,?)",
+                                 (hd["ma_hd"],hd["ma_kh"],ky,ct,dt,gc))
+                    conn.commit(); conn.close()
+                    st.success(f"✅ Đã tạo kỳ {ky}"); st.rerun()
+                except Exception as e: st.error(f"❌ {e}")
             st.markdown("</div>", unsafe_allow_html=True)
