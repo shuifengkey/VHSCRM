@@ -22,6 +22,73 @@ st.set_page_config(
 )
 init_db()
 
+# PWA Install to Home Screen Injection
+components.html(f"""
+<script>
+const head = window.parent.document.head;
+
+let appleIcon = head.querySelector('link[rel="apple-touch-icon"]');
+if (!appleIcon) {{
+    appleIcon = window.parent.document.createElement('link');
+    appleIcon.rel = 'apple-touch-icon';
+    head.appendChild(appleIcon);
+}}
+appleIcon.href = '{_LOGO_URI}';
+
+let manifest = head.querySelector('link[rel="manifest"]');
+const manifestData = {{
+    "short_name": "VHSCRM",
+    "name": "VHS CRM",
+    "icons": [
+        {{ "src": "{_LOGO_URI}", "type": "image/png", "sizes": "192x192" }},
+        {{ "src": "{_LOGO_URI}", "type": "image/png", "sizes": "512x512" }}
+    ],
+    "start_url": ".",
+    "display": "standalone",
+    "theme_color": "#0f172a",
+    "background_color": "#0f172a"
+}};
+const manifestBlob = new Blob([JSON.stringify(manifestData)], {{type: 'application/json'}});
+const manifestUrl = URL.createObjectURL(manifestBlob);
+
+if (manifest) {{
+    manifest.href = manifestUrl;
+}} else {{
+    manifest = window.parent.document.createElement('link');
+    manifest.rel = 'manifest';
+    manifest.href = manifestUrl;
+    head.appendChild(manifest);
+}}
+
+let themeMeta = head.querySelector('meta[name="theme-color"]');
+if (themeMeta) {{ themeMeta.content = '#0f172a'; }}
+else {{
+    themeMeta = window.parent.document.createElement('meta');
+    themeMeta.name = 'theme-color';
+    themeMeta.content = '#0f172a';
+    head.appendChild(themeMeta);
+}}
+
+['mobile-web-app-capable', 'apple-mobile-web-app-capable'].forEach(name => {{
+    let meta = head.querySelector(`meta[name="${{name}}"]`);
+    if (!meta) {{
+        meta = window.parent.document.createElement('meta');
+        meta.name = name;
+        meta.content = 'yes';
+        head.appendChild(meta);
+    }}
+}});
+
+let appleTitle = head.querySelector('meta[name="apple-mobile-web-app-title"]');
+if (!appleTitle) {{
+    appleTitle = window.parent.document.createElement('meta');
+    appleTitle.name = 'apple-mobile-web-app-title';
+    appleTitle.content = 'VHSCRM';
+    head.appendChild(appleTitle);
+}}
+</script>
+""", height=0, width=0)
+
 # ============================================================
 # PIN AUTHENTICATION LAYER
 # ============================================================
