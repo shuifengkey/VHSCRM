@@ -14,17 +14,7 @@ def render():
     
     st.markdown("""
     <style>
-    @media (max-width: 576px) {
-        div[data-testid="stHorizontalBlock"]:has(.keep-row) {
-            flex-direction: row !important;
-            flex-wrap: nowrap !important;
-        }
-        div[data-testid="stHorizontalBlock"]:has(.keep-row) > div[data-testid="column"] {
-            width: fit-content !important;
-            flex: 1 1 0% !important;
-            min-width: 0 !important;
-        }
-    }
+    /* Nút edit absolute positioning via JS */
     </style>
     """, unsafe_allow_html=True)
 
@@ -122,7 +112,6 @@ def render():
     
                         c_hd, c_act = st.columns([3, 1], vertical_alignment="bottom")
                         with c_hd:
-                            st.markdown("<div class='keep-row'></div>", unsafe_allow_html=True)
                             st.markdown(f'<div style="font-size:12px;font-weight:600;color:{hd_color};margin-top:8px;">📄 {hd_text}</div>', unsafe_allow_html=True)
                         with c_act:
                             render_edit_popover(r, "grid")

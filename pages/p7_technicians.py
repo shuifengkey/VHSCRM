@@ -4,17 +4,7 @@ from utils.database import get_connection
 def render():
     st.markdown("""
     <style>
-    @media (max-width: 576px) {
-        div[data-testid="stHorizontalBlock"]:has(.keep-row) {
-            flex-direction: row !important;
-            flex-wrap: nowrap !important;
-        }
-        div[data-testid="stHorizontalBlock"]:has(.keep-row) > div[data-testid="column"] {
-            width: fit-content !important;
-            flex: 1 1 0% !important;
-            min-width: 0 !important;
-        }
-    }
+    /* Nút edit absolute positioning via JS */
     </style>
     """, unsafe_allow_html=True)
     
@@ -32,7 +22,6 @@ def render():
                 with st.container(border=True):
                     c1, c2 = st.columns([3, 1], vertical_alignment="center")
                     with c1:
-                        st.markdown("<div class='keep-row'></div>", unsafe_allow_html=True)
                         st.markdown(f"""
 <div style="display:flex;align-items:center;gap:12px;">
     <div style="font-size:32px;">👷</div>
@@ -106,4 +95,27 @@ def render():
                         st.error(f"Lỗi: {e}")
         st.markdown("</div>", unsafe_allow_html=True)
 
-
+    import streamlit.components.v1 as components
+    components.html("""
+    <script>
+    setInterval(() => {
+        const cards = window.parent.document.querySelectorAll('div[data-testid="stVerticalBlockBorderWrapper"]');
+        cards.forEach(card => {
+            const popovers = card.querySelectorAll('div[data-testid="stPopover"]');
+            if (popovers.length > 0) {
+                const btnContainer = popovers[popovers.length - 1].parentElement;
+                if (window.parent.innerWidth <= 576) {
+                    btnContainer.style.position = 'absolute';
+                    btnContainer.style.right = '12px';
+                    btnContainer.style.bottom = '12px';
+                    btnContainer.style.width = 'auto';
+                } else {
+                    btnContainer.style.position = '';
+                    btnContainer.style.right = '';
+                    btnContainer.style.bottom = '';
+                }
+            }
+        });
+    }, 500);
+    </script>
+    """, height=0)
