@@ -16,10 +16,17 @@ def render():
     <style>
     /* Prevent specific columns from stacking on mobile */
     div[data-testid="stHorizontalBlock"]:has(.no-wrap-row) {
+        flex-direction: row !important;
         flex-wrap: nowrap !important;
+        align-items: flex-start !important;
     }
     div[data-testid="stHorizontalBlock"]:has(.no-wrap-row) > div[data-testid="column"] {
         min-width: 0 !important;
+        width: auto !important;
+        flex: 1 1 auto !important;
+    }
+    div[data-testid="stHorizontalBlock"]:has(.no-wrap-row) > div[data-testid="column"]:last-child {
+        flex: 0 0 auto !important;
     }
     </style>
     """, unsafe_allow_html=True)
