@@ -144,9 +144,7 @@ def render():
                         st.markdown(f"""
 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; gap:8px;">
     <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
-        <div style="width:40px; height:40px; min-width:40px; border-radius:50%; background:linear-gradient(135deg, #3b82f6, #1d4ed8); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px; box-shadow:0 2px 4px rgba(37,99,235,0.2);">
-            {char}
-        </div>
+        <img src="https://api.dicebear.com/9.x/adventurer/svg?seed={r['ma_kh']}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf,ffd5dc" style="width:40px; height:40px; min-width:40px; border-radius:50%; box-shadow:0 2px 4px rgba(0,0,0,0.1); object-fit:cover;" alt="avatar">
         <div style="min-width:0; flex:1;">
             <div style="font-size:14px; font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{r["ten_cty"]}">{r["ten_cty"]}</div>
             <div style="font-size:11px; font-weight:600; color:#64748b; background:#f1f5f9; padding:2px 6px; border-radius:4px; display:inline-block; margin-top:4px;">#{r["ma_kh"]}</div>
