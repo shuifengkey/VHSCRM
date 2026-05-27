@@ -2,6 +2,10 @@
 import streamlit as st
 import sys, os, hashlib, base64
 
+def format_money(val):
+    if not val: return "0"
+    return f"{int(val):,}".replace(",", ".")
+
 
 from utils.database import init_db, get_connection
 from utils.styles import GLOBAL_CSS, card, badge, section_header, stat_row, COLORS
