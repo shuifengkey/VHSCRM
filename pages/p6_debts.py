@@ -192,7 +192,7 @@ def render():
         st.markdown(f"""<div>{rows_html}</div>""", unsafe_allow_html=True)
 
     with tab_manage:
-        col_pay, col_new = st.columns([1,1])
+        col_pay, col_new = st.columns([1,1], gap="large")
 
         with col_pay:
             st.markdown('<div class="vhs-card" style="padding:20px;">', unsafe_allow_html=True)

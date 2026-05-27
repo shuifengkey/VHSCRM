@@ -167,45 +167,20 @@ footer { display: none !important; }
     padding-top: 8vh !important;
     margin: 0 auto !important;
 }
-/* Style the text input */
-.stTextInput > div > div > input {
-    background: rgba(255,255,255,0.06) !important;
-    border: 1px solid rgba(255,255,255,0.12) !important;
-    color: #f1f5f9 !important;
-    border-radius: 14px !important;
-    padding: 14px 18px !important;
-    font-size: 20px !important;
-    text-align: center !important;
-    letter-spacing: 8px !important;
-    font-weight: 700 !important;
-}
-.stTextInput > div > div > input::placeholder {
-    color: #475569 !important;
-    letter-spacing: 6px !important;
-}
-.stTextInput > div > div > input:focus {
-    border-color: #16a34a !important;
-    box-shadow: 0 0 20px rgba(22,163,74,0.2) !important;
-}
-/* Style the button */
-.stButton > button, [data-testid="stFormSubmitButton"] > button {
-    background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 60%, #166534 100%) !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 14px !important;
-    padding: 14px !important;
+/* Style the PIN input specifically */
+[data-testid="stTextInput"] > div > div > input {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    color: #e2e8f0 !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
     font-size: 16px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.5px !important;
-    transition: all 0.2s ease !important;
+    text-align: center !important;
+    letter-spacing: 2px !important;
 }
-.stButton > button:hover, [data-testid="stFormSubmitButton"] > button:hover {
-    background: linear-gradient(135deg, #1e293b 0%, #294d3f 60%, #22c55e 100%) !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 8px 24px rgba(22,163,74,0.3) !important;
-}
-.stButton > button:active, [data-testid="stFormSubmitButton"] > button:active {
-    transform: scale(0.98) !important;
+[data-testid="stTextInput"] > div > div > input:focus {
+    border-color: #22c55e !important;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2) !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -275,7 +250,7 @@ div[data-testid="InputInstructions"] {{ display: none !important; }}
         </script>
         """, height=0, width=0)
 
-        submitted = st.form_submit_button("🔓 XÁC NHẬN", use_container_width=True)
+        submitted = st.form_submit_button("🔓 XÁC NHẬN", type="primary", use_container_width=True)
 
     if submitted:
         is_valid = False
