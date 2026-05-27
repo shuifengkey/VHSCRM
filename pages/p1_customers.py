@@ -20,8 +20,6 @@ def render():
             display: flex;
             justify-content: flex-end;
         }
-    }
-    
     /* Force rows with 4 or more columns (Filters, List View) to stack on screens smaller than 1024px to prevent overlapping */
     @media (max-width: 1024px) {
         div[data-testid="stHorizontalBlock"]:has(> div:nth-child(4)) {
@@ -33,6 +31,19 @@ def render():
             width: 100% !important;
             min-width: 100% !important;
         }
+    }
+    
+    /* Color the Edit popover button green */
+    div[data-testid="column"]:has(.align-right) div[data-testid="stPopover"] > button {
+        background-color: #16a34a !important;
+        color: white !important;
+        border-color: #16a34a !important;
+        border-radius: 6px !important;
+    }
+    div[data-testid="column"]:has(.align-right) div[data-testid="stPopover"] > button:hover {
+        background-color: #15803d !important;
+        border-color: #15803d !important;
+        color: white !important;
     }
     .align-right { display: none; }
     </style>

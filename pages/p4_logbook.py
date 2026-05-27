@@ -8,6 +8,23 @@ from utils.styles import badge, section_header, COLORS
 from datetime import timezone, datetime, date, timedelta
 
 def render():
+    st.markdown("""
+    <style>
+    /* Color the Bổ sung popover button green */
+    div[data-testid="column"]:has(.color-bosung) div[data-testid="stPopover"] > button {
+        background-color: #16a34a !important;
+        color: white !important;
+        border-color: #16a34a !important;
+        border-radius: 6px !important;
+    }
+    div[data-testid="column"]:has(.color-bosung) div[data-testid="stPopover"] > button:hover {
+        background-color: #15803d !important;
+        border-color: #15803d !important;
+        color: white !important;
+    }
+    .color-bosung { display: none; }
+    </style>
+    """, unsafe_allow_html=True)
     st.markdown(section_header("Work Log Kỹ Thuật Viên", "Check-in / Check-out · Ghi chú hóa chất · Lịch sử thi công", "📓"), unsafe_allow_html=True)
 
     tab_work, tab_history, tab_stats = st.tabs(["🔧  Check-in / Out", "📋  Lịch Sử", "📊  Thống Kê KTV"])
@@ -142,7 +159,8 @@ def render():
     </div>
     """, unsafe_allow_html=True)
                             with c2:
-                                with st.popover("📎 Bổ sung"):
+                                st.markdown('<div class="color-bosung"></div>', unsafe_allow_html=True)
+                                with st.popover("➕ Bổ sung"):
                                     with st.form(f"form_attach_{job['id']}"):
                                         extra_att = st.file_uploader("Thêm ảnh/tài liệu", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"extra_file_{job['id']}")
                                         if st.form_submit_button("Lưu bổ sung", use_container_width=True):
@@ -373,7 +391,8 @@ def render():
 </div>
 """, unsafe_allow_html=True)
                         with c2:
-                            with st.popover("📎 Bổ sung", use_container_width=True):
+                            st.markdown('<div class="color-bosung"></div>', unsafe_allow_html=True)
+                            with st.popover("➕ Bổ sung", use_container_width=True):
                                 with st.form(f"hist_form_attach_{log['id']}"):
                                     extra_att = st.file_uploader("Thêm ảnh/tài liệu", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"hist_extra_file_{log['id']}")
                                     if st.form_submit_button("Lưu bổ sung", use_container_width=True):
