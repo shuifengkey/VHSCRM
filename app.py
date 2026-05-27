@@ -186,9 +186,22 @@ div[data-testid="InputInstructions"] {{ display: none !important; }}
             
         if is_valid:
             st.markdown(f"""
-            <div style="text-align:center; padding: 20px; animation:pinSlideIn 0.3s ease;">
-                <img src="{_LOGO_URI}" style="width:70px;height:70px;animation:pinPulse 1s infinite;margin-bottom:15px;border-radius:15px;" />
-                <div style="color:#22c55e;font-weight:700;font-size:16px;">Đang tải dữ liệu...</div>
+            <style>
+            .loader-overlay {{
+                position: fixed;
+                top: 0; left: 0; width: 100vw; height: 100vh;
+                background: #0f172a;
+                z-index: 999999;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                animation: pinSlideIn 0.3s ease;
+            }}
+            </style>
+            <div class="loader-overlay">
+                <img src="{_LOGO_URI}" style="width:80px;height:80px;animation:pinPulse 1s infinite;margin-bottom:20px;border-radius:20px;filter:drop-shadow(0 0 20px rgba(22,163,74,0.4));" />
+                <div style="color:#22c55e;font-weight:700;font-size:17px;letter-spacing:0.5px;">Đang tải dữ liệu...</div>
             </div>
             """, unsafe_allow_html=True)
             import time
