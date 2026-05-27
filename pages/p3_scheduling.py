@@ -318,8 +318,8 @@ def render():
                     api_key = api_key_row['value_data'] if api_key_row else None
                     conn_map.close()
                     
-                    route_mode = st.radio("Điểm xuất phát:", ["🏠 Từ nhà (164 Huy Cận)", "📍 Từ ca thi công đầu tiên"], horizontal=True)
-                    vehicle_mode = st.radio("Phương tiện:", ["🏍️ Xe máy", "🚗 Ô tô"], horizontal=True)
+                    route_mode = st.radio("Điểm xuất phát:", ["🏠 Từ nhà (164 Huy Cận)", "📍 Từ ca thi công đầu tiên"], index=1, horizontal=True)
+                    vehicle_mode = st.radio("Phương tiện:", ["🏍️ Xe máy", "🚗 Ô tô"], index=1, horizontal=True)
                         
                     if vehicle_mode.startswith("🏍️"):
                         embed_mode = "bicycling" # Embed API might not support two_wheeler everywhere, bicycling is a safe visual fallback for two wheels, though driving is often used.
