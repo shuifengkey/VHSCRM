@@ -28,11 +28,28 @@ def render():
     div[data-testid="stHorizontalBlock"]:has(.no-wrap-row) > div[data-testid="column"]:last-child {
         flex: 0 0 auto !important;
     }
+    /* Absolute positioning for Edit Popover to force it to top right globally for all cards */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        position: relative !important;
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stPopover"] {
+        position: absolute !important;
+        top: 8px !important;
+        right: 8px !important;
+        width: auto !important;
+        z-index: 99 !important;
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stPopover"] button {
+        padding: 0.25rem 0.5rem !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
     def render_edit_popover(r, suffix):
-        with st.popover("✏️ Sửa", use_container_width=True):
+        with st.popover("✏️", use_container_width=False):
             with st.form(f"edit_{r['ma_kh']}_{suffix}"):
                 ten = st.text_input("Tên công ty", value=r["ten_cty"], key=f"ten_{r['ma_kh']}_{suffix}")
                 dd  = st.text_input("Đại diện", value=r["dai_dien"] or "", key=f"dd_{r['ma_kh']}_{suffix}")
