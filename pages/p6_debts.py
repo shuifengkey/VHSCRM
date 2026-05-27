@@ -240,7 +240,7 @@ def render():
                 so_tien_str = st.text_input("Số Tiền Khách Trả (VNĐ)",
                     key="raw_so_tien", value=st.session_state.fmt_so_tien, on_change=fmt_tien, help="Nhập số tiền khách thanh toán cho khoản nợ này")
 
-                if st.button("💳 Xác Nhận Thu Tiền", use_container_width=True):
+                if st.button("💰 Xác Nhận Thu Tiền", type="primary", use_container_width=True):
                     try:
                         so_tien = int(so_tien_str.replace(".", "").replace(",", "").strip()) if so_tien_str else 0
                         conn = get_connection()
@@ -300,7 +300,7 @@ def render():
             ky = st.text_input("Kỳ thu (YYYY-MM)", value=(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().strftime("%Y-%m"), help="Hệ thống mặc định là tháng hiện tại")
             dt_str = st.text_input("Số Tiền Khách Đưa (VNĐ)", key="raw_adv_dt", value=st.session_state.fmt_adv_dt, on_change=fmt_adv_dt_cb)
             
-            if st.button("➕ Xác Nhận Thu Trước", use_container_width=True):
+            if st.button("➕ Xác Nhận Thu Trước", type="primary", use_container_width=True):
                 try:
                     dt = int(dt_str.replace(".", "").replace(",", "").strip()) if dt_str else 0
                     if dt <= 0:

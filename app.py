@@ -22,6 +22,23 @@ st.set_page_config(
 )
 init_db()
 
+# Global CSS override for primary buttons
+st.markdown("""
+<style>
+/* Override default primary button color to ensure it is always VHS green */
+div[data-testid="baseButton-primary"] > button {
+    background-color: #16a34a !important;
+    color: white !important;
+    border-color: #16a34a !important;
+}
+div[data-testid="baseButton-primary"] > button:hover {
+    background-color: #15803d !important;
+    border-color: #15803d !important;
+    color: white !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # PWA Install to Home Screen Injection
 components.html(f"""
 <script>

@@ -10,14 +10,14 @@ from datetime import timezone, datetime, date, timedelta
 def render():
     st.markdown("""
     <style>
-    /* Color the Bổ sung popover button green */
-    div[data-testid="column"]:has(.color-bosung) div[data-testid="stPopover"] > button {
+    /* Color ALL popover buttons green in this page */
+    div[data-testid="stPopover"] > button {
         background-color: #16a34a !important;
         color: white !important;
         border-color: #16a34a !important;
         border-radius: 6px !important;
     }
-    div[data-testid="column"]:has(.color-bosung) div[data-testid="stPopover"] > button:hover {
+    div[data-testid="stPopover"] > button:hover {
         background-color: #15803d !important;
         border-color: #15803d !important;
         color: white !important;

@@ -207,11 +207,24 @@ def render():
                 st.markdown(f'<div style="font-size:14px;font-weight:700;color:#dc2626;margin:12px 0 8px;">🚨 QUÁ CA — Chưa thi công ({len(overdue_jobs)} ca)</div>', unsafe_allow_html=True)
                 for j in overdue_jobs:
                     is_night = False
-                    try: is_night = int(j["gio_ket_thuc"].split(":")[0]) < int(j["gio_bat_dau"].split(":")[0])
+                    border_color = "#dc2626"
+                    bg_color = "#fef2f2"
+                    try: 
+                        h_bd = int(j["gio_bat_dau"].split(":")[0])
+                        is_night = int(j["gio_ket_thuc"].split(":")[0]) < h_bd
+                        if h_bd < 12: 
+                            border_color = "#f59e0b"
+                            bg_color = "#fffbeb"
+                        elif h_bd < 18: 
+                            border_color = "#3b82f6"
+                            bg_color = "#eff6ff"
+                        else: 
+                            border_color = "#8b5cf6"
+                            bg_color = "#f5f3ff"
                     except: pass
 
                     st.markdown(f"""
-<div class="vhs-list-item" style="background:#fef2f2;border-left:5px solid #dc2626;border-radius:0 12px 12px 0;">
+<div class="vhs-list-item" style="background:{bg_color};border-left:5px solid {border_color};border-radius:0 12px 12px 0;">
 <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
 <div>
 <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px;">
@@ -236,13 +249,24 @@ def render():
 
             # --- Upcoming ---
             if upcoming_jobs:
-                st.markdown(f'<div style="font-size:14px;font-weight:700;color:#2563eb;margin:16px 0 8px;">⏰ Sắp thi công — trong 24h ({len(upcoming_jobs)} ca)</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="font-size:14px;font-weight:700;color:#2563eb;margin:16px 0 8px;">🚀 Sắp thi công — trong 24h ({len(upcoming_jobs)} ca)</div>', unsafe_allow_html=True)
                 for j in upcoming_jobs:
                     is_night = False
-                    try: is_night = int(j["gio_ket_thuc"].split(":")[0]) < int(j["gio_bat_dau"].split(":")[0])
-                    except: pass
                     border  = "#2563eb"
                     bg      = "#eff6ff"
+                    try: 
+                        h_bd = int(j["gio_bat_dau"].split(":")[0])
+                        is_night = int(j["gio_ket_thuc"].split(":")[0]) < h_bd
+                        if h_bd < 12: 
+                            border = "#f59e0b"
+                            bg = "#fffbeb"
+                        elif h_bd < 18: 
+                            border = "#3b82f6"
+                            bg = "#eff6ff"
+                        else: 
+                            border = "#8b5cf6"
+                            bg = "#f5f3ff"
+                    except: pass
 
                     st.markdown(f"""
 <div class="vhs-list-item" style="background:{bg};border-left:5px solid {border};border-radius:0 12px 12px 0;">
