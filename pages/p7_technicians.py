@@ -6,7 +6,19 @@ def render():
     st.markdown(section_header("Quản Lý KTV", "Quản lý hồ sơ, thêm/sửa/xóa danh sách Kỹ Thuật Viên", "👷"), unsafe_allow_html=True)
     st.markdown("""
     <style>
-    /* Nút edit absolute positioning via JS */
+    /* Color ALL popover buttons with dark gradient in this page */
+    div[data-testid="stPopover"] > button {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 60%, #166534 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 6px !important;
+    }
+    div[data-testid="stPopover"] > button:hover {
+        background: linear-gradient(135deg, #1e293b 0%, #294d3f 60%, #22c55e 100%) !important;
+        box-shadow: 0 4px 12px rgba(22,163,74,0.3) !important;
+        color: white !important;
+    }
+    .color-edit { display: none; }
     </style>
     """, unsafe_allow_html=True)
     
@@ -99,6 +111,19 @@ def render():
 
     import streamlit.components.v1 as components
     components.html("""
+    <style>
+    div[data-testid="stPopover"] > button {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 60%, #166534 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 6px !important;
+    }
+    div[data-testid="stPopover"] > button:hover {
+        background: linear-gradient(135deg, #1e293b 0%, #294d3f 60%, #22c55e 100%) !important;
+        box-shadow: 0 4px 12px rgba(22,163,74,0.3) !important;
+        color: white !important;
+    }
+    </style>
     <script>
     setInterval(() => {
         const cards = window.parent.document.querySelectorAll('div[data-testid="stVerticalBlockBorderWrapper"]');

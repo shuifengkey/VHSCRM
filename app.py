@@ -25,16 +25,17 @@ init_db()
 # Global CSS override for primary buttons
 st.markdown("""
 <style>
-/* Override default primary button color to ensure it is always VHS green */
-div[data-testid="baseButton-primary"] > button {
-    background-color: #16a34a !important;
+/* Override default primary button color to ensure it is always the dark VHS gradient */
+div[data-testid="baseButton-primary"] > button, div[data-testid="stFormSubmitButton"] > button {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 60%, #166534 100%) !important;
     color: white !important;
-    border-color: #16a34a !important;
+    border: none !important;
 }
-div[data-testid="baseButton-primary"] > button:hover {
-    background-color: #15803d !important;
-    border-color: #15803d !important;
+div[data-testid="baseButton-primary"] > button:hover, div[data-testid="stFormSubmitButton"] > button:hover {
+    background: linear-gradient(135deg, #1e293b 0%, #294d3f 60%, #22c55e 100%) !important;
+    box-shadow: 0 8px 24px rgba(22,163,74,0.3) !important;
     color: white !important;
+    transform: translateY(-1px) !important;
 }
 </style>
 """, unsafe_allow_html=True)

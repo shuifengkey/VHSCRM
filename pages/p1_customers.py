@@ -35,16 +35,16 @@ def render():
         }
     }
     
-    /* Color ALL popover buttons green in this page */
+    /* Color ALL popover buttons with dark gradient in this page */
     div[data-testid="stPopover"] > button {
-        background-color: #16a34a !important;
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 60%, #166534 100%) !important;
         color: white !important;
-        border-color: #16a34a !important;
+        border: none !important;
         border-radius: 6px !important;
     }
     div[data-testid="stPopover"] > button:hover {
-        background-color: #15803d !important;
-        border-color: #15803d !important;
+        background: linear-gradient(135deg, #1e293b 0%, #294d3f 60%, #22c55e 100%) !important;
+        box-shadow: 0 4px 12px rgba(22,163,74,0.3) !important;
         color: white !important;
     }
     .align-right { display: none; }
