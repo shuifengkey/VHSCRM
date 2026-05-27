@@ -14,10 +14,12 @@ def render():
     
     st.markdown("""
     <style>
-    /* Float the Edit button to the right inside its column */
-    div[data-testid="column"]:has(.align-right) div[data-testid="stPopover"] {
-        display: flex;
-        justify-content: flex-end;
+    /* Float the Edit button to the right inside its column ONLY on mobile */
+    @media (max-width: 768px) {
+        div[data-testid="column"]:has(.align-right) div[data-testid="stPopover"] {
+            display: flex;
+            justify-content: flex-end;
+        }
     }
     .align-right { display: none; }
     </style>
