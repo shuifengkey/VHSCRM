@@ -67,6 +67,12 @@ def push_event_to_google(creds, subject, start_dt, end_dt, content, location="")
             'dateTime': end_dt,
             'timeZone': 'Asia/Ho_Chi_Minh',
           },
+          'reminders': {
+            'useDefault': False,
+            'overrides': [
+              {'method': 'popup', 'minutes': 12 * 60},
+            ],
+          },
         }
         event = service.events().insert(calendarId='primary', body=event).execute()
         return True, event.get('id')
@@ -88,6 +94,12 @@ def update_event_on_google(creds, event_id, subject, start_dt, end_dt, content, 
           'end': {
             'dateTime': end_dt,
             'timeZone': 'Asia/Ho_Chi_Minh',
+          },
+          'reminders': {
+            'useDefault': False,
+            'overrides': [
+              {'method': 'popup', 'minutes': 12 * 60},
+            ],
           },
         }
         event = service.events().update(calendarId='primary', eventId=event_id, body=event).execute()
