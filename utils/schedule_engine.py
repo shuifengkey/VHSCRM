@@ -50,6 +50,9 @@ def complete_schedule(schedule_id: int, contract: dict) -> dict:
     conn.execute("UPDATE schedules SET trang_thai='completed' WHERE id=?", (schedule_id,))
     sched = dict(conn.execute("SELECT * FROM schedules WHERE id=?", (schedule_id,)).fetchone())
     
+    from utils.google_sync import auto_sync_schedule_to_google
+    auto_sync_schedule_to_google(conn, schedule_id, "upsert")
+    
     # Auto debt generation logic
     dvt = contract.get("don_vi_tinh", "/tháng")
     gia_tri = float(contract.get("gia_tri_thang") or 0.0)

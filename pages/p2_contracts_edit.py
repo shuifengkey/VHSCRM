@@ -198,6 +198,16 @@ def edit_contract_dialog(ma_hd):
             c.commit()
             
             # Xóa các ca chưa làm (không nằm trong logbook) để sinh lại theo cấu hình mới
+            to_delete = c.execute("""
+                SELECT google_event_id FROM schedules 
+                WHERE ma_hd=? AND trang_thai='scheduled' 
+                  AND id NOT IN (SELECT schedule_id FROM logbook)
+            """, (ma_hd,)).fetchall()
+            from utils.google_sync import auto_sync_schedule_to_google
+            for row in to_delete:
+                if row["google_event_id"]:
+                    auto_sync_schedule_to_google(c, row["google_event_id"], "delete")
+                    
             c.execute("""
                 DELETE FROM schedules 
                 WHERE ma_hd=? AND trang_thai='scheduled' 

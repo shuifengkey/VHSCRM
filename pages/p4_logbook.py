@@ -252,6 +252,8 @@ def render():
                                         else:
                                             conn_fallback = __import__('utils.database', fromlist=['get_connection']).get_connection()
                                             conn_fallback.execute("UPDATE schedules SET trang_thai='completed' WHERE id=?", (job['id'],))
+                                            from utils.google_sync import auto_sync_schedule_to_google
+                                            auto_sync_schedule_to_google(conn_fallback, job['id'], "upsert")
                                             conn_fallback.commit()
                                             conn_fallback.close()
                                         st.success("✅ Check-out thành công! Ca hoàn thành.")

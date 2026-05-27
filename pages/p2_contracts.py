@@ -249,6 +249,13 @@ def render():
                         if st.button("✅ Xác nhận xóa", key=f"yes_{r['ma_hd']}"):
                             conn = get_connection()
                             conn.execute("DELETE FROM logbook WHERE schedule_id IN (SELECT id FROM schedules WHERE ma_hd=?)", (r['ma_hd'],))
+                            
+                            to_delete = conn.execute("SELECT google_event_id FROM schedules WHERE ma_hd=?", (r['ma_hd'],)).fetchall()
+                            from utils.google_sync import auto_sync_schedule_to_google
+                            for row in to_delete:
+                                if row["google_event_id"]:
+                                    auto_sync_schedule_to_google(conn, row["google_event_id"], "delete")
+                                    
                             conn.execute("DELETE FROM schedules WHERE ma_hd=?", (r['ma_hd'],))
                             conn.execute("DELETE FROM contracts WHERE ma_hd=?", (r['ma_hd'],))
                             conn.commit(); conn.close()

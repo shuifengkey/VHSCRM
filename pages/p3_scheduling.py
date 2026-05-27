@@ -503,6 +503,9 @@ def render():
                                                     SET loai_con_trung=? 
                                                     WHERE ma_hd=? AND lan_thu=? AND ky_thang > ?
                                                 """, (new_pest, r["ma_hd"], r["lan_thu"], r["ky_thang"]))
+                                            
+                                            from utils.google_sync import auto_sync_schedule_to_google
+                                            auto_sync_schedule_to_google(conn, r["id"], "upsert")
                                             conn.commit(); conn.close()
                                             st.success("✅ Đã cập nhật!"); st.rerun()
                                         except Exception as e: st.error(f"❌ {e}")
@@ -510,6 +513,8 @@ def render():
                                         try:
                                             conn = get_connection()
                                             conn.execute("UPDATE schedules SET trang_thai='skipped' WHERE id=?",(r["id"],))
+                                            from utils.google_sync import auto_sync_schedule_to_google
+                                            auto_sync_schedule_to_google(conn, r["id"], "upsert")
                                             conn.commit(); conn.close()
                                             st.info("Ca đã bỏ qua."); st.rerun()
                                         except Exception as e: st.error(f"❌ {e}")
@@ -690,12 +695,15 @@ def render():
                             "SELECT COALESCE(MAX(lan_thu),0) FROM schedules WHERE ma_hd=? AND ky_thang=?",
                             (hd3["ma_hd"],ky_extra)
                         ).fetchone()[0]
-                        conn.execute("""INSERT INTO schedules
+                        rs = conn.execute("""INSERT INTO schedules
                             (ma_hd,ma_kh,ky_thang,lan_thu,ngay_du_kien,gio_bat_dau,gio_ket_thuc,nguon,ghi_chu)
-                            VALUES(?,?,?,?,?,?,?,?,?)""",
+                            VALUES(?,?,?,?,?,?,?,?,?) RETURNING id""",
                             (hd3["ma_hd"],hd3["ma_kh"],ky_extra,max_lan+1,
                              extra_ngay.isoformat(),extra_gbd.strftime("%H:%M"),
-                             extra_gkt.strftime("%H:%M"),"manual",extra_gc))
+                             extra_gkt.strftime("%H:%M"),"manual",extra_gc)).fetchone()
+                        if rs:
+                            from utils.google_sync import auto_sync_schedule_to_google
+                            auto_sync_schedule_to_google(conn, rs["id"], "upsert")
                         conn.commit(); conn.close()
                         st.success(f"✅ Đã thêm ca ngày {extra_ngay.strftime('%d/%m/%Y')}"); st.rerun()
                     except Exception as e: st.error(f"❌ {e}")

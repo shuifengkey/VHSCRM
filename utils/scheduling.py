@@ -281,7 +281,7 @@ def describe_schedule(hd: dict) -> str:
 # SINH LỊCH TỰ ĐỘNG
 # ============================================================
 
-def auto_generate_schedules(ma_hd: str, ky_thang: str, overwrite=False) -> int:
+def auto_generate_schedules(ma_hd: str, ky_thang: str, overwrite=False, future_only=False) -> int:
     """
     Sinh các ca thi công cho hợp đồng ma_hd trong kỳ ky_thang.
     Không ghi đè ca đã được điều chỉnh thủ công (nguon='manual').
@@ -295,8 +295,25 @@ def auto_generate_schedules(ma_hd: str, ky_thang: str, overwrite=False) -> int:
     hd = dict(hd)
 
     if overwrite:
+        # Delete from Google Calendar first
+        to_delete = conn.execute("SELECT id, google_event_id FROM schedules WHERE ma_hd=? AND ky_thang=? AND nguon='auto'", (ma_hd, ky_thang)).fetchall()
+        from utils.google_sync import auto_sync_schedule_to_google
+        for r in to_delete:
+            if r["google_event_id"]:
+                auto_sync_schedule_to_google(conn, r["google_event_id"], "delete")
         conn.execute(
             "DELETE FROM schedules WHERE ma_hd=? AND ky_thang=? AND nguon='auto'",
+            (ma_hd, ky_thang)
+        )
+    elif future_only:
+        to_delete = conn.execute("SELECT id, google_event_id FROM schedules WHERE ma_hd=? AND ky_thang=? AND nguon='auto' AND ngay_du_kien >= date('now', 'localtime')", (ma_hd, ky_thang)).fetchall()
+        from utils.google_sync import auto_sync_schedule_to_google
+        for r in to_delete:
+            if r["google_event_id"]:
+                auto_sync_schedule_to_google(conn, r["google_event_id"], "delete")
+        # Delete only schedules that are not yet executed
+        conn.execute(
+            "DELETE FROM schedules WHERE ma_hd=? AND ky_thang=? AND nguon='auto' AND ngay_du_kien >= date('now', 'localtime')",
             (ma_hd, ky_thang)
         )
 
@@ -336,13 +353,19 @@ def auto_generate_schedules(ma_hd: str, ky_thang: str, overwrite=False) -> int:
         ).fetchone()
         ktv_val = prev_ktv["ky_thuat_vien"] if prev_ktv else hd.get("ky_thuat_vien")
 
-        conn.execute("""
+        rs = conn.execute("""
             INSERT INTO schedules
               (ma_hd, ma_kh, ky_thang, lan_thu, ngay_du_kien,
                gio_bat_dau, gio_ket_thuc, nguon, loai_con_trung, ky_thuat_vien)
             VALUES(?,?,?,?,?,?,?,?,?,?)
+            RETURNING id
         """, (ma_hd, hd["ma_kh"], ky_thang, lan_thu,
-              d.isoformat(), hd["gio_bat_dau"], hd["gio_ket_thuc"], "auto", pest_val, ktv_val))
+              d.isoformat(), hd["gio_bat_dau"], hd["gio_ket_thuc"], "auto", pest_val, ktv_val)).fetchone()
+        
+        if rs:
+            from utils.google_sync import auto_sync_schedule_to_google
+            auto_sync_schedule_to_google(conn, rs["id"], "upsert")
+            
         created += 1
 
     conn.commit()

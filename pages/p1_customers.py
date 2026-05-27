@@ -78,6 +78,13 @@ def render():
                         try:
                             conn2 = get_connection()
                             conn2.execute("DELETE FROM logbook WHERE ma_kh=?", (r["ma_kh"],))
+                            
+                            to_delete = conn2.execute("SELECT google_event_id FROM schedules WHERE ma_kh=?", (r["ma_kh"],)).fetchall()
+                            from utils.google_sync import auto_sync_schedule_to_google
+                            for row in to_delete:
+                                if row["google_event_id"]:
+                                    auto_sync_schedule_to_google(conn2, row["google_event_id"], "delete")
+                                    
                             conn2.execute("DELETE FROM schedules WHERE ma_kh=?", (r["ma_kh"],))
                             conn2.execute("DELETE FROM contracts WHERE ma_kh=?", (r["ma_kh"],))
                             conn2.execute("DELETE FROM customers WHERE ma_kh=?", (r["ma_kh"],))

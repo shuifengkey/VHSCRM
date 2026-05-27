@@ -158,6 +158,8 @@ def _do_init_db():
         nguon         TEXT DEFAULT 'auto',
         ky_thuat_vien TEXT,
         ghi_chu       TEXT,
+        loai_con_trung TEXT,
+        google_event_id TEXT,
         UNIQUE(ma_hd, ky_thang, lan_thu),
         FOREIGN KEY (ma_hd) REFERENCES contracts(ma_hd)
     )""")
@@ -216,6 +218,8 @@ def _do_init_db():
     try: c.execute("ALTER TABLE contracts ADD COLUMN tuan_lap_lai TEXT")
     except Exception: pass
     try: c.execute("ALTER TABLE schedules ADD COLUMN loai_con_trung TEXT")
+    except Exception: pass
+    try: c.execute("ALTER TABLE schedules ADD COLUMN google_event_id TEXT")
     except Exception: pass
     try: c.execute("ALTER TABLE logbook ADD COLUMN attachments TEXT")
     except Exception: pass
