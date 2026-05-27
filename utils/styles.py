@@ -143,7 +143,9 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
 }
 
 /* ── BUTTONS ── */
-.stButton > button {
+.stButton > button,
+.stDownloadButton > button,
+[data-testid="stFormSubmitButton"] > button {
     background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 60%, #166534 100%) !important;
     color: white !important;
     border: none !important; border-radius: 14px !important;
@@ -151,7 +153,9 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
     padding: 10px 18px !important; transition: all .2s ease !important;
     letter-spacing: 0.5px !important;
 }
-.stButton > button:hover {
+.stButton > button:hover,
+.stDownloadButton > button:hover,
+[data-testid="stFormSubmitButton"] > button:hover {
     background: linear-gradient(135deg, #1e293b 0%, #294d3f 60%, #22c55e 100%) !important;
     box-shadow: 0 6px 18px rgba(22,163,74,.3) !important;
     transform: translateY(-1px) !important;
@@ -217,9 +221,7 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
 
 /* ── FORM SUBMIT ── */
 [data-testid="stFormSubmitButton"] > button {
-    background: #16a34a !important; color: white !important;
-    border-radius: 10px !important; font-weight: 700 !important;
-    width: 100%; padding: 12px !important; font-size: 14px !important;
+    width: 100% !important; 
 }
 
 /* ── ALERTS ── */
