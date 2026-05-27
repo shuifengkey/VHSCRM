@@ -175,6 +175,7 @@ def render():
                         with c_act:
                             st.markdown('<div class="align-right"></div>', unsafe_allow_html=True)
                             render_edit_popover(r, "grid")
+                    st.markdown("<div style='height: 12px'></div>", unsafe_allow_html=True)
         else:
             # List layout
             for r in rows:
@@ -199,6 +200,7 @@ def render():
                     with lc5:
                         st.markdown('<div class="align-right"></div>', unsafe_allow_html=True)
                         render_edit_popover(r, "list")
+                st.markdown("<div style='height: 8px'></div>", unsafe_allow_html=True)
 
     # ===== THÊM MỚI =====
     with tab_add:
