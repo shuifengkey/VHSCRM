@@ -140,6 +140,38 @@ def render():
             st.markdown("</div>", unsafe_allow_html=True)
             
             st.markdown('<div style="height:10px;"></div>', unsafe_allow_html=True)
+            
+            st.markdown('<div class="vhs-card" style="padding:16px;">', unsafe_allow_html=True)
+            st.markdown("**💸 Thu Tiền Trước (Chưa có trong danh sách)**")
+            st.caption("💡 Dùng khi khách trả trước cho kỳ tới.")
+            
+            contracts = conn.execute("""
+                SELECT ma_hd, ma_kh FROM contracts WHERE trang_thai='active'
+            """).fetchall()
+            if contracts:
+                hd_opts = {f"[{c['ma_hd']}] {c['ma_kh']}": c for c in contracts}
+                hd_sel = st.selectbox("Chọn Hợp Đồng", list(hd_opts.keys()), key="adv_hd_sel")
+                hd = hd_opts[hd_sel]
+                
+                ky = st.text_input("Kỳ thu (YYYY-MM)", value=(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().strftime("%Y-%m"))
+                dt_adv = st.number_input("Số Tiền Khách Trả Trước", min_value=0, step=100000, key="adv_dt")
+                
+                if st.button("💰 Xác Nhận Thu Trước", type="primary", use_container_width=True):
+                    if dt_adv <= 0:
+                        st.warning("Vui lòng nhập số tiền hợp lệ!")
+                    else:
+                        now_iso = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().isoformat()
+                        existing = conn.execute("SELECT id FROM debts WHERE ma_hd=? AND ky_thanh_toan=?", (hd["ma_hd"], ky)).fetchone()
+                        if existing:
+                            conn.execute("UPDATE debts SET da_thu = da_thu + ?, ngay_thu=? WHERE id=?", (dt_adv, now_iso, existing["id"]))
+                        else:
+                            conn.execute("INSERT INTO debts (ma_hd,ma_kh,ky_thanh_toan,can_thu,da_thu,ghi_chu,ngay_thu) VALUES(?,?,?,?,?,?,?)",
+                                         (hd["ma_hd"],hd["ma_kh"],ky,0,dt_adv,"Thu trước",now_iso))
+                        conn.commit()
+                        st.success(f"Đã ghi nhận thu trước {format_money(dt_adv)} cho kỳ {ky}"); st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+            st.markdown('<div style="height:10px;"></div>', unsafe_allow_html=True)
             if st.button("🧹 Quét Chốt Sổ Cuối Tháng", type="primary", use_container_width=True):
                 from utils.month_end_sweep import run_month_end_sweep
                 res = run_month_end_sweep()
