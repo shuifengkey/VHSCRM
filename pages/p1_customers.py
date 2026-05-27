@@ -173,7 +173,7 @@ def render():
                         with c_act:
                             st.markdown('<div class="align-right"></div>', unsafe_allow_html=True)
                             render_edit_popover(r, "grid")
-                    st.markdown("<div style='height: 12px'></div>", unsafe_allow_html=True)
+                    st.markdown("<div style='height: 32px'></div>", unsafe_allow_html=True)
         else:
             # List layout
             for r in rows:
