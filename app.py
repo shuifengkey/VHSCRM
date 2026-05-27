@@ -144,6 +144,7 @@ footer { display: none !important; }
     20%, 60% {{ transform: translateX(-8px); }}
     40%, 80% {{ transform: translateX(8px); }}
 }}
+div[data-testid="InputInstructions"] {{ display: none !important; }}
 </style>
 <div style="animation:pinSlideIn 0.5s cubic-bezier(0.16,1,0.3,1);text-align:center;padding:20px 0 24px;">
     <img src="{_LOGO_URI}" style="width:90px;height:90px;margin:0 auto 20px;display:block;filter:drop-shadow(0 0 20px rgba(22,163,74,0.4));animation:pinPulse 2s infinite;" />
@@ -158,19 +159,42 @@ footer { display: none !important; }
         type="password",
         max_chars=6,
         key="pin_field",
-        placeholder="••••••",
+        placeholder="",
         label_visibility="collapsed"
     )
+    
+    import streamlit.components.v1 as components
+    components.html("""
+    <script>
+    const inputs = window.parent.document.querySelectorAll('input[type="password"]');
+    inputs.forEach(input => {
+        input.setAttribute('inputmode', 'numeric');
+        input.setAttribute('pattern', '[0-9]*');
+    });
+    </script>
+    """, height=0, width=0)
+
     if st.button("🔓 XÁC NHẬN", use_container_width=True, key="pin_submit"):
+        is_valid = False
+        role = ""
         if pin_val == "1710":
-            st.session_state.authenticated = True
-            st.session_state.auth_role = "ktv"
-            st.session_state.pin_error = False
-            st.session_state.pin_input = ""
-            st.rerun()
+            is_valid = True
+            role = "ktv"
         elif _verify_pin(pin_val):
+            is_valid = True
+            role = "admin"
+            
+        if is_valid:
+            st.markdown(f"""
+            <div style="text-align:center; padding: 20px; animation:pinSlideIn 0.3s ease;">
+                <img src="{_LOGO_URI}" style="width:70px;height:70px;animation:pinPulse 1s infinite;margin-bottom:15px;border-radius:15px;" />
+                <div style="color:#22c55e;font-weight:700;font-size:16px;">Đang tải dữ liệu...</div>
+            </div>
+            """, unsafe_allow_html=True)
+            import time
+            time.sleep(0.8)
             st.session_state.authenticated = True
-            st.session_state.auth_role = "admin"
+            st.session_state.auth_role = role
             st.session_state.pin_error = False
             st.session_state.pin_input = ""
             st.rerun()
