@@ -21,6 +21,19 @@ def render():
             justify-content: flex-end;
         }
     }
+    
+    /* Force rows with 4 or more columns (Filters, List View) to stack on screens smaller than 1024px to prevent overlapping */
+    @media (max-width: 1024px) {
+        div[data-testid="stHorizontalBlock"]:has(> div:nth-child(4)) {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0.5rem !important;
+        }
+        div[data-testid="stHorizontalBlock"]:has(> div:nth-child(4)) > div[data-testid="column"] {
+            width: 100% !important;
+            min-width: 100% !important;
+        }
+    }
     .align-right { display: none; }
     </style>
     """, unsafe_allow_html=True)
@@ -68,7 +81,7 @@ def render():
         with c1: search = st.text_input("🔍 Tìm kiếm", placeholder="Tên công ty, mã KH, số điện thoại...")
         with c2: filter_pk = st.selectbox("Phân khúc", ["Tất cả","Nhà hàng", "Khách sạn", "Căn hộ/Biệt thự", "KCC", "Nhà Kho/Xưởng"])
         with c3: sort_by = st.selectbox("Sắp xếp", ["Mã KH","Tên A-Z","Mới nhất"])
-        with c4: view_mode = st.selectbox("Hiển thị", ["Dạng Dòng", "Dạng Thẻ"])
+        with c4: view_mode = st.selectbox("Hiển thị", ["Dạng Thẻ", "Dạng Dòng"])
 
         query = "SELECT k.*, (SELECT COUNT(*) FROM contracts c WHERE c.ma_kh=k.ma_kh AND c.trang_thai='active') as so_hd FROM customers k WHERE 1=1"
         params = []
