@@ -1,4 +1,4 @@
-# app.py — VHS CRM v4 — Top navbar layout
+# app.py — VHSCRM v4 — Top navbar layout
 import streamlit as st
 import sys, os, hashlib, base64
 
@@ -15,8 +15,9 @@ with open(_LOGO_PATH, "rb") as _f:
     _LOGO_B64 = base64.b64encode(_f.read()).decode()
 _LOGO_URI = f"data:image/png;base64,{_LOGO_B64}"
 
+from PIL import Image
 st.set_page_config(
-    page_title="VHS CRM", page_icon=_LOGO_PATH,
+    page_title="VHSCRM", page_icon=Image.open(_LOGO_PATH),
     layout="wide", initial_sidebar_state="collapsed"
 )
 init_db()
@@ -148,7 +149,7 @@ div[data-testid="InputInstructions"] {{ display: none !important; }}
 </style>
 <div style="animation:pinSlideIn 0.5s cubic-bezier(0.16,1,0.3,1);text-align:center;padding:20px 0 24px;">
     <img src="{_LOGO_URI}" style="width:90px;height:90px;margin:0 auto 20px;display:block;filter:drop-shadow(0 0 20px rgba(22,163,74,0.4));animation:pinPulse 2s infinite;" />
-    <div style="font-size:26px;font-weight:800;color:#f8fafc;margin-bottom:6px;letter-spacing:-0.3px;">VHS CRM</div>
+    <div style="font-size:26px;font-weight:800;color:#f8fafc;margin-bottom:6px;letter-spacing:-0.3px;">VHSCRM</div>
     <div style="font-size:13px;color:#64748b;margin-bottom:24px;">Nhập mã PIN để truy cập hệ thống</div>
     {error_html}
 </div>
@@ -226,7 +227,7 @@ div[data-testid="InputInstructions"] {{ display: none !important; }}
 
     st.markdown("""
 <div style="text-align:center;margin-top:32px;font-size:11px;color:#475569;">
-    🛡️ Bảo mật bởi VHS CRM
+    🛡️ Bảo mật bởi VHSCRM
 </div>
 """, unsafe_allow_html=True)
 
@@ -280,7 +281,7 @@ st.markdown(f"""
   <div class="vhs-nav-brand">
     <img src="{_LOGO_URI}" style="width:38px;height:38px;border-radius:8px;" />
     <div>
-      <div class="vhs-nav-brand-text">VHS CRM</div>
+      <div class="vhs-nav-brand-text">VHSCRM</div>
       <div class="vhs-nav-brand-sub">Pest Control v4</div>
     </div>
   </div>
