@@ -65,11 +65,14 @@ def google_sync_dialog(thang, nam):
                     if s['ky_thuat_vien']: content += f"KTV: {s['ky_thuat_vien']}\n"
                     if s['ghi_chu']:       content += f"Ghi chú: {s['ghi_chu']}\n"
                     
-                    ok, _ = push_event_to_google(creds, subject, start_dt, end_dt, content, s.get('dia_chi') or "")
-                    if ok: success_count += 1
+                    ok, err_msg = push_event_to_google(creds, subject, start_dt, end_dt, content, s.get('dia_chi') or "")
+                    if ok: 
+                        success_count += 1
+                    else:
+                        st.error(f"Lỗi khi đẩy lịch {s['ten_cty']}: {err_msg}")
                 
                 if success_count == len(schedules):
-                    st.success(f"🎉 Đã đồng bộ thành công {success_count}/{len(schedules)} sự kiện!")
+                    st.success(f"✅ Đã đồng bộ thành công {success_count}/{len(schedules)} sự kiện!")
                 else:
                     st.warning(f"Đã đồng bộ {success_count}/{len(schedules)} sự kiện. (Có {len(schedules)-success_count} lỗi)")
                 st.balloons()
@@ -83,13 +86,14 @@ def google_sync_dialog(thang, nam):
     st.markdown("### 🔑 Đăng nhập Google")
 
     if st.session_state.gg_flow_data is None:
-        if st.button("🔑 Lấy mã đăng nhập Google", type="primary", use_container_width=True):
+        if st.button("🔌 Lấy mã đăng nhập Google", type="primary", use_container_width=True):
             with st.spinner("Đang kết nối với Google..."):
-                flow = initiate_device_flow(client_id)
+                flow, err_msg = initiate_device_flow(client_id.strip())
                 if flow and "verification_url" in flow:
                     st.session_state.gg_flow_data = flow
+                    st.rerun()
                 else:
-                    st.error("❌ Không thể kết nối với Google. Kiểm tra lại Client ID.")
+                    st.error(f"❌ Không thể kết nối với Google. Lỗi: {err_msg}")
     
     if st.session_state.gg_flow_data:
         flow = st.session_state.gg_flow_data
@@ -102,19 +106,19 @@ def google_sync_dialog(thang, nam):
         st.markdown("**Bước 3:** Chọn tài khoản Google → Bấm Allow → Quay lại đây bấm nút bên dưới.")
         st.divider()
         
-        if st.button("✅ Tôi đã đăng nhập xong", type="primary", use_container_width=True):
+        if st.button("🔒 Tôi đã đăng nhập xong", type="primary", use_container_width=True):
             with st.spinner("Đang xác nhận..."):
-                token_data = complete_device_flow(client_id, client_secret, flow['device_code'])
+                token_data, err_msg = complete_device_flow(client_id.strip(), client_secret.strip(), flow['device_code'])
                 if token_data and 'access_token' in token_data:
                     new_cache = json.dumps(token_data)
                     conn = get_connection()
                     conn.execute("INSERT OR REPLACE INTO settings (id, key_name, value_data) VALUES ((SELECT id FROM settings WHERE key_name='google_token_cache'), 'google_token_cache', ?)", (new_cache,))
                     conn.commit(); conn.close()
                     st.session_state.gg_flow_data = None
-                    st.success("✅ Đăng nhập thành công! Vui lòng đóng và mở lại hộp thoại để đồng bộ.")
+                    st.success("🎉 Đăng nhập thành công! Vui lòng ĐÓNG và mở lại hộp thoại để đồng bộ.")
                     st.balloons()
                 else:
-                    st.error("❌ Chưa xác nhận được. Hãy đảm bảo anh/chị đã bấm Allow trên trang Google rồi thử lại.")
+                    st.error(f"❌ Chưa xác nhận được. Lỗi: {err_msg}")
 
 def render():
     conn_t = get_connection()

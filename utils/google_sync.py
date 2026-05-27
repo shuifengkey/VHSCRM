@@ -14,8 +14,8 @@ def initiate_device_flow(client_id):
     }
     resp = requests.post(url, data=data)
     if resp.status_code == 200:
-        return resp.json()
-    return None
+        return resp.json(), None
+    return None, resp.text
 
 def complete_device_flow(client_id, client_secret, device_code):
     url = "https://oauth2.googleapis.com/token"
@@ -27,8 +27,8 @@ def complete_device_flow(client_id, client_secret, device_code):
     }
     resp = requests.post(url, data=data)
     if resp.status_code == 200:
-        return resp.json()
-    return None
+        return resp.json(), None
+    return None, resp.text
 
 def get_cached_credentials(client_id, client_secret, token_cache_json):
     if not token_cache_json:
