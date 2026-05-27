@@ -224,7 +224,7 @@ def render():
                     except: pass
 
                     st.markdown(f"""
-<div class="vhs-list-item" style="background:{bg_color};border-left:5px solid {border_color};border-radius:0 12px 12px 0;">
+<div class="vhs-list-item" style="background:{bg_color} !important;border-left:5px solid {border_color} !important;border-radius:0 12px 12px 0 !important;">
 <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
 <div>
 <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px;">
@@ -269,7 +269,7 @@ def render():
                     except: pass
 
                     st.markdown(f"""
-<div class="vhs-list-item" style="background:{bg};border-left:5px solid {border};border-radius:0 12px 12px 0;">
+<div class="vhs-list-item" style="background:{bg} !important;border-left:5px solid {border} !important;border-radius:0 12px 12px 0 !important;">
 <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
 <div>
 <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px;">
