@@ -91,7 +91,6 @@ def google_sync_dialog(thang, nam):
                 flow, err_msg = initiate_device_flow(client_id.strip())
                 if flow and "verification_url" in flow:
                     st.session_state.gg_flow_data = flow
-                    st.rerun()
                 else:
                     st.error(f"❌ Không thể kết nối với Google. Lỗi: {err_msg}")
     
