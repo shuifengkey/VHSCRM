@@ -318,33 +318,49 @@ def render():
                     api_key = api_key_row['value_data'] if api_key_row else None
                     conn_map.close()
                     
-                    origin = "164 Huy Cận, Phước Long"
+                    route_mode = st.radio("Điểm xuất phát:", ["🏠 Từ nhà (164 Huy Cận)", "📍 Từ ca thi công đầu tiên"], horizontal=True)
+                    
+                    if route_mode.startswith("🏠"):
+                        origin = "164 Huy Cận, Phước Long"
+                        wp_list = [j['dia_chi'] for j in map_jobs[:-1]]
+                        is_single_place = False
+                    else:
+                        origin = map_jobs[0]['dia_chi']
+                        wp_list = [j['dia_chi'] for j in map_jobs[1:-1]]
+                        is_single_place = (len(map_jobs) == 1)
+                        
                     dest = map_jobs[-1]['dia_chi']
                     
-                    wp_list = [j['dia_chi'] for j in map_jobs[:-1]]
-                    
                     if api_key and api_key.strip():
-                        if wp_list:
-                            waypoints = "|".join(urllib.parse.quote(wp) for wp in wp_list)
-                            wp_param = f"&waypoints={waypoints}"
+                        if is_single_place:
+                            map_url = f"https://www.google.com/maps/embed/v1/place?key={api_key}&q={urllib.parse.quote(origin)}"
+                            dir_url = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(origin)}"
                         else:
-                            wp_param = ""
-                            
-                        map_url = f"https://www.google.com/maps/embed/v1/directions?key={api_key}&origin={urllib.parse.quote(origin)}&destination={urllib.parse.quote(dest)}{wp_param}"
-                        dir_url = f"https://www.google.com/maps/dir/?api=1&origin={urllib.parse.quote(origin)}&destination={urllib.parse.quote(dest)}{wp_param}"
+                            if wp_list:
+                                waypoints = "|".join(urllib.parse.quote(wp) for wp in wp_list)
+                                wp_param = f"&waypoints={waypoints}"
+                            else:
+                                wp_param = ""
+                            map_url = f"https://www.google.com/maps/embed/v1/directions?key={api_key}&origin={urllib.parse.quote(origin)}&destination={urllib.parse.quote(dest)}{wp_param}"
+                            dir_url = f"https://www.google.com/maps/dir/?api=1&origin={urllib.parse.quote(origin)}&destination={urllib.parse.quote(dest)}{wp_param}"
                     else:
-                        if wp_list:
-                            waypoints = " to:".join(wp for wp in wp_list)
-                            daddr = f"{waypoints} to:{dest}"
-                            wp_param = "&waypoints=" + "|".join(urllib.parse.quote(wp) for wp in wp_list)
+                        if is_single_place:
+                            map_url = f"https://maps.google.com/maps?q={urllib.parse.quote(origin)}&output=embed"
+                            dir_url = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(origin)}"
                         else:
-                            daddr = dest
-                            wp_param = ""
-                        map_url = f"https://maps.google.com/maps?saddr={urllib.parse.quote(origin)}&daddr={urllib.parse.quote(daddr)}&output=embed"
-                        dir_url = f"https://www.google.com/maps/dir/?api=1&origin={urllib.parse.quote(origin)}&destination={urllib.parse.quote(dest)}{wp_param}"
+                            if wp_list:
+                                waypoints = " to:".join(wp for wp in wp_list)
+                                daddr = f"{waypoints} to:{dest}"
+                                wp_param = "&waypoints=" + "|".join(urllib.parse.quote(wp) for wp in wp_list)
+                            else:
+                                daddr = dest
+                                wp_param = ""
+                            map_url = f"https://maps.google.com/maps?saddr={urllib.parse.quote(origin)}&daddr={urllib.parse.quote(daddr)}&output=embed"
+                            dir_url = f"https://www.google.com/maps/dir/?api=1&origin={urllib.parse.quote(origin)}&destination={urllib.parse.quote(dest)}{wp_param}"
                     
                     st.components.v1.iframe(map_url, height=500, scrolling=True)
-                    st.markdown(f'<a href="{dir_url}" target="_blank" style="display:inline-block;margin-top:10px;background:#3b82f6;color:white;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">📍 Bắt đầu đi từ nhà (Google Maps)</a>', unsafe_allow_html=True)
+                    btn_text = "📍 Bắt đầu đi từ nhà (Google Maps)" if route_mode.startswith("🏠") else "📍 Mở lộ trình trên Google Maps"
+                    st.markdown(f'<a href="{dir_url}" target="_blank" style="display:inline-block;margin-top:10px;background:#3b82f6;color:white;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">{btn_text}</a>', unsafe_allow_html=True)
 
     # ═══════════════════════════════════
     # THEO THÁNG / HĐ
