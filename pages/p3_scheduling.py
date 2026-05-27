@@ -358,7 +358,11 @@ def render():
                             map_url = f"https://maps.google.com/maps?saddr={urllib.parse.quote(origin)}&daddr={urllib.parse.quote(daddr)}&output=embed"
                             dir_url = f"https://www.google.com/maps/dir/?api=1&origin={urllib.parse.quote(origin)}&destination={urllib.parse.quote(dest)}{wp_param}"
                     
-                    st.components.v1.iframe(map_url, height=500, scrolling=True)
+                    st.markdown(f'''
+                    <div style="border-radius:12px; overflow:hidden; border:1px solid #e2e8f0; box-shadow:0 1px 4px rgba(0,0,0,.04); margin-bottom:10px;">
+                        <iframe src="{map_url}" width="100%" height="500" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                    ''', unsafe_allow_html=True)
                     btn_text = "📍 Bắt đầu đi từ nhà (Google Maps)" if route_mode.startswith("🏠") else "📍 Mở lộ trình trên Google Maps"
                     st.markdown(f'<a href="{dir_url}" target="_blank" style="display:inline-block;margin-top:10px;background:#3b82f6;color:white;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">{btn_text}</a>', unsafe_allow_html=True)
 
