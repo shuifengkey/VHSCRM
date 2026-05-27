@@ -131,7 +131,7 @@ def render():
 
         if view_mode == "Dạng Thẻ":
             # Grid card layout
-            cols = st.columns(3)
+            cols = st.columns(3, gap="large")
             for i, r in enumerate(rows):
                 with cols[i % 3]:
                     pk_colors = {"Nhà hàng":"orange", "Khách sạn":"blue", "Căn hộ/Biệt thự":"green", "KCC":"purple", "Nhà Kho/Xưởng":"gray"}
