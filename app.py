@@ -193,7 +193,9 @@ footer { display: none !important; }
 st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
 
 if st.session_state.get("auth_role") == "ktv":
+    import importlib
     from pages import p7_mobile_ktv
+    importlib.reload(p7_mobile_ktv)
     p7_mobile_ktv.render()
     st.stop()
 
