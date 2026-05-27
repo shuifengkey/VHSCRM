@@ -102,7 +102,7 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
 .stRadio input:checked ~ div { color: white !important; }
 /* Active nav item */
 .stRadio > div label:has(input:checked) {
-    background: #16a34a !important;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 60%, #166534 100%) !important;
     color: white !important;
 }
 
@@ -160,13 +160,6 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
     box-shadow: 0 6px 18px rgba(22,163,74,.3) !important;
     transform: translateY(-1px) !important;
 }
-.stButton > button[kind="secondary"] {
-    background: white !important; color: #374151 !important;
-    border: 1.5px solid #d1d5db !important;
-}
-.stButton > button[kind="secondary"]:hover {
-    background: #f9fafb !important; box-shadow: 0 2px 8px rgba(0,0,0,.08) !important;
-}
 
 /* ── INPUTS ── */
 .stTextInput > div > div > input,
@@ -205,7 +198,7 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
     padding: 7px 16px !important; background: transparent !important;
 }
 .stTabs [aria-selected="true"] {
-    background: #16a34a !important; color: white !important;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 60%, #166534 100%) !important; color: white !important;
 }
 
 /* ── EXPANDER ── */
@@ -310,7 +303,7 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
     }
     .vhs-nav-st-radio .stRadio [role="radiogroup"] label:has(input:checked),
     .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] label:has(input:checked) {
-        background: #16a34a !important;
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 60%, #166534 100%) !important;
         color: white !important;
         box-shadow: 0 4px 10px rgba(22,163,74,0.3) !important;
     }
