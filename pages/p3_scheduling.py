@@ -318,7 +318,18 @@ def render():
                     api_key = api_key_row['value_data'] if api_key_row else None
                     conn_map.close()
                     
-                    route_mode = st.radio("Điểm xuất phát:", ["🏠 Từ nhà (164 Huy Cận)", "📍 Từ ca thi công đầu tiên"], horizontal=True)
+                    c_r1, c_r2 = st.columns(2)
+                    with c_r1:
+                        route_mode = st.radio("Điểm xuất phát:", ["🏠 Từ nhà (164 Huy Cận)", "📍 Từ ca thi công đầu tiên"], horizontal=True)
+                    with c_r2:
+                        vehicle_mode = st.radio("Phương tiện:", ["🏍️ Xe máy", "🚗 Ô tô"], horizontal=True)
+                        
+                    if vehicle_mode.startswith("🏍️"):
+                        embed_mode = "bicycling" # Embed API might not support two_wheeler everywhere, bicycling is a safe visual fallback for two wheels, though driving is often used.
+                        dir_mode = "two-wheeler"
+                    else:
+                        embed_mode = "driving"
+                        dir_mode = "driving"
                     
                     if route_mode.startswith("🏠"):
                         origin = "164 Huy Cận, Phước Long"
@@ -341,8 +352,8 @@ def render():
                                 wp_param = f"&waypoints={waypoints}"
                             else:
                                 wp_param = ""
-                            map_url = f"https://www.google.com/maps/embed/v1/directions?key={api_key}&origin={urllib.parse.quote(origin)}&destination={urllib.parse.quote(dest)}{wp_param}"
-                            dir_url = f"https://www.google.com/maps/dir/?api=1&origin={urllib.parse.quote(origin)}&destination={urllib.parse.quote(dest)}{wp_param}"
+                            map_url = f"https://www.google.com/maps/embed/v1/directions?key={api_key}&origin={urllib.parse.quote(origin)}&destination={urllib.parse.quote(dest)}&mode={embed_mode}{wp_param}"
+                            dir_url = f"https://www.google.com/maps/dir/?api=1&origin={urllib.parse.quote(origin)}&destination={urllib.parse.quote(dest)}&travelmode={dir_mode}{wp_param}"
                     else:
                         if is_single_place:
                             map_url = f"https://maps.google.com/maps?q={urllib.parse.quote(origin)}&output=embed"
@@ -356,7 +367,7 @@ def render():
                                 daddr = dest
                                 wp_param = ""
                             map_url = f"https://maps.google.com/maps?saddr={urllib.parse.quote(origin)}&daddr={urllib.parse.quote(daddr)}&output=embed"
-                            dir_url = f"https://www.google.com/maps/dir/?api=1&origin={urllib.parse.quote(origin)}&destination={urllib.parse.quote(dest)}{wp_param}"
+                            dir_url = f"https://www.google.com/maps/dir/?api=1&origin={urllib.parse.quote(origin)}&destination={urllib.parse.quote(dest)}&travelmode={dir_mode}{wp_param}"
                     
                     st.markdown(f'''
                     <div style="border-radius:12px; overflow:hidden; border:1px solid #e2e8f0; box-shadow:0 1px 4px rgba(0,0,0,.04); margin-bottom:10px;">
