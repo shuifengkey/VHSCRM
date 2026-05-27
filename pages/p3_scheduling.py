@@ -125,6 +125,31 @@ def render():
     finally:
         conn_t.close()
 
+    st.markdown("""
+    <style>
+    /* Add shift specific classes to override vhs-list-item without relying on inline !important which Streamlit strips */
+    .vhs-list-item.shift-morning {
+        background: #fffbeb !important;
+        border-left: 5px solid #f59e0b !important;
+        border-radius: 0 12px 12px 0 !important;
+    }
+    .vhs-list-item.shift-afternoon {
+        background: #eff6ff !important;
+        border-left: 5px solid #3b82f6 !important;
+        border-radius: 0 12px 12px 0 !important;
+    }
+    .vhs-list-item.shift-night {
+        background: #f5f3ff !important;
+        border-left: 5px solid #8b5cf6 !important;
+        border-radius: 0 12px 12px 0 !important;
+    }
+    .vhs-list-item.shift-overdue {
+        background: #fef2f2 !important;
+        border-left: 5px solid #dc2626 !important;
+        border-radius: 0 12px 12px 0 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     st.markdown(section_header("Lịch Thi Công","Quản lý lịch — Điều chỉnh thủ công — Calendar view","📅"),
                 unsafe_allow_html=True)
 
@@ -207,24 +232,14 @@ def render():
                 st.markdown(f'<div style="font-size:14px;font-weight:700;color:#dc2626;margin:12px 0 8px;">🚨 QUÁ CA — Chưa thi công ({len(overdue_jobs)} ca)</div>', unsafe_allow_html=True)
                 for j in overdue_jobs:
                     is_night = False
-                    border_color = "#dc2626"
-                    bg_color = "#fef2f2"
+                    shift_class = "shift-overdue"
                     try: 
                         h_bd = int(j["gio_bat_dau"].split(":")[0])
                         is_night = int(j["gio_ket_thuc"].split(":")[0]) < h_bd
-                        if h_bd < 12: 
-                            border_color = "#f59e0b"
-                            bg_color = "#fffbeb"
-                        elif h_bd < 18: 
-                            border_color = "#3b82f6"
-                            bg_color = "#eff6ff"
-                        else: 
-                            border_color = "#8b5cf6"
-                            bg_color = "#f5f3ff"
                     except: pass
 
                     st.markdown(f"""
-<div class="vhs-list-item" style="background:{bg_color} !important;border-left:5px solid {border_color} !important;border-radius:0 12px 12px 0 !important;">
+<div class="vhs-list-item {shift_class}">
 <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
 <div>
 <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px;">
@@ -252,24 +267,24 @@ def render():
                 st.markdown(f'<div style="font-size:14px;font-weight:700;color:#2563eb;margin:16px 0 8px;">🚀 Sắp thi công — trong 24h ({len(upcoming_jobs)} ca)</div>', unsafe_allow_html=True)
                 for j in upcoming_jobs:
                     is_night = False
-                    border  = "#2563eb"
-                    bg      = "#eff6ff"
+                    shift_class = "shift-afternoon"
+                    border = "#2563eb"
                     try: 
                         h_bd = int(j["gio_bat_dau"].split(":")[0])
                         is_night = int(j["gio_ket_thuc"].split(":")[0]) < h_bd
                         if h_bd < 12: 
+                            shift_class = "shift-morning"
                             border = "#f59e0b"
-                            bg = "#fffbeb"
                         elif h_bd < 18: 
+                            shift_class = "shift-afternoon"
                             border = "#3b82f6"
-                            bg = "#eff6ff"
                         else: 
+                            shift_class = "shift-night"
                             border = "#8b5cf6"
-                            bg = "#f5f3ff"
                     except: pass
 
                     st.markdown(f"""
-<div class="vhs-list-item" style="background:{bg} !important;border-left:5px solid {border} !important;border-radius:0 12px 12px 0 !important;">
+<div class="vhs-list-item {shift_class}">
 <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
 <div>
 <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px;">
