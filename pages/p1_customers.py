@@ -14,25 +14,12 @@ def render():
     
     st.markdown("""
     <style>
-    /* Absolute position the Edit Column to the top right of its Row! */
-    div[data-testid="stHorizontalBlock"]:has(.edit-col-marker) {
-        position: relative !important;
+    /* Float the Edit button to the right inside its column */
+    div[data-testid="column"]:has(.align-right) div[data-testid="stPopover"] {
+        display: flex;
+        justify-content: flex-end;
     }
-    div[data-testid="column"]:has(.edit-col-marker) {
-        position: absolute !important;
-        top: 0px !important;
-        right: 0px !important;
-        width: auto !important;
-        min-width: 0 !important;
-        z-index: 100 !important;
-    }
-    div[data-testid="column"]:has(.edit-col-marker) div[data-testid="stPopover"] button {
-        padding: 0.25rem 0.5rem !important;
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
-    .edit-col-marker { display: none; }
+    .align-right { display: none; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -111,24 +98,28 @@ def render():
                     hd_color = "#16a34a" if r["so_hd"] else "#94a3b8"
     
                     with st.container(border=True):
-                        c_top, c_edit = st.columns([5, 1], vertical_alignment="top")
-                        with c_top:
-                            st.markdown('<div class="no-wrap-row"></div>', unsafe_allow_html=True)
-                            st.markdown(f"""
-                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-                                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#16a34a20,#16a34a10);display:flex;align-items:center;justify-content:center;font-size:18px;">🏢</div>
-                                {badge(r["phan_khuc"], pk_color)}
-                            </div>
-                            <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{r["ten_cty"]}</div>
-                            <div style="font-size:11px;color:#94a3b8;margin-bottom:10px;">{r["ma_kh"]}</div>
-                            <div style="font-size:12px;color:#64748b;line-height:1.8;">
-                                {'👤 ' + r["dai_dien"] if r["dai_dien"] else ''}{'<br>' if r["dai_dien"] else ''}
-                                {'📞 ' + r["sdt"] if r["sdt"] else ''}
-                            </div>
-                            <div style="font-size:12px;font-weight:600;color:{hd_color};margin-top:8px;">📄 {hd_text}</div>
-                            """, unsafe_allow_html=True)
-                        with c_edit:
-                            st.markdown('<div class="edit-col-marker"></div>', unsafe_allow_html=True)
+                        st.markdown(f"""
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+<div style="width:40px;height:40px;border-radius:10px;
+            background:linear-gradient(135deg,#16a34a20,#16a34a10);
+            display:flex;align-items:center;justify-content:center;
+            font-size:18px;">🏢</div>
+{badge(r["phan_khuc"], pk_color)}
+</div>
+<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:2px;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{r["ten_cty"]}</div>
+<div style="font-size:11px;color:#94a3b8;margin-bottom:10px;">{r["ma_kh"]}</div>
+<div style="font-size:12px;color:#64748b;line-height:1.8;">
+{'👤 ' + r["dai_dien"] if r["dai_dien"] else ''}{'<br>' if r["dai_dien"] else ''}
+{'📞 ' + r["sdt"] if r["sdt"] else ''}
+</div>
+""", unsafe_allow_html=True)
+    
+                        c_hd, c_act = st.columns([3, 1], vertical_alignment="bottom")
+                        with c_hd:
+                            st.markdown(f'<div style="font-size:12px;font-weight:600;color:{hd_color};margin-top:8px;">📄 {hd_text}</div>', unsafe_allow_html=True)
+                        with c_act:
+                            st.markdown('<div class="align-right"></div>', unsafe_allow_html=True)
                             render_edit_popover(r, "grid")
         else:
             # List layout
@@ -152,7 +143,7 @@ def render():
                     with lc4:
                         st.markdown(f'<div style="font-size:12px;font-weight:600;color:{hd_color};">📄 {hd_text}</div>', unsafe_allow_html=True)
                     with lc5:
-                        st.markdown('<div class="edit-col-marker"></div>', unsafe_allow_html=True)
+                        st.markdown('<div class="align-right"></div>', unsafe_allow_html=True)
                         render_edit_popover(r, "list")
 
     # ===== THÊM MỚI =====
