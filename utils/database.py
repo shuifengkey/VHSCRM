@@ -204,7 +204,36 @@ def _do_init_db():
         value_data TEXT
     )""")
 
+    c.execute("""CREATE TABLE IF NOT EXISTS invoices (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ma_hd TEXT,
+        ma_kh TEXT NOT NULL,
+        ky_thang TEXT NOT NULL,
+        so_hoa_don TEXT,
+        ngay_xuat TEXT,
+        gia_truoc_vat REAL DEFAULT 0,
+        vat_pct REAL DEFAULT 0,
+        tien_vat REAL DEFAULT 0,
+        tong_tien REAL DEFAULT 0,
+        trang_thai TEXT DEFAULT 'Chưa xuất'
+    )""")
+
+    c.execute("""CREATE TABLE IF NOT EXISTS expenses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ngay_chi TEXT NOT NULL,
+        loai_chi_phi TEXT NOT NULL,
+        so_tien REAL DEFAULT 0,
+        nguoi_chi TEXT,
+        ghi_chu TEXT,
+        ma_hd TEXT,
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+    )""")
+
     # --- Auto Migration for existing databases ---
+    try: c.execute("ALTER TABLE contracts ADD COLUMN vat_pct REAL DEFAULT 0")
+    except Exception: pass
+    try: c.execute("ALTER TABLE debts ADD COLUMN tien_vat REAL DEFAULT 0")
+    except Exception: pass
     try: c.execute("ALTER TABLE contracts ADD COLUMN don_vi_tinh TEXT DEFAULT '/tháng'")
     except Exception: pass
     try: c.execute("ALTER TABLE contracts ADD COLUMN loai_khach TEXT DEFAULT 'Định kỳ'")

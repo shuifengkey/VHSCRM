@@ -14,7 +14,7 @@ def run_month_end_sweep():
     
     # Lấy các hợp đồng đang active có don_vi_tinh = '/tháng'
     contracts = conn.execute("""
-        SELECT ma_hd, ma_kh, gia_tri_thang, tan_suat 
+        SELECT ma_hd, ma_kh, gia_tri_thang, tan_suat, vat_pct 
         FROM contracts 
         WHERE trang_thai='active' AND don_vi_tinh='/tháng'
     """).fetchall()
@@ -26,6 +26,7 @@ def run_month_end_sweep():
         ma_hd = ct["ma_hd"]
         ma_kh = ct["ma_kh"]
         gia_tri = float(ct["gia_tri_thang"] or 0.0)
+        vat_pct = float(ct.get("vat_pct") or 0.0)
         total_required = int(ct["tan_suat"] or 1)
         
         if gia_tri <= 0:
@@ -43,8 +44,10 @@ def run_month_end_sweep():
                 ghi_chu = f"⚠️ Tự động sinh (chốt sổ). Thiếu ca: Làm {completed_count}/{total_required} ca."
                 count_warnings += 1
                 
-            conn.execute("INSERT INTO debts (ma_hd, ma_kh, ky_thanh_toan, can_thu, da_thu, ghi_chu) VALUES (?, ?, ?, ?, ?, ?)",
-                         (ma_hd, ma_kh, ky_thang, gia_tri, 0.0, ghi_chu))
+            tien_vat = gia_tri * (vat_pct / 100.0)
+            new_can_thu = gia_tri + tien_vat
+            conn.execute("INSERT INTO debts (ma_hd, ma_kh, ky_thanh_toan, can_thu, da_thu, ghi_chu, tien_vat) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                         (ma_hd, ma_kh, ky_thang, new_can_thu, 0.0, ghi_chu, tien_vat))
             count_generated += 1
             
     conn.commit()

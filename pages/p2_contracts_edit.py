@@ -188,12 +188,12 @@ def edit_contract_dialog(ma_hd):
                     ma_kh=?, ngay_ky=?, ngay_het_han=?, loai_khach=?,
                     gia_tri_thang=?, don_vi_tinh=?, khu_vuc_xu_ly=?, loai_con_trung=?, phuong_phap_xu_ly=?,
                     tan_suat=?, kieu_lap=?, lap_thu=?, chu_ky_lap=?, tuan_lap_lai=?,
-                    ngay_thi_cong_dau=?, gio_bat_dau=?, gio_ket_thuc=?, ghi_chu=?
+                    ngay_thi_cong_dau=?, gio_bat_dau=?, gio_ket_thuc=?, ghi_chu=?, vat_pct=?
                 WHERE ma_hd=?
             """, (kh_opts[kh_sel], ngay_ky.isoformat(), ngay_ht.isoformat(), loai_khach,
                   gia_tri, don_vi_tinh, khu_vuc_xu_ly, loai_con_trung, phuong_phap_xu_ly,
                   tan_suat, kieu_lap_val, lap_thu_val, chu_ky_lap, tuan_lap_lai_val,
-                  ngay_thi_cong_dau.isoformat(), gbd.strftime("%H:%M"), gkt.strftime("%H:%M"), ghi_chu,
+                  ngay_thi_cong_dau.isoformat(), gbd.strftime("%H:%M"), gkt.strftime("%H:%M"), ghi_chu, vat_pct,
                   ma_hd))
             c.commit()
             

@@ -315,11 +315,13 @@ def render():
                                 st.session_state.fmt_gia_tri = f"{num:,}".replace(",", ".")
                             except: pass
 
-                        c_gia, c_dvt = st.columns(2)
+                        c_gia, c_dvt, c_vat = st.columns([2, 1, 1])
                         with c_gia:
                             gia_tri_str = st.text_input("Giá Trị (VNĐ) *", key="raw_gia_tri", value=st.session_state.fmt_gia_tri, placeholder="3.500.000", on_change=format_currency)
                         with c_dvt:
                             don_vi_tinh = st.selectbox("Đơn Vị", ["/tháng", "/lần thi công"])
+                        with c_vat:
+                            vat_pct = st.selectbox("VAT (%)", [0, 8, 10], index=0)
     
                     st.markdown("**🏠 Khu vực xử lý**")
                     khu_vuc_sel = st.multiselect(
@@ -501,8 +503,8 @@ def render():
                                       (ma_hd,ma_kh,ngay_ky,ngay_het_han,
                                        ngay_thi_cong_dau,gio_bat_dau,gio_ket_thuc,
                                        tan_suat,kieu_lap,lap_thu,gia_tri_thang,ghi_chu,
-                                       don_vi_tinh,loai_khach,khu_vuc_xu_ly,loai_con_trung,chu_ky_lap,phuong_phap_xu_ly,tuan_lap_lai,ky_thuat_vien)
-                                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                                       don_vi_tinh,loai_khach,khu_vuc_xu_ly,loai_con_trung,chu_ky_lap,phuong_phap_xu_ly,tuan_lap_lai,ky_thuat_vien,vat_pct)
+                                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                                 """, (ma_hd, kh_opts[kh_sel],
                                       ngay_ky.isoformat(), ngay_ht.isoformat(),
                                       ngay_thi_cong_dau.isoformat(),

@@ -56,6 +56,7 @@ def complete_schedule(schedule_id: int, contract: dict) -> dict:
     # Auto debt generation logic
     dvt = contract.get("don_vi_tinh", "/tháng")
     gia_tri = float(contract.get("gia_tri_thang") or 0.0)
+    vat_pct = float(contract.get("vat_pct") or 0.0)
     ma_hd = contract["ma_hd"]
     ma_kh = contract["ma_kh"]
     ky_thang = sched["ky_thang"]
@@ -63,22 +64,26 @@ def complete_schedule(schedule_id: int, contract: dict) -> dict:
     if gia_tri > 0:
         if dvt == "/lần thi công":
             completed_count = conn.execute("SELECT COUNT(id) FROM schedules WHERE ma_hd=? AND ky_thang=? AND trang_thai='completed'", (ma_hd, ky_thang)).fetchone()[0]
-            new_can_thu = completed_count * gia_tri
+            base_can_thu = completed_count * gia_tri
+            tien_vat = base_can_thu * (vat_pct / 100.0)
+            new_can_thu = base_can_thu + tien_vat
             
             debt = conn.execute("SELECT id FROM debts WHERE ma_hd=? AND ky_thanh_toan=?", (ma_hd, ky_thang)).fetchone()
             if debt:
-                conn.execute("UPDATE debts SET can_thu = ? WHERE id=?", (new_can_thu, debt["id"]))
+                conn.execute("UPDATE debts SET can_thu = ?, tien_vat = ? WHERE id=?", (new_can_thu, tien_vat, debt["id"]))
             else:
-                conn.execute("INSERT INTO debts (ma_hd, ma_kh, ky_thanh_toan, can_thu, da_thu, ghi_chu) VALUES (?, ?, ?, ?, ?, ?)",
-                             (ma_hd, ma_kh, ky_thang, new_can_thu, 0.0, "Tự động sinh (theo lần)"))
+                conn.execute("INSERT INTO debts (ma_hd, ma_kh, ky_thanh_toan, can_thu, da_thu, ghi_chu, tien_vat) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                             (ma_hd, ma_kh, ky_thang, new_can_thu, 0.0, "Tự động sinh (theo lần)", tien_vat))
         else: # /tháng
             total_required = int(contract.get("tan_suat") or 1)
             completed_count = conn.execute("SELECT COUNT(id) FROM schedules WHERE ma_hd=? AND ky_thang=? AND trang_thai='completed'", (ma_hd, ky_thang)).fetchone()[0]
             if completed_count >= total_required:
                 debt = conn.execute("SELECT id FROM debts WHERE ma_hd=? AND ky_thanh_toan=?", (ma_hd, ky_thang)).fetchone()
                 if not debt:
-                    conn.execute("INSERT INTO debts (ma_hd, ma_kh, ky_thanh_toan, can_thu, da_thu, ghi_chu) VALUES (?, ?, ?, ?, ?, ?)",
-                                 (ma_hd, ma_kh, ky_thang, gia_tri, 0.0, "Tự động sinh (đủ tháng)"))
+                    tien_vat = gia_tri * (vat_pct / 100.0)
+                    new_can_thu = gia_tri + tien_vat
+                    conn.execute("INSERT INTO debts (ma_hd, ma_kh, ky_thanh_toan, can_thu, da_thu, ghi_chu, tien_vat) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                 (ma_hd, ma_kh, ky_thang, new_can_thu, 0.0, "Tự động sinh (đủ tháng)", tien_vat))
 
     if contract.get("loai_khach") == "Khách lẻ":
         conn.execute("UPDATE contracts SET trang_thai='completed' WHERE ma_hd=?", (ma_hd,))
