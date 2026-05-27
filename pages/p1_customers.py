@@ -176,6 +176,15 @@ def render():
                     st.markdown("<div style='height: 32px'></div>", unsafe_allow_html=True)
         else:
             # List layout
+            st.markdown("""
+            <style>
+            /* Slim down padding for List view boxes */
+            div[data-testid="stVerticalBlockBorderWrapper"]:has(.vhs-list-marker) {
+                padding-top: 0.4rem !important;
+                padding-bottom: 0.4rem !important;
+            }
+            </style>
+            """, unsafe_allow_html=True)
             for r in rows:
                 pk_colors = {"Nhà hàng":"orange", "Khách sạn":"blue", "Căn hộ/Biệt thự":"green", "KCC":"purple", "Nhà Kho/Xưởng":"gray"}
                 pk_color = pk_colors.get(r["phan_khuc"], "gray")
@@ -183,6 +192,7 @@ def render():
                 hd_color = "#16a34a" if r["so_hd"] else "#94a3b8"
 
                 with st.container(border=True):
+                    st.markdown('<div class="vhs-list-marker" style="display:none;"></div>', unsafe_allow_html=True)
                     lc1, lc2, lc3, lc4, lc5 = st.columns([2, 1.5, 1.5, 1, 0.7], vertical_alignment="center")
                     with lc1:
                         st.markdown(f'<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><b style="color:#0f172a;font-size:14px;">{r["ten_cty"]}</b><br><span style="font-size:11px;color:#64748b;">{r["ma_kh"]}</span></div>', unsafe_allow_html=True)
@@ -198,7 +208,7 @@ def render():
                     with lc5:
                         st.markdown('<div class="align-right"></div>', unsafe_allow_html=True)
                         render_edit_popover(r, "list")
-                st.markdown("<div style='height: 8px'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='height: 4px'></div>", unsafe_allow_html=True)
 
     # ===== THÊM MỚI =====
     with tab_add:
