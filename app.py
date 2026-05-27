@@ -663,24 +663,26 @@ elif page == "⚙️ Cài đặt":
         
     with t3:
         st.markdown('<div class="vhs-card">', unsafe_allow_html=True)
-        st.markdown("### Cấu hình Google Calendar API")
-        st.info("Nhập Client ID và Client Secret từ ứng dụng Google Cloud Console để đồng bộ lịch thi công sang Google Calendar.")
+        st.markdown("### Cấu hình Google Calendar & Maps API")
+        st.info("Nhập các thông tin xác thực từ Google Cloud Console để đồng bộ lịch và vẽ bản đồ.")
         
         conn = get_connection()
-        settings_rows = conn.execute("SELECT key_name, value_data FROM settings WHERE key_name IN ('google_client_id', 'google_client_secret')").fetchall()
+        settings_rows = conn.execute("SELECT key_name, value_data FROM settings WHERE key_name IN ('google_client_id', 'google_client_secret', 'google_maps_api_key')").fetchall()
         settings_dict = {r['key_name']: r['value_data'] for r in settings_rows}
         
         with st.form("form_google_settings"):
-            client_id = st.text_input("Client ID", value=settings_dict.get('google_client_id', ''))
-            client_secret = st.text_input("Client Secret", value=settings_dict.get('google_client_secret', ''), type="password")
+            client_id = st.text_input("Calendar Client ID", value=settings_dict.get('google_client_id', ''))
+            client_secret = st.text_input("Calendar Client Secret", value=settings_dict.get('google_client_secret', ''), type="password")
+            maps_api_key = st.text_input("Maps API Key", value=settings_dict.get('google_maps_api_key', ''))
             
             if st.form_submit_button("💾 Lưu Cấu Hình", type="primary"):
                 conn_save = get_connection()
                 conn_save.execute("INSERT OR REPLACE INTO settings (id, key_name, value_data) VALUES ((SELECT id FROM settings WHERE key_name='google_client_id'), 'google_client_id', ?)", (client_id,))
                 conn_save.execute("INSERT OR REPLACE INTO settings (id, key_name, value_data) VALUES ((SELECT id FROM settings WHERE key_name='google_client_secret'), 'google_client_secret', ?)", (client_secret,))
+                conn_save.execute("INSERT OR REPLACE INTO settings (id, key_name, value_data) VALUES ((SELECT id FROM settings WHERE key_name='google_maps_api_key'), 'google_maps_api_key', ?)", (maps_api_key,))
                 conn_save.commit()
                 conn_save.close()
-                st.success("Đã lưu cấu hình Google Calendar!")
+                st.success("Đã lưu cấu hình Google API!")
                 st.rerun()
                 
         conn.close()
