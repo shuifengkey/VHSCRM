@@ -241,11 +241,20 @@ div[data-testid="InputInstructions"] {{ display: none !important; }}
         import streamlit.components.v1 as components
         components.html("""
         <script>
-        const inputs = window.parent.document.querySelectorAll('input[type="password"]');
-        inputs.forEach(input => {
-            input.setAttribute('inputmode', 'numeric');
-            input.setAttribute('pattern', '[0-9]*');
-        });
+        const setNumeric = () => {
+            const inputs = window.parent.document.querySelectorAll('input[type="password"]');
+            inputs.forEach(input => {
+                if (input.getAttribute('inputmode') !== 'numeric') {
+                    input.setAttribute('inputmode', 'numeric');
+                    input.setAttribute('pattern', '[0-9]*');
+                }
+            });
+        };
+        setNumeric();
+        setTimeout(setNumeric, 100);
+        setTimeout(setNumeric, 500);
+        setTimeout(setNumeric, 1000);
+        setTimeout(setNumeric, 2000);
         </script>
         """, height=0, width=0)
 
