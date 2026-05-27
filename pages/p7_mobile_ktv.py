@@ -178,7 +178,7 @@ def render():
     # Lấy dữ liệu ca
     now_dt = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7))
     past3_str = (now_dt - timedelta(days=3)).strftime("%Y-%m-%d")
-    tomorrow_str = (now_dt + timedelta(days=1)).strftime("%Y-%m-%d")
+    tomorrow_str = (now_dt + timedelta(days=30)).strftime("%Y-%m-%d")
     
     conn = get_connection()
     q = f"""SELECT s.*, c.ten_cty, c.dia_chi, c.sdt,
@@ -190,7 +190,10 @@ def render():
             ORDER BY s.ngay_du_kien ASC, s.gio_bat_dau ASC"""
     all_jobs = conn.execute(q, (past3_str, tomorrow_str)).fetchall()
     
-    my_jobs = []
+    active_jobs = []
+    pending_jobs = []
+    completed_jobs = []
+    
     today_str = now_dt.strftime("%Y-%m-%d")
     yesterday_str = (now_dt - timedelta(days=1)).strftime("%Y-%m-%d")
     
@@ -203,16 +206,15 @@ def render():
             continue
             
         is_completed = bool(job.get("co_time") or job.get("trang_thai") == "completed")
+        is_active = bool(job.get("checkin_time") and not job.get("co_time")) and not is_completed
         sch_date = job["ngay_du_kien"]
         
-        # 2. Quyết định hiển thị
+        # 2. Quyết định hiển thị và phân loại
         show_job = False
         
         if sch_date >= today_str:
-            # Ca hôm nay hoặc tương lai (ngày mai) -> luôn hiện
             show_job = True
-        elif not is_completed and sch_date >= yesterday_str:
-            # Ca hôm qua chưa hoàn thành (bị quá hạn) -> hiện để xử lý
+        elif not is_completed and sch_date >= yesterday_str: # Chưa làm bị quá hạn
             show_job = True
         elif is_completed:
             if job.get("co_time"):
@@ -225,13 +227,80 @@ def render():
             elif sch_date == today_str:
                 show_job = True
         elif job.get("checkin_time") and not is_completed:
-            # Ca đang thi công từ mấy hôm trước (quên checkout) -> luôn hiện
             show_job = True
 
         if show_job:
-            my_jobs.append(job)
+            # Phân loại
+            if is_completed:
+                completed_jobs.append(job)
+            elif is_active:
+                active_jobs.append(job)
+            else:
+                pending_jobs.append(job)
 
-    if not my_jobs:
+    def render_job_card(job_item):
+        log = {"id": job_item["log_id"], "checkin_time": job_item["checkin_time"], "checkout_time": job_item["co_time"], "ket_qua": job_item["ket_qua"], "hoa_chat": job_item["hoa_chat"]} if job_item["log_id"] else None
+        
+        is_completed_local = bool(job_item.get("co_time") or job_item.get("trang_thai") == "completed")
+        is_active_local = bool(log and not log.get("checkout_time")) and not is_completed_local
+        
+        _sch_d = date.fromisoformat(job_item["ngay_du_kien"])
+        _h, _m = 8, 0
+        try: _h, _m = map(int, (job_item["gio_bat_dau"] or "08:00").split(":"))
+        except: pass
+        _start = datetime(_sch_d.year, _sch_d.month, _sch_d.day, _h, _m)
+        is_overdue = ((_start - now_dt).total_seconds() / 3600) < -24 and not is_completed_local
+        
+        bg_color = "#e2e8f0" if is_completed_local else ("#fffbeb" if is_active_local else ("#fef2f2" if is_overdue else "white"))
+        border_color = "#cbd5e1" if is_completed_local else ("#f59e0b" if is_active_local else ("#ef4444" if is_overdue else "#e2e8f0"))
+        
+        badge_html = ""
+        if is_completed_local: badge_html = '<div class="status-badge" style="background:#22c55e;color:white;">✅ Đã hoàn thành</div>'
+        elif is_active_local: badge_html = '<div class="status-badge" style="background:#f59e0b;color:white;">⏱️ Đang thi công</div>'
+        elif is_overdue: badge_html = '<div class="status-badge" style="background:#ef4444;color:white;">⚠️ Quá ca</div>'
+        
+        badge_str = f" {badge_html}" if badge_html else ""
+        
+        date_str = ""
+        if not is_completed_local:
+            try:
+                _d = date.fromisoformat(job_item['ngay_du_kien'])
+                date_str = f" <span style='font-size:16px;color:#64748b;'>({_d.strftime('%d/%m')})</span>"
+            except: pass
+
+        if is_completed_local:
+            left_border = "border-left: 6px solid #94a3b8;"
+        elif is_active_local:
+            left_border = "border-left: 6px solid #f59e0b;"
+        elif is_overdue:
+            left_border = "border-left: 6px solid #ef4444;"
+        else:
+            left_border = "border-left: 6px solid #3b82f6;"
+
+        margin_bottom = "0px" if not is_completed_local else "16px"
+        padding_bottom = "75px" if not is_completed_local else "20px"
+
+        st.markdown(f"""
+        <div class="mobile-card" style="background:{bg_color};border-color:{border_color};{left_border}; margin-bottom:{margin_bottom}; padding-bottom:{padding_bottom};">
+            <div class="shift-time">{job_item['gio_bat_dau']} - {job_item['gio_ket_thuc']}{date_str}</div>
+            <div class="shift-company">🏢 {job_item['ten_cty']}</div>{badge_str}
+            <div class="shift-address">
+                📍 {str(job_item['dia_chi']).replace(chr(10), ' ') if job_item['dia_chi'] else 'Chưa có địa chỉ'}<br>
+                📞 {job_item['sdt'] or 'Chưa có SĐT'}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Buttons actions
+        if not is_completed_local:
+            st.markdown("<div class='btn-pull-up'></div>", unsafe_allow_html=True)
+            btn_label = "✅ Hoàn Thành Ca" if is_active_local else "📍 Bắt Đầu (Check-in)"
+            btn_type = "primary"
+            
+            if st.button(btn_label, key=f"btn_{job_item['id']}", type=btn_type, use_container_width=True):
+                action_dialog(job_item, log)
+
+    if not (active_jobs or pending_jobs or completed_jobs):
         st.markdown("""
         <div class="mobile-card" style="text-align:center;padding:40px 20px;">
             <div style="font-size:40px;margin-bottom:10px;">🎉</div>
@@ -240,70 +309,16 @@ def render():
         </div>
         """, unsafe_allow_html=True)
     else:
-        st.markdown(f"<div style='font-weight:700;color:#64748b;margin-bottom:12px;'>BẠN CÓ {len(my_jobs)} CA SẮP TỚI</div>", unsafe_allow_html=True)
-        
-        for job in my_jobs:
-            # Dữ liệu log đã được JOIN sẵn từ câu lệnh SQL chính
-            log = {"id": job["log_id"], "checkin_time": job["checkin_time"], "checkout_time": job["co_time"], "ket_qua": job["ket_qua"], "hoa_chat": job["hoa_chat"]} if job["log_id"] else None
+        if active_jobs:
+            st.markdown(f"<div style='font-weight:900;color:#d97706;margin:24px 0 16px 0;font-size:15px;'>⏱️ ĐANG THI CÔNG ({len(active_jobs)})</div>", unsafe_allow_html=True)
+            for j in active_jobs: render_job_card(j)
             
-            # Phân tích trạng thái
-            is_completed = bool(job.get("co_time") or job.get("trang_thai") == "completed")
-            is_active = bool(log and not log.get("checkout_time")) and not is_completed
+        if pending_jobs:
+            st.markdown(f"<div style='font-weight:900;color:#0f172a;margin:24px 0 16px 0;font-size:15px;'>📝 CHƯA THI CÔNG ({len(pending_jobs)})</div>", unsafe_allow_html=True)
+            for j in pending_jobs: render_job_card(j)
             
-            _sch_d = date.fromisoformat(job["ngay_du_kien"])
-            _h, _m = 8, 0
-            try: _h, _m = map(int, (job["gio_bat_dau"] or "08:00").split(":"))
-            except: pass
-            _start = datetime(_sch_d.year, _sch_d.month, _sch_d.day, _h, _m)
-            is_overdue = ((_start - now_dt).total_seconds() / 3600) < -24 and not is_completed
-            
-            bg_color = "#e2e8f0" if is_completed else ("#fffbeb" if is_active else ("#fef2f2" if is_overdue else "white"))
-            border_color = "#cbd5e1" if is_completed else ("#f59e0b" if is_active else ("#ef4444" if is_overdue else "#e2e8f0"))
-            
-            badge_html = ""
-            if is_completed: badge_html = '<div class="status-badge" style="background:#22c55e;color:white;">✅ Đã hoàn thành</div>'
-            elif is_active: badge_html = '<div class="status-badge" style="background:#f59e0b;color:white;">⏱️ Đang thi công</div>'
-            elif is_overdue: badge_html = '<div class="status-badge" style="background:#ef4444;color:white;">⚠️ Quá ca</div>'
-            
-            badge_str = f" {badge_html}" if badge_html else ""
-            
-            date_str = ""
-            if not is_completed:
-                try:
-                    _d = date.fromisoformat(job['ngay_du_kien'])
-                    date_str = f" <span style='font-size:16px;color:#64748b;'>({_d.strftime('%d/%m')})</span>"
-                except: pass
-
-            if is_completed:
-                left_border = "border-left: 6px solid #94a3b8;"
-            elif is_active:
-                left_border = "border-left: 6px solid #f59e0b;"
-            elif is_overdue:
-                left_border = "border-left: 6px solid #ef4444;"
-            else:
-                left_border = "border-left: 6px solid #3b82f6;"
-
-            margin_bottom = "0px" if not is_completed else "16px"
-            padding_bottom = "75px" if not is_completed else "20px"
-
-            st.markdown(f"""
-            <div class="mobile-card" style="background:{bg_color};border-color:{border_color};{left_border}; margin-bottom:{margin_bottom}; padding-bottom:{padding_bottom};">
-                <div class="shift-time">{job['gio_bat_dau']} - {job['gio_ket_thuc']}{date_str}</div>
-                <div class="shift-company">🏢 {job['ten_cty']}</div>{badge_str}
-                <div class="shift-address">
-                    📍 {str(job['dia_chi']).replace(chr(10), ' ') if job['dia_chi'] else 'Chưa có địa chỉ'}<br>
-                    📞 {job['sdt'] or 'Chưa có SĐT'}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Buttons actions
-            if not is_completed:
-                st.markdown("<div class='btn-pull-up'></div>", unsafe_allow_html=True)
-                btn_label = "✅ Hoàn Thành Ca" if is_active else "📍 Bắt Đầu (Check-in)"
-                btn_type = "primary"
-                
-                if st.button(btn_label, key=f"btn_{job['id']}", type=btn_type, use_container_width=True):
-                    action_dialog(job, log)
+        if completed_jobs:
+            st.markdown(f"<div style='font-weight:900;color:#166534;margin:24px 0 16px 0;font-size:15px;'>✅ ĐÃ HOÀN THÀNH ({len(completed_jobs)})</div>", unsafe_allow_html=True)
+            for j in completed_jobs: render_job_card(j)
                 
     conn.close()
