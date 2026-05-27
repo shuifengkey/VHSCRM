@@ -189,7 +189,8 @@ def render():
             st.markdown("**📝 Thông Tin Khách Hàng Mới**")
             st.markdown('<hr style="margin:12px 0">', unsafe_allow_html=True)
             if st.session_state.get("add_kh_success"):
-                st.success(st.session_state.add_kh_success)
+                st.toast(st.session_state.add_kh_success, icon="✅")
+                st.balloons()
                 st.session_state.add_kh_success = None
                 
             with st.form("form_add_kh", clear_on_submit=True):

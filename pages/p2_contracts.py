@@ -287,7 +287,8 @@ def render():
                 st.markdown('<hr style="margin:8px 0 16px">', unsafe_allow_html=True)
 
                 if st.session_state.get("add_hd_success"):
-                    st.success(st.session_state.add_hd_success)
+                    st.toast(st.session_state.add_hd_success, icon="✅")
+                    st.balloons()
                     st.session_state.add_hd_success = None
 
                 with st.container():
@@ -520,7 +521,9 @@ def render():
                                     st.session_state.add_hd_success = f"✅ Tạo HĐ **{ma_hd}** thành công!"
                                 st.rerun()
                             except Exception as e:
-                                st.error(f"❌ {e}")
+                                import traceback
+                                traceback.print_exc()
+                                st.error(f"❌ Có lỗi xảy ra: {e}")
 
             st.markdown("</div>", unsafe_allow_html=True)
 
