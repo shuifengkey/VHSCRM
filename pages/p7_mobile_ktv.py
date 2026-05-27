@@ -178,7 +178,7 @@ def render():
     # Lấy dữ liệu ca
     now_dt = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7))
     past3_str = (now_dt - timedelta(days=3)).strftime("%Y-%m-%d")
-    tomorrow_str = (now_dt + timedelta(days=30)).strftime("%Y-%m-%d")
+    tomorrow_str = (now_dt + timedelta(days=1)).strftime("%Y-%m-%d")
     
     conn = get_connection()
     q = f"""SELECT s.*, c.ten_cty, c.dia_chi, c.sdt,
