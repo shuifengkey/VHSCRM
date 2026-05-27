@@ -151,7 +151,7 @@ def render():
                 pct_life = max(0, min(100, int(elapsed/total_d*100))) if total_d else 100
             except: pct_life = 0
 
-            freq_str = TAN_SUAT_OPTS.get(r['tan_suat'], '?') if r.get('loai_khach') == 'Định kỳ' else r.get('chu_ky_lap', '1_lan').replace('_', ' ')
+            freq_str = TAN_SUAT_OPTS.get(r['tan_suat'], '?') if r.get('loai_khach') == 'Định kỳ' else r.get('chu_ky_lap', '1_lan').replace('_lan', ' lần').replace('_thang', ' tháng').replace('_tuan', ' tuần').replace('_nam', ' năm')
             with st.expander(
                 f"**{r['ma_hd']}** — {r['ten_cty']}  "
                 f"| {r.get('loai_khach', 'Định kỳ')} ({freq_str})  "
