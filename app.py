@@ -463,7 +463,7 @@ if page == "🏠 Tổng Quan":
                 box-shadow:0 4px 24px rgba(0,0,0,.15);">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
         <div>
-          <div style="font-size:22px;font-weight:800;color:white;">Tổng quan hệ thống VHS</div>
+          <div style="font-size:22px;font-weight:800;color:white;text-transform:uppercase;">Tổng quan hệ thống VHS</div>
           <div style="font-size:13px;color:#86efac;margin-top:3px;">{now.strftime('%A, %d/%m/%Y — %H:%M')}</div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
