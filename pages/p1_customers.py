@@ -19,7 +19,7 @@ def render():
     """, unsafe_allow_html=True)
 
     def render_edit_popover(r, suffix):
-        with st.popover("✏️"):
+        with st.popover("✏️ Sửa", use_container_width=True):
             with st.form(f"edit_{r['ma_kh']}_{suffix}"):
                 ten = st.text_input("Tên công ty", value=r["ten_cty"], key=f"ten_{r['ma_kh']}_{suffix}")
                 dd  = st.text_input("Đại diện", value=r["dai_dien"] or "", key=f"dd_{r['ma_kh']}_{suffix}")
