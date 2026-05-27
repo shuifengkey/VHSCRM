@@ -278,7 +278,7 @@ def render():
                     y=[r["rev"] for r in rev],
                     marker=dict(color=["#16a34a","#2563eb","#d97706", "#7c3aed", "#64748b"],
                                 line=dict(color="white",width=2)),
-                    text=[f"{format_money(r[\'rev\'])}" for r in rev],
+                    text=[f"{int(r['rev'] or 0):,}".replace(",", ".") for r in rev],
                     textposition="outside",
                 ))
                 fig2.update_layout(
