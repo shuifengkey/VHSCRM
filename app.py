@@ -104,7 +104,7 @@ footer { display: none !important; }
 }
 /* Style the button */
 .stButton > button {
-    background: linear-gradient(135deg, #16a34a, #15803d) !important;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 60%, #166534 100%) !important;
     color: white !important;
     border: none !important;
     border-radius: 14px !important;
@@ -115,7 +115,7 @@ footer { display: none !important; }
     transition: all 0.2s ease !important;
 }
 .stButton > button:hover {
-    background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+    background: linear-gradient(135deg, #1e293b 0%, #294d3f 60%, #22c55e 100%) !important;
     transform: translateY(-1px) !important;
     box-shadow: 0 8px 24px rgba(22,163,74,0.3) !important;
 }
