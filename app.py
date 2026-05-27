@@ -154,27 +154,36 @@ div[data-testid="InputInstructions"] {{ display: none !important; }}
 </div>
 """, unsafe_allow_html=True)
 
-    pin_val = st.text_input(
-        "Nhập mã PIN",
-        type="password",
-        max_chars=6,
-        key="pin_field",
-        placeholder="",
-        label_visibility="collapsed"
-    )
-    
-    import streamlit.components.v1 as components
-    components.html("""
-    <script>
-    const inputs = window.parent.document.querySelectorAll('input[type="password"]');
-    inputs.forEach(input => {
-        input.setAttribute('inputmode', 'numeric');
-        input.setAttribute('pattern', '[0-9]*');
-    });
-    </script>
-    """, height=0, width=0)
+    st.markdown("""
+    <style>
+    div[data-testid="stForm"] { border: none !important; padding: 0 !important; background: transparent !important; }
+    </style>
+    """, unsafe_allow_html=True)
 
-    if st.button("🔓 XÁC NHẬN", use_container_width=True, key="pin_submit"):
+    with st.form("login_form", clear_on_submit=False):
+        pin_val = st.text_input(
+            "Nhập mã PIN",
+            type="password",
+            max_chars=6,
+            key="pin_field",
+            placeholder="",
+            label_visibility="collapsed"
+        )
+        
+        import streamlit.components.v1 as components
+        components.html("""
+        <script>
+        const inputs = window.parent.document.querySelectorAll('input[type="password"]');
+        inputs.forEach(input => {
+            input.setAttribute('inputmode', 'numeric');
+            input.setAttribute('pattern', '[0-9]*');
+        });
+        </script>
+        """, height=0, width=0)
+
+        submitted = st.form_submit_button("🔓 XÁC NHẬN", use_container_width=True)
+
+    if submitted:
         is_valid = False
         role = ""
         if pin_val == "1710":
