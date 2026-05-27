@@ -1,4 +1,4 @@
-﻿import streamlit as st
+import streamlit as st
 import sys, os
 from utils.database import get_connection
 from utils.styles import badge, section_header, stat_row, COLORS
@@ -130,7 +130,7 @@ def render():
                 sel = st.selectbox("Chọn Khoản Nợ", list(opts.keys()), key="pay_sel")
                 u = opts[sel]
                 con_no = u["can_thu"] - u["da_thu"]
-                so_tien = st.number_input("Số tiền khách trả", min_value=0, max_value=int(con_no), value=int(con_no), step=100000, key="pay_amount")
+                so_tien = st.number_input("Số tiền khách trả (gồm VAT nếu có)", min_value=0, value=int(con_no), step=100000, key="pay_amount")
                 if st.button("Xác nhận thu", type="primary"):
                     now_iso = (datetime.now(timezone.utc) + timedelta(hours=7)).date().isoformat()
                     conn.execute("UPDATE debts SET da_thu=da_thu+?, ngay_thu=? WHERE id=?", (so_tien, now_iso, u["id"]))
