@@ -49,27 +49,20 @@ def google_sync_dialog(thang, nam):
                 ky_str = f"{nam}-{thang:02d}"
                 conn = get_connection()
                 schedules = conn.execute('''
-                    SELECT s.ngay_du_kien, s.gio_bat_dau, s.gio_ket_thuc, s.ghi_chu, s.ky_thuat_vien, c.ten_cty, c.dia_chi
+                    SELECT s.id
                     FROM schedules s
-                    JOIN customers c ON s.ma_kh=c.ma_kh
                     WHERE strftime('%Y-%m', s.ngay_du_kien) = ? AND s.trang_thai != 'skipped'
                 ''', (ky_str,)).fetchall()
-                conn.close()
                 
                 success_count = 0
+                from utils.google_sync import auto_sync_schedule_to_google
                 for s in schedules:
-                    start_dt = f"{s['ngay_du_kien']}T{s['gio_bat_dau']}:00"
-                    end_dt   = f"{s['ngay_du_kien']}T{s['gio_ket_thuc']}:00"
-                    subject  = f"[VHS] Thi công: {s['ten_cty']}"
-                    content  = f"Khách hàng: {s['ten_cty']}\n"
-                    if s['ky_thuat_vien']: content += f"KTV: {s['ky_thuat_vien']}\n"
-                    if s['ghi_chu']:       content += f"Ghi chú: {s['ghi_chu']}\n"
-                    
-                    ok, err_msg = push_event_to_google(creds, subject, start_dt, end_dt, content, s.get('dia_chi') or "")
+                    ok, res = auto_sync_schedule_to_google(conn, s['id'], "upsert")
                     if ok: 
                         success_count += 1
                     else:
-                        st.error(f"Lỗi khi đẩy lịch {s['ten_cty']}: {err_msg}")
+                        st.error(f"Lỗi khi đẩy lịch ID {s['id']}: {res}")
+                conn.close()
                 
                 if success_count == len(schedules):
                     st.success(f"✅ Đã đồng bộ thành công {success_count}/{len(schedules)} sự kiện!")
