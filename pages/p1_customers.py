@@ -14,37 +14,25 @@ def render():
     
     st.markdown("""
     <style>
-    /* Prevent specific columns from stacking on mobile */
-    div[data-testid="stHorizontalBlock"]:has(.no-wrap-row) {
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        align-items: flex-start !important;
-    }
-    div[data-testid="stHorizontalBlock"]:has(.no-wrap-row) > div[data-testid="column"] {
-        min-width: 0 !important;
-        width: auto !important;
-        flex: 1 1 auto !important;
-    }
-    div[data-testid="stHorizontalBlock"]:has(.no-wrap-row) > div[data-testid="column"]:last-child {
-        flex: 0 0 auto !important;
-    }
-    /* Absolute positioning for Edit Popover to force it to top right globally for all cards */
-    div[data-testid="stVerticalBlockBorderWrapper"] {
+    /* Absolute position the Edit Column to the top right of its Row! */
+    div[data-testid="stHorizontalBlock"]:has(.edit-col-marker) {
         position: relative !important;
     }
-    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stPopover"] {
+    div[data-testid="column"]:has(.edit-col-marker) {
         position: absolute !important;
-        top: 8px !important;
-        right: 8px !important;
+        top: 0px !important;
+        right: 0px !important;
         width: auto !important;
-        z-index: 99 !important;
+        min-width: 0 !important;
+        z-index: 100 !important;
     }
-    div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stPopover"] button {
+    div[data-testid="column"]:has(.edit-col-marker) div[data-testid="stPopover"] button {
         padding: 0.25rem 0.5rem !important;
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
     }
+    .edit-col-marker { display: none; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -140,6 +128,7 @@ def render():
                             <div style="font-size:12px;font-weight:600;color:{hd_color};margin-top:8px;">📄 {hd_text}</div>
                             """, unsafe_allow_html=True)
                         with c_edit:
+                            st.markdown('<div class="edit-col-marker"></div>', unsafe_allow_html=True)
                             render_edit_popover(r, "grid")
         else:
             # List layout
@@ -163,6 +152,7 @@ def render():
                     with lc4:
                         st.markdown(f'<div style="font-size:12px;font-weight:600;color:{hd_color};">📄 {hd_text}</div>', unsafe_allow_html=True)
                     with lc5:
+                        st.markdown('<div class="edit-col-marker"></div>', unsafe_allow_html=True)
                         render_edit_popover(r, "list")
 
     # ===== THÊM MỚI =====
