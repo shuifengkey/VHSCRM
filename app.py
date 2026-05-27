@@ -358,7 +358,7 @@ st.markdown(f"""
   <div style="flex:1;display:flex;align-items:center;" id="vhs-nav-items"></div>
   <div class="vhs-status">
     <div class="vhs-status-pill">🔧 <b>{ca_hom_nay}</b> ca hôm nay</div>
-    <div class="vhs-status-pill">⚠️ Nợ <b>{tong_no/1e6:.1f}M</b></div>
+    <div class="vhs-status-pill">⚠️ Nợ <b>{format_money(tong_no)}</b></div>
     <div class="vhs-status-pill">🕐 <b>{now.strftime('%H:%M')}</b></div>
   </div>
 </div>
@@ -484,9 +484,9 @@ if page == "🏠 Tổng Quan":
     c1,c2,c3,c4,c5 = st.columns(5)
     with c1: st.metric("👥 Khách Hàng",    total_kh)
     with c2: st.metric("📄 HĐ Active",      total_hd)
-    with c3: st.metric("💵 Doanh Thu/Tháng",f"{doanh_thu/1e6:.1f}M đ")
+    with c3: st.metric("💵 Doanh Thu/Tháng",f"{format_money(doanh_thu)} đ")
     with c4: st.metric("✅ Ca Hoàn Thành",  ca_done)
-    with c5: st.metric("⚠️ Công Nợ",        f"{tong_no/1e6:.1f}M đ")
+    with c5: st.metric("⚠️ Công Nợ",        f"{format_money(tong_no)} đ")
 
     st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
 
@@ -501,11 +501,11 @@ if page == "🏠 Tổng Quan":
         if monthly:
             fig = go.Figure()
             fig.add_scatter(x=[r["ky_thanh_toan"] for r in monthly],
-                            y=[r["ct"]/1e6 for r in monthly],
+                            y=[r["ct"] for r in monthly],
                             name="Cần Thu", line=dict(color="#e2e8f0",width=3),
                             fill="tozeroy", fillcolor="rgba(226,232,240,.3)")
             fig.add_scatter(x=[r["ky_thanh_toan"] for r in monthly],
-                            y=[r["dt"]/1e6 for r in monthly],
+                            y=[r["dt"] for r in monthly],
                             name="Đã Thu", line=dict(color="#16a34a",width=3),
                             fill="tozeroy", fillcolor="rgba(22,163,74,.15)",
                             mode="lines+markers", marker=dict(size=6,color="#16a34a"))
@@ -604,7 +604,7 @@ if page == "🏠 Tổng Quan":
           {stat_row("Ca bỏ qua",f'<b style="color:#dc2626">{overdue}</b>')}
           {stat_row("KH còn nợ",f'<b style="color:#d97706">{kh_no}</b>')}
           {stat_row("Tỷ lệ HT",f'<b style="color:#16a34a">{rate}%</b>')}
-          {stat_row("Thu tháng này",f'<b>{da_thu_thang/1e6:.1f}M</b>')}
+          {stat_row("Thu tháng này",f'<b>{format_money(da_thu_thang)}</b>')}
         </div>
         """, unsafe_allow_html=True)
     conn.close()

@@ -275,10 +275,10 @@ def render():
                 # Doanh thu theo phân khúc
                 fig2 = go.Figure(go.Bar(
                     x=[r["phan_khuc"] for r in rev],
-                    y=[r["rev"]/1e6 for r in rev],
+                    y=[r["rev"] for r in rev],
                     marker=dict(color=["#16a34a","#2563eb","#d97706", "#7c3aed", "#64748b"],
                                 line=dict(color="white",width=2)),
-                    text=[f"{r['rev']/1e6:.1f}M" for r in rev],
+                    text=[f"{format_money(r[\'rev\'])}" for r in rev],
                     textposition="outside",
                 ))
                 fig2.update_layout(

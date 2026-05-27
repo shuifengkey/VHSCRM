@@ -31,10 +31,10 @@ def render():
         loi_nhuan = tong_dt - tong_chi
         
         c1, c2, c3, c4 = st.columns(4)
-        with c1: st.metric("📬 Tổng Cần Thu", f"{tong_ct/1e6:.1f}M đ")
-        with c2: st.metric("✅ Thực Thu (Doanh thu)", f"{tong_dt/1e6:.1f}M đ")
-        with c3: st.metric("💸 Chi Phí Đầu Vào", f"{tong_chi/1e6:.1f}M đ")
-        with c4: st.metric("📈 Lợi Nhuận Gộp", f"{loi_nhuan/1e6:.1f}M đ")
+        with c1: st.metric("📬 Tổng Cần Thu", f"{format_money(tong_ct)} đ")
+        with c2: st.metric("✅ Thực Thu (Doanh thu)", f"{format_money(tong_dt)} đ")
+        with c3: st.metric("💸 Chi Phí Đầu Vào", f"{format_money(tong_chi)} đ")
+        with c4: st.metric("📈 Lợi Nhuận Gộp", f"{format_money(loi_nhuan)} đ")
         
         st.markdown('<hr style="margin:16px 0">', unsafe_allow_html=True)
         col_chart, col_top = st.columns([3,2])
@@ -52,8 +52,8 @@ def render():
             
             if monthly:
                 fig = go.Figure()
-                fig.add_scatter(x=[r["k"] for r in monthly], y=[r["dt"]/1e6 for r in monthly], name="Thu (M)", line=dict(color="#16a34a",width=3), mode="lines+markers")
-                fig.add_scatter(x=[r["k"] for r in monthly], y=[r["chi"]/1e6 for r in monthly], name="Chi (M)", line=dict(color="#dc2626",width=3), mode="lines+markers")
+                fig.add_scatter(x=[r["k"] for r in monthly], y=[r["dt"] for r in monthly], name="Thu (VND)", line=dict(color="#16a34a",width=3), mode="lines+markers")
+                fig.add_scatter(x=[r["k"] for r in monthly], y=[r["chi"] for r in monthly], name="Chi (VND)", line=dict(color="#dc2626",width=3), mode="lines+markers")
                 fig.update_layout(height=260, title="Thu Chi 6 Tháng Gần Nhất", margin=dict(l=10,r=10,t=40,b=20), paper_bgcolor="white", plot_bgcolor="white")
                 st.plotly_chart(fig, use_container_width=True)
                 
@@ -73,7 +73,7 @@ def render():
                     <div style="margin-bottom:12px;">
                         <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
                             <span style="font-weight:600;">{t['ten_cty'][:22]}</span>
-                            <span style="color:#dc2626;font-weight:700;">{t['no']/1e6:.1f}M</span>
+                            <span style="color:#dc2626;font-weight:700;">{format_money(t['no'])} đ</span>
                         </div>
                         <div style="background:#fee2e2;border-radius:99px;height:5px;">
                             <div style="background:#dc2626;height:5px;border-radius:99px;width:{pct}%;"></div>
