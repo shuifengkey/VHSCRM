@@ -38,13 +38,19 @@ def edit_contract_dialog(ma_hd):
     with c3:
         loai_khach = st.selectbox("Loại Khách", ["Định kỳ", "Khách lẻ"], index=0 if hd['loai_khach']=="Định kỳ" else 1, key=f"e_lk_{ma_hd}")
         
-        c_gia, c_dvt = st.columns(2)
+        c_gia, c_dvt, c_vat = st.columns([2, 1, 1])
         with c_gia:
             val_str = f"{int(hd['gia_tri_thang']):,.0f}".replace(",", ".") if hd['gia_tri_thang'] else "0"
             gia_tri_str = st.text_input("Giá Trị (VNĐ)", value=val_str, key=f"e_gt_{ma_hd}")
         with c_dvt:
             idx_dvt = 0 if hd['don_vi_tinh'] == "/tháng" else 1
             don_vi_tinh = st.selectbox("Đơn Vị", ["/tháng", "/lần thi công"], index=idx_dvt, key=f"e_dvt_{ma_hd}")
+        with c_vat:
+            try: curr_vat = int(hd.get('vat_pct', 0))
+            except: curr_vat = 0
+            vat_opts = [0, 8, 10]
+            vat_idx = vat_opts.index(curr_vat) if curr_vat in vat_opts else 0
+            vat_pct = st.selectbox("VAT (%)", vat_opts, index=vat_idx, key=f"e_vat_{ma_hd}")
 
     # Thông tin thi công
     c4, c5, c6 = st.columns(3)
