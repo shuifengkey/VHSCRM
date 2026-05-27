@@ -553,7 +553,7 @@ def render():
                     x=[r["gia_tri_thang"]/1e6 for r in top8],
                     orientation="h",
                     marker_color=["#16a34a","#22c55e","#4ade80","#86efac"]*2,
-                    text=[f"{format_money(r[\'gia_tri_thang\'])}" for r in top8],
+                    text=[f"{int(r['gia_tri_thang'] or 0):,}".replace(",", ".") for r in top8],
                     textposition="outside",
                 ))
                 fig.update_layout(
