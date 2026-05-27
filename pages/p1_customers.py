@@ -14,7 +14,13 @@ def render():
     
     st.markdown("""
     <style>
-    /* Nút edit absolute positioning via JS */
+    /* Prevent specific columns from stacking on mobile */
+    div[data-testid="stHorizontalBlock"]:has(.no-wrap-row) {
+        flex-wrap: nowrap !important;
+    }
+    div[data-testid="stHorizontalBlock"]:has(.no-wrap-row) > div[data-testid="column"] {
+        min-width: 0 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -93,27 +99,23 @@ def render():
                     hd_color = "#16a34a" if r["so_hd"] else "#94a3b8"
     
                     with st.container(border=True):
-                        st.markdown(f"""
-<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-<div style="width:40px;height:40px;border-radius:10px;
-            background:linear-gradient(135deg,#16a34a20,#16a34a10);
-            display:flex;align-items:center;justify-content:center;
-            font-size:18px;">🏢</div>
-{badge(r["phan_khuc"], pk_color)}
-</div>
-<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:2px;
-            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{r["ten_cty"]}</div>
-<div style="font-size:11px;color:#94a3b8;margin-bottom:10px;">{r["ma_kh"]}</div>
-<div style="font-size:12px;color:#64748b;line-height:1.8;">
-{'👤 ' + r["dai_dien"] if r["dai_dien"] else ''}{'<br>' if r["dai_dien"] else ''}
-{'📞 ' + r["sdt"] if r["sdt"] else ''}
-</div>
-""", unsafe_allow_html=True)
-    
-                        c_hd, c_act = st.columns([3, 1], vertical_alignment="bottom")
-                        with c_hd:
-                            st.markdown(f'<div style="font-size:12px;font-weight:600;color:{hd_color};margin-top:8px;">📄 {hd_text}</div>', unsafe_allow_html=True)
-                        with c_act:
+                        c_top, c_edit = st.columns([5, 1], vertical_alignment="top")
+                        with c_top:
+                            st.markdown('<div class="no-wrap-row"></div>', unsafe_allow_html=True)
+                            st.markdown(f"""
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                                <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#16a34a20,#16a34a10);display:flex;align-items:center;justify-content:center;font-size:18px;">🏢</div>
+                                {badge(r["phan_khuc"], pk_color)}
+                            </div>
+                            <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{r["ten_cty"]}</div>
+                            <div style="font-size:11px;color:#94a3b8;margin-bottom:10px;">{r["ma_kh"]}</div>
+                            <div style="font-size:12px;color:#64748b;line-height:1.8;">
+                                {'👤 ' + r["dai_dien"] if r["dai_dien"] else ''}{'<br>' if r["dai_dien"] else ''}
+                                {'📞 ' + r["sdt"] if r["sdt"] else ''}
+                            </div>
+                            <div style="font-size:12px;font-weight:600;color:{hd_color};margin-top:8px;">📄 {hd_text}</div>
+                            """, unsafe_allow_html=True)
+                        with c_edit:
                             render_edit_popover(r, "grid")
         else:
             # List layout
