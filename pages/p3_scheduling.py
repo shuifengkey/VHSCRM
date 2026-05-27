@@ -223,84 +223,113 @@ def render():
               <div style="font-size:17px;font-weight:700;color:#0f172a;margin-top:10px;">Không có ca nào trong 24h tới!</div>
             </div>""", unsafe_allow_html=True)
         else:
-            # --- Overdue ---
-            if overdue_jobs:
-                st.markdown(f'<div style="font-size:14px;font-weight:700;color:#dc2626;margin:12px 0 8px;">🚨 QUÁ CA — Chưa thi công ({len(overdue_jobs)} ca)</div>', unsafe_allow_html=True)
-                for j in overdue_jobs:
-                    is_night = False
-                    shift_class = "shift-overdue"
-                    try: 
-                        h_bd = int(j["gio_bat_dau"].split(":")[0])
-                        is_night = int(j["gio_ket_thuc"].split(":")[0]) < h_bd
-                    except: pass
+            all_jobs = overdue_jobs + upcoming_jobs
+            map_jobs = [j for j in all_jobs if j.get('dia_chi') and j['dia_chi'].strip()]
+            col_list, col_map = st.columns([5, 4], gap='large')
+            with col_list:
+                # --- Overdue ---
+                if overdue_jobs:
+                    st.markdown(f'<div style="font-size:14px;font-weight:700;color:#dc2626;margin:12px 0 8px;">🚨 QUÁ CA — Chưa thi công ({len(overdue_jobs)} ca)</div>', unsafe_allow_html=True)
+                    for j in overdue_jobs:
+                        is_night = False
+                        shift_class = "shift-overdue"
+                        try: 
+                            h_bd = int(j["gio_bat_dau"].split(":")[0])
+                            is_night = int(j["gio_ket_thuc"].split(":")[0]) < h_bd
+                        except: pass
+    
+                        st.markdown(f"""
+    <div class="vhs-list-item {shift_class}">
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <div>
+    <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px;">
+    {j['ten_cty']}
+    <span style="background:#dc2626;color:white;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">⚠️ QUÁ CA</span>
+    {'<span style="background:#1e1b4b;color:#c4b5fd;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">🌙 CA ĐÊM</span>' if is_night else ''}
+    </div>
+    <div style="font-size:12px;color:#64748b;line-height:2;">
+    📋 <b>{j['ma_hd']}</b> · Kỳ <b>{j['ky_thang']}</b> · Lần <b>{j['lan_thu']}/{j['tan_suat']}</b><br>
+    📅 <b>{j['ngay_du_kien']}</b> · ⏰ <b>{j['gio_bat_dau']} → {j['gio_ket_thuc']}</b>
+    {'<br>📍 ' + j['dia_chi'] if j.get('dia_chi') else ''}
+    {'<br>👷 KTV: ' + j['ky_thuat_vien'] if j.get('ky_thuat_vien') else '<br>👷 KTV: (Chưa gán)'}
+    </div>
+    </div>
+    <div style="background:white;border-radius:8px;padding:8px 14px;text-align:center;border:1px solid #dc262630;">
+    <div style="font-size:10px;color:#94a3b8;">TRẠNG THÁI</div>
+    <div style="font-size:13px;font-weight:700;color:#dc2626;">⚠️ Quá ca</div>
+    </div>
+    </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+                # --- Upcoming ---
+                if upcoming_jobs:
+                    st.markdown(f'<div style="font-size:14px;font-weight:700;color:#2563eb;margin:16px 0 8px;">🚀 Sắp thi công — trong 24h ({len(upcoming_jobs)} ca)</div>', unsafe_allow_html=True)
+                    for j in upcoming_jobs:
+                        is_night = False
+                        shift_class = "shift-afternoon"
+                        border = "#2563eb"
+                        try: 
+                            h_bd = int(j["gio_bat_dau"].split(":")[0])
+                            is_night = int(j["gio_ket_thuc"].split(":")[0]) < h_bd
+                            if h_bd < 12: 
+                                shift_class = "shift-morning"
+                                border = "#f59e0b"
+                            elif h_bd < 18: 
+                                shift_class = "shift-afternoon"
+                                border = "#3b82f6"
+                            else: 
+                                shift_class = "shift-night"
+                                border = "#8b5cf6"
+                        except: pass
+    
+                        st.markdown(f"""
+    <div class="vhs-list-item {shift_class}">
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <div>
+    <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px;">
+    {j['ten_cty']}
+    {'<span style="background:#1e1b4b;color:#c4b5fd;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">🌙 CA ĐÊM</span>' if is_night else ''}
+    </div>
+    <div style="font-size:12px;color:#64748b;line-height:2;">
+    📋 <b>{j['ma_hd']}</b> · Kỳ <b>{j['ky_thang']}</b> · Lần <b>{j['lan_thu']}/{j['tan_suat']}</b><br>
+    📅 <b>{j['ngay_du_kien']}</b> · ⏰ <b>{j['gio_bat_dau']} → {j['gio_ket_thuc']}</b>
+    {'<br>📍 ' + j['dia_chi'] if j.get('dia_chi') else ''}
+    {'<br>👷 KTV: ' + j['ky_thuat_vien'] if j.get('ky_thuat_vien') else '<br>👷 KTV: (Chưa gán)'}
+    </div>
+    </div>
+    <div style="background:white;border-radius:8px;padding:8px 14px;text-align:center;border:1px solid {border}30;">
+    <div style="font-size:10px;color:#94a3b8;">TRẠNG THÁI</div>
+    <div style="font-size:13px;font-weight:700;color:{border};">{ST_LBL.get(j['trang_thai'],'?')}</div>
+    </div>
+    </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-                    st.markdown(f"""
-<div class="vhs-list-item {shift_class}">
-<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-<div>
-<div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px;">
-{j['ten_cty']}
-<span style="background:#dc2626;color:white;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">⚠️ QUÁ CA</span>
-{'<span style="background:#1e1b4b;color:#c4b5fd;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">🌙 CA ĐÊM</span>' if is_night else ''}
-</div>
-<div style="font-size:12px;color:#64748b;line-height:2;">
-📋 <b>{j['ma_hd']}</b> · Kỳ <b>{j['ky_thang']}</b> · Lần <b>{j['lan_thu']}/{j['tan_suat']}</b><br>
-📅 <b>{j['ngay_du_kien']}</b> · ⏰ <b>{j['gio_bat_dau']} → {j['gio_ket_thuc']}</b>
-{'<br>📍 ' + j['dia_chi'] if j.get('dia_chi') else ''}
-{'<br>👷 KTV: ' + j['ky_thuat_vien'] if j.get('ky_thuat_vien') else '<br>👷 KTV: (Chưa gán)'}
-</div>
-</div>
-<div style="background:white;border-radius:8px;padding:8px 14px;text-align:center;border:1px solid #dc262630;">
-<div style="font-size:10px;color:#94a3b8;">TRẠNG THÁI</div>
-<div style="font-size:13px;font-weight:700;color:#dc2626;">⚠️ Quá ca</div>
-</div>
-</div>
-</div>
-""", unsafe_allow_html=True)
-
-            # --- Upcoming ---
-            if upcoming_jobs:
-                st.markdown(f'<div style="font-size:14px;font-weight:700;color:#2563eb;margin:16px 0 8px;">🚀 Sắp thi công — trong 24h ({len(upcoming_jobs)} ca)</div>', unsafe_allow_html=True)
-                for j in upcoming_jobs:
-                    is_night = False
-                    shift_class = "shift-afternoon"
-                    border = "#2563eb"
-                    try: 
-                        h_bd = int(j["gio_bat_dau"].split(":")[0])
-                        is_night = int(j["gio_ket_thuc"].split(":")[0]) < h_bd
-                        if h_bd < 12: 
-                            shift_class = "shift-morning"
-                            border = "#f59e0b"
-                        elif h_bd < 18: 
-                            shift_class = "shift-afternoon"
-                            border = "#3b82f6"
-                        else: 
-                            shift_class = "shift-night"
-                            border = "#8b5cf6"
-                    except: pass
-
-                    st.markdown(f"""
-<div class="vhs-list-item {shift_class}">
-<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-<div>
-<div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px;">
-{j['ten_cty']}
-{'<span style="background:#1e1b4b;color:#c4b5fd;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">🌙 CA ĐÊM</span>' if is_night else ''}
-</div>
-<div style="font-size:12px;color:#64748b;line-height:2;">
-📋 <b>{j['ma_hd']}</b> · Kỳ <b>{j['ky_thang']}</b> · Lần <b>{j['lan_thu']}/{j['tan_suat']}</b><br>
-📅 <b>{j['ngay_du_kien']}</b> · ⏰ <b>{j['gio_bat_dau']} → {j['gio_ket_thuc']}</b>
-{'<br>📍 ' + j['dia_chi'] if j.get('dia_chi') else ''}
-{'<br>👷 KTV: ' + j['ky_thuat_vien'] if j.get('ky_thuat_vien') else '<br>👷 KTV: (Chưa gán)'}
-</div>
-</div>
-<div style="background:white;border-radius:8px;padding:8px 14px;text-align:center;border:1px solid {border}30;">
-<div style="font-size:10px;color:#94a3b8;">TRẠNG THÁI</div>
-<div style="font-size:13px;font-weight:700;color:{border};">{ST_LBL.get(j['trang_thai'],'?')}</div>
-</div>
-</div>
-</div>
-""", unsafe_allow_html=True)
+            with col_map:
+                st.markdown('<div style="font-size:14px;font-weight:700;color:#0f172a;margin:12px 0 8px;">🗺️ Lộ Trình Di Chuyển Hôm Nay</div>', unsafe_allow_html=True)
+                if not map_jobs:
+                    st.info("Các ca thi công hôm nay không có thông tin địa chỉ để vẽ bản đồ.")
+                else:
+                    import urllib.parse
+                    origin = map_jobs[0]['dia_chi']
+                    if len(map_jobs) == 1:
+                        map_url = f"https://maps.google.com/maps?q={urllib.parse.quote(origin)}&output=embed"
+                        dir_url = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(origin)}"
+                    else:
+                        dest = map_jobs[-1]['dia_chi']
+                        if len(map_jobs) > 2:
+                            waypoints = " to:".join(j['dia_chi'] for j in map_jobs[1:-1])
+                            daddr = f"{waypoints} to:{dest}"
+                            wp_param = "&waypoints=" + "|".join(urllib.parse.quote(j['dia_chi']) for j in map_jobs[1:-1])
+                        else:
+                            daddr = dest
+                            wp_param = ""
+                        map_url = f"https://maps.google.com/maps?saddr={urllib.parse.quote(origin)}&daddr={urllib.parse.quote(daddr)}&output=embed"
+                        dir_url = f"https://www.google.com/maps/dir/?api=1&origin={urllib.parse.quote(origin)}&destination={urllib.parse.quote(dest)}{wp_param}"
+                    
+                    st.components.v1.iframe(map_url, height=500, scrolling=True)
+                    st.markdown(f'<a href="{dir_url}" target="_blank" style="display:inline-block;margin-top:10px;background:#3b82f6;color:white;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">📍 Mở trên Google Maps</a>', unsafe_allow_html=True)
 
     # ═══════════════════════════════════
     # THEO THÁNG / HĐ
