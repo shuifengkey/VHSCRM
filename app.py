@@ -103,7 +103,7 @@ footer { display: none !important; }
     box-shadow: 0 0 20px rgba(22,163,74,0.2) !important;
 }
 /* Style the button */
-.stButton > button {
+.stButton > button, [data-testid="stFormSubmitButton"] > button {
     background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 60%, #166534 100%) !important;
     color: white !important;
     border: none !important;
@@ -114,12 +114,12 @@ footer { display: none !important; }
     letter-spacing: 0.5px !important;
     transition: all 0.2s ease !important;
 }
-.stButton > button:hover {
+.stButton > button:hover, [data-testid="stFormSubmitButton"] > button:hover {
     background: linear-gradient(135deg, #1e293b 0%, #294d3f 60%, #22c55e 100%) !important;
     transform: translateY(-1px) !important;
     box-shadow: 0 8px 24px rgba(22,163,74,0.3) !important;
 }
-.stButton > button:active {
+.stButton > button:active, [data-testid="stFormSubmitButton"] > button:active {
     transform: scale(0.98) !important;
 }
 </style>
