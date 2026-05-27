@@ -194,8 +194,9 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
 }
 .stTabs [data-baseweb="tab"] {
     border-radius: 8px !important; font-size: 13px !important;
-    font-weight: 500 !important; color: #64748b !important;
+    font-weight: 600 !important; color: #64748b !important;
     padding: 7px 16px !important; background: transparent !important;
+    text-transform: uppercase !important;
 }
 .stTabs [aria-selected="true"] {
     background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 60%, #166534 100%) !important; color: white !important;
@@ -360,7 +361,7 @@ def badge(text, color="green"):
 
 def section_header(title, subtitle="", icon=""):
     sub = f'<div style="font-size:13px;color:#64748b;margin-top:2px;">{subtitle}</div>' if subtitle else ""
-    return f'<div style="margin-bottom:18px;"><div style="font-size:20px;font-weight:800;color:#0f172a;">{icon} {title}</div>{sub}</div>'
+    return f'<div style="margin-bottom:18px;"><div style="font-size:20px;font-weight:800;color:#0f172a;text-transform:uppercase;">{icon} {title}</div>{sub}</div>'
 
 def stat_row(label, value, color="#0f172a"):
     return f'<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f1f5f9;"><span style="font-size:13px;color:#64748b;">{label}</span><span style="font-size:14px;font-weight:600;color:{color};">{value}</span></div>'

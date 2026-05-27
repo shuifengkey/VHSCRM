@@ -1,7 +1,9 @@
 import streamlit as st
 from utils.database import get_connection
+from utils.styles import section_header
 
 def render():
+    st.markdown(section_header("Quản Lý KTV", "Quản lý hồ sơ, thêm/sửa/xóa danh sách Kỹ Thuật Viên", "👷"), unsafe_allow_html=True)
     st.markdown("""
     <style>
     /* Nút edit absolute positioning via JS */

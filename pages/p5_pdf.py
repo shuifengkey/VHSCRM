@@ -5,11 +5,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from utils.database import get_connection
 from utils.pdf_generator import generate_bao_gia, generate_hop_dong, generate_phieu_xac_nhan
 from datetime import timezone, date, datetime, timedelta
+from utils.styles import section_header
 
 def render():
-    st.title("🖨️ Xuất Chứng Từ PDF Tự Động")
-    st.markdown("Chọn khách hàng và loại chứng từ - Hệ thống tự truy xuất dữ liệu và sinh PDF.")
-    st.markdown("---")
+    st.markdown(section_header("Xuất Chứng Từ PDF Tự Động", "Chọn khách hàng và loại chứng từ để sinh PDF", "🖨️"), unsafe_allow_html=True)
     
     conn = get_connection()
     all_kh = conn.execute("""
