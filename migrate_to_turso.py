@@ -3,7 +3,7 @@ import sys
 import sqlite3
 
 # Thêm đường dẫn hiện tại vào sys.path
-sys.path.insert(0, os.path.dirname(__file__))
+
 
 from utils.database import init_db, get_connection
 

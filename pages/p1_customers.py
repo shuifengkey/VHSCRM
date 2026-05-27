@@ -1,7 +1,7 @@
 # pages/p1_customers.py - Module Khách Hàng - nâng cấp v2
 import streamlit as st
 import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 from utils.database import get_connection
 from utils.styles import card, badge, section_header, COLORS
 from datetime import date

@@ -1,7 +1,7 @@
 # pages/p5_pdf.py - Module 5: Xuất PDF tự động
 import streamlit as st
 import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 from utils.database import get_connection
 from utils.pdf_generator import generate_bao_gia, generate_hop_dong, generate_phieu_xac_nhan
 from datetime import timezone, date, datetime, timedelta

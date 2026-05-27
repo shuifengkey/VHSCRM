@@ -1,7 +1,7 @@
 # pages/p4_logbook.py - Logbook KTV v2 — Mobile-first + Timeline
 import streamlit as st
 import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 from utils.database import get_connection
 from utils.scheduling import is_job_active_now, check_time_violation
 from utils.styles import badge, section_header, COLORS

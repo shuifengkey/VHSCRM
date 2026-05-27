@@ -1,7 +1,7 @@
 # app.py — VHS CRM v4 — Top navbar layout
 import streamlit as st
 import sys, os, hashlib, base64
-sys.path.insert(0, os.path.dirname(__file__))
+
 
 from utils.database import init_db, get_connection
 from utils.styles import GLOBAL_CSS, card, badge, section_header, stat_row, COLORS

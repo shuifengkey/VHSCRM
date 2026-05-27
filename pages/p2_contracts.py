@@ -1,7 +1,7 @@
 # pages/p2_contracts.py — Hợp Đồng v4
 import streamlit as st
 import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 from utils.database import get_connection
 from utils.styles import badge, section_header, COLORS
 from utils.scheduling import (auto_generate_schedules, calc_dates_for_month,

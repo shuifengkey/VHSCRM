@@ -1,7 +1,7 @@
 # pages/p6_debts.py - Công Nợ v2 — Charts + Aging + Quick Pay
 import streamlit as st
 import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 from utils.database import get_connection
 from utils.styles import badge, section_header, stat_row, COLORS
 from datetime import timezone, date, datetime, timedelta

@@ -1,7 +1,7 @@
 import streamlit as st
 import sys, os
 from datetime import timezone, date, datetime, timedelta
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 from utils.database import get_connection
 from utils.scheduling import is_job_active_now, check_time_violation
 

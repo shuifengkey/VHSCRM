@@ -1,6 +1,6 @@
 # pages/p3_scheduling.py — Lịch Thi Công v4
 import streamlit as st, sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 from utils.database  import get_connection
 from utils.scheduling import (auto_generate_schedules, calc_dates_for_month,
                                is_job_active_now, THU_NAMES)
