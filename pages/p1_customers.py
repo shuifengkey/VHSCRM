@@ -35,17 +35,24 @@ def render():
         }
     }
     
-    /* Color ALL popover buttons with dark gradient in this page */
+    /* Refined popover button for Edit */
     div[data-testid="stPopover"] > button {
-        background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 60%, #166534 100%) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 6px !important;
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px !important;
+        color: #475569 !important;
+        padding: 4px 8px !important;
+        min-height: 32px !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+        transition: all 0.2s ease;
     }
     div[data-testid="stPopover"] > button:hover {
-        background: linear-gradient(135deg, #1e293b 0%, #294d3f 60%, #22c55e 100%) !important;
-        box-shadow: 0 4px 12px rgba(22,163,74,0.3) !important;
-        color: white !important;
+        background: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+        color: #0f172a !important;
+    }
+    div[data-testid="stPopover"] > button p {
+        font-size: 13px !important;
     }
     .align-right { display: none; }
     </style>
@@ -133,26 +140,38 @@ def render():
                     hd_color = "#16a34a" if r["so_hd"] else "#94a3b8"
     
                     with st.container(border=True):
+                        char = r["ten_cty"][0].upper() if r["ten_cty"] else 'C'
                         st.markdown(f"""
-<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-<div style="width:40px;height:40px;border-radius:10px;
-            background:linear-gradient(135deg,#16a34a20,#16a34a10);
-            display:flex;align-items:center;justify-content:center;
-            font-size:18px;">🏢</div>
-{badge(r["phan_khuc"], pk_color)}
+<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; gap:8px;">
+    <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
+        <div style="width:40px; height:40px; min-width:40px; border-radius:50%; background:linear-gradient(135deg, #3b82f6, #1d4ed8); color:white; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:18px; box-shadow:0 2px 4px rgba(37,99,235,0.2);">
+            {char}
+        </div>
+        <div style="min-width:0; flex:1;">
+            <div style="font-size:14px; font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{r["ten_cty"]}">{r["ten_cty"]}</div>
+            <div style="font-size:11px; font-weight:600; color:#64748b; background:#f1f5f9; padding:2px 6px; border-radius:4px; display:inline-block; margin-top:4px;">#{r["ma_kh"]}</div>
+        </div>
+    </div>
+    <div style="flex-shrink:0;">{badge(r["phan_khuc"], pk_color)}</div>
 </div>
-<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:2px;
-            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{r["ten_cty"]}</div>
-<div style="font-size:11px;color:#94a3b8;margin-bottom:10px;">{r["ma_kh"]}</div>
-<div style="font-size:12px;color:#64748b;line-height:1.8;">
-{'👤 ' + r["dai_dien"] if r["dai_dien"] else ''}{'<br>' if r["dai_dien"] else ''}
-{'📞 ' + r["sdt"] if r["sdt"] else ''}
+<div style="background:#f8fafc; border-radius:8px; padding:10px; margin-bottom:12px; border:1px solid #e2e8f0;">
+    <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; margin-bottom:6px;">
+        <span style="background:#e0e7ff; color:#4338ca; border-radius:4px; padding:2px 5px; font-size:11px;">👤</span>
+        <b style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{r["dai_dien"] or "Chưa có NDĐ"}</b>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569;">
+        <span style="background:#dcfce7; color:#15803d; border-radius:4px; padding:2px 5px; font-size:11px;">📞</span>
+        <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{r["sdt"] or "Chưa có SĐT"}</span>
+    </div>
 </div>
 """, unsafe_allow_html=True)
     
-                        c_hd, c_act = st.columns([3, 1], vertical_alignment="bottom")
+                        c_hd, c_act = st.columns([3, 1], vertical_alignment="center")
                         with c_hd:
-                            st.markdown(f'<div style="font-size:12px;font-weight:600;color:{hd_color};margin-top:8px;">📄 {hd_text}</div>', unsafe_allow_html=True)
+                            hd_bg = "#dcfce7" if r["so_hd"] else "#f1f5f9"
+                            hd_col = "#16a34a" if r["so_hd"] else "#64748b"
+                            icon = "📄" if r["so_hd"] else "📁"
+                            st.markdown(f'<div style="background:{hd_bg}; color:{hd_col}; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:6px;"><span>{icon}</span> {hd_text}</div>', unsafe_allow_html=True)
                         with c_act:
                             st.markdown('<div class="align-right"></div>', unsafe_allow_html=True)
                             render_edit_popover(r, "grid")
