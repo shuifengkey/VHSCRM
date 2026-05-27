@@ -144,14 +144,16 @@ div[data-testid="stHorizontalBlock"] { gap: 0 !important; }
 
 /* ── BUTTONS ── */
 .stButton > button {
-    background: #16a34a !important; color: white !important;
-    border: none !important; border-radius: 10px !important;
-    font-weight: 600 !important; font-size: 13px !important;
-    padding: 9px 18px !important; transition: all .15s !important;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 60%, #166534 100%) !important;
+    color: white !important;
+    border: none !important; border-radius: 14px !important;
+    font-weight: 600 !important; font-size: 14px !important;
+    padding: 10px 18px !important; transition: all .2s ease !important;
+    letter-spacing: 0.5px !important;
 }
 .stButton > button:hover {
-    background: #15803d !important;
-    box-shadow: 0 4px 14px rgba(22,163,74,.3) !important;
+    background: linear-gradient(135deg, #1e293b 0%, #294d3f 60%, #22c55e 100%) !important;
+    box-shadow: 0 6px 18px rgba(22,163,74,.3) !important;
     transform: translateY(-1px) !important;
 }
 .stButton > button[kind="secondary"] {
