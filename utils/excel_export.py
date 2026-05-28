@@ -47,7 +47,7 @@ def number_to_words_vn(n):
     s = s.strip() + " đồng"
     return s.capitalize()
 
-def generate_payment_request_excel(debt_data):
+def generate_payment_request_pdf(debt_data):
     """
     debt_data: dict chứa thông tin nợ, bao gồm các field:
     - ten_cty, nguoi_lien_he, sdt
@@ -107,9 +107,38 @@ def generate_payment_request_excel(debt_data):
     short_name = ten_cty[:20] if ten_cty else "Khach hang"
     ws["C25"] = f"VHS {short_name} thanh toan"
     
-    # Lưu vào buffer
-    output = io.BytesIO()
-    wb.save(output)
-    output.seek(0)
+    import tempfile, uuid
+    temp_dir = tempfile.gettempdir()
+    unique_id = str(uuid.uuid4())
+    temp_xlsx = os.path.abspath(os.path.join(temp_dir, f"{unique_id}.xlsx"))
+    temp_pdf = os.path.abspath(os.path.join(temp_dir, f"{unique_id}.pdf"))
     
-    return output.getvalue(), f"PYC_{debt_data.get('ma_hd', '')}_{debt_data.get('ky_thanh_toan', '')}.xlsx"
+    wb.save(temp_xlsx)
+    wb.close()
+    
+    try:
+        import win32com.client
+        excel = win32com.client.DispatchEx("Excel.Application")
+        excel.Visible = False
+        excel.DisplayAlerts = False
+        
+        wb_com = excel.Workbooks.Open(temp_xlsx)
+        wb_com.ActiveSheet.ExportAsFixedFormat(0, temp_pdf)
+        wb_com.Close(False)
+        excel.Quit()
+        
+        with open(temp_pdf, "rb") as f:
+            pdf_data = f.read()
+            
+        try: os.remove(temp_xlsx)
+        except: pass
+        try: os.remove(temp_pdf)
+        except: pass
+        
+        filename = f"PYC_{debt_data.get('ma_hd', '')}_{debt_data.get('ky_thanh_toan', '')}.pdf"
+        return pdf_data, filename, "application/pdf"
+        
+    except Exception as e:
+        try: os.remove(temp_xlsx)
+        except: pass
+        raise Exception(f"Không thể tạo PDF qua MS Excel: {e}")
