@@ -267,6 +267,13 @@ def render():
                                                     filepath = os.path.join(upload_dir, filename)
                                                     with open(filepath, "wb") as out:
                                                         out.write(f.getbuffer())
+                                                    
+                                                    if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
+                                                        try:
+                                                            from utils.image_processing import auto_crop_document
+                                                            auto_crop_document(filepath)
+                                                        except Exception as e:
+                                                            print(f"Crop warning: {e}")
                                                     uploaded_paths.append(filename)
                                                 new_att_str = ",".join(uploaded_paths)
                                                 old_att = log.get("attachments", "")
