@@ -230,7 +230,7 @@ def edit_contract_dialog(ma_hd):
                 n += auto_generate_schedules(ma_hd, start.strftime("%Y-%m"))
                 start = (start + timedelta(days=32)).replace(day=1)
                 
-            st.session_state.add_hd_success = f"✅ Đã cập nhật hợp đồng {ma_hd} và sinh lại {n} ca thi công mới!"
+            st.session_state.add_hd_success = f"✓ Đã cập nhật hợp đồng {ma_hd} và sinh lại {n} ca thi công mới!"
             st.rerun()
         except Exception as e:
             st.error(f"Lỗi: {e}")

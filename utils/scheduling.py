@@ -438,7 +438,7 @@ def check_time_violation(gio_bat_dau_hd: str, gio_ket_thuc_hd: str,
         if diff > 30:
             return {"violation":True,"type":"late",
                     "message":f"⚠️ Check-in trễ hơn {diff} phút (khung giờ: {gio_bat_dau_hd})"}
-        return {"violation":False,"type":"ok","message":"✅ Đúng khung giờ"}
+        return {"violation":False,"type":"ok","message":"✓ Đúng khung giờ"}
     except Exception as e:
         return {"violation":False,"type":"error","message":str(e)}
 

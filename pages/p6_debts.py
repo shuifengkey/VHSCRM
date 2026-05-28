@@ -47,7 +47,7 @@ def render():
         c0, c1, c2, c3, c4 = st.columns(5)
         with c0: st.metric("🌟 Kỳ Vọng/Tháng", f"{format_money(doanh_thu_du_kien)} đ", help="Tổng giá trị các hợp đồng đang active")
         with c1: st.metric("📬 Tổng Cần Thu", f"{format_money(tong_ct)} đ")
-        with c2: st.metric("✅ Thực Thu", f"{format_money(tong_dt)} đ")
+        with c2: st.metric("✓ Thực Thu", f"{format_money(tong_dt)} đ")
         with c3: st.metric("💸 Chi Phí", f"{format_money(tong_chi)} đ")
         with c4: st.metric("📈 Lợi Nhuận", f"{format_money(loi_nhuan)} đ")
         
@@ -381,7 +381,7 @@ def render():
                         conn.execute("INSERT INTO expenses (ngay_chi, loai_chi_phi, so_tien, nguoi_chi, ghi_chu) VALUES (?, ?, ?, ?, ?)",
                                      (ngay_chi.isoformat(), loai_cp, so_tien, nguoi_chi, ghi_chu))
                         conn.commit()
-                        st.toast("Thêm chi phí thành công!", icon="✅")
+                        st.toast("Thêm chi phí thành công!", icon="✓")
                         st.rerun()
                     else:
                         st.warning("Vui lòng nhập số tiền hợp lệ")

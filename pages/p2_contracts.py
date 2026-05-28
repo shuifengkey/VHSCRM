@@ -245,7 +245,7 @@ def render():
                         if r["loai_khach"] == "Định kỳ" or r["chu_ky_lap"] != "1_lan":
                             n2 = auto_generate_schedules(r["ma_hd"], ky_next)
                         n = n1 + n2
-                        st.success(f"✅ Đã sinh {n} ca mới." if n else "Lịch đã đủ hoặc không có lịch sinh thêm.")
+                        st.success(f"✓ Đã sinh {n} ca mới." if n else "Lịch đã đủ hoặc không có lịch sinh thêm.")
                         st.rerun()
                 with col_b:
                     if st.button("🗑️ Xóa Hợp Đồng", key=f"del_{r['ma_hd']}"):
@@ -255,7 +255,7 @@ def render():
                     st.warning(f"⚠️ Bạn có chắc chắn muốn xóa hợp đồng **{r['ma_hd']}** và **toàn bộ lịch thi công** không?")
                     c_yes, c_no = st.columns([1, 4])
                     with c_yes:
-                        if st.button("✅ Xác nhận xóa", key=f"yes_{r['ma_hd']}"):
+                        if st.button("✓ Xác nhận xóa", key=f"yes_{r['ma_hd']}"):
                             if st.session_state.get('auth_role') != 'admin':
                                 st.error("❌ Chỉ Admin mới có quyền xóa dữ liệu!")
                             else:
@@ -299,7 +299,7 @@ def render():
                 st.markdown('<hr style="margin:8px 0 16px">', unsafe_allow_html=True)
 
                 if st.session_state.get("add_hd_success"):
-                    st.toast(st.session_state.add_hd_success, icon="✅")
+                    st.toast(st.session_state.add_hd_success, icon="✓")
                     st.balloons()
                     st.session_state.add_hd_success = None
 
@@ -530,9 +530,9 @@ def render():
                                     for _ in range(3):  # tháng bắt đầu HĐ + 2 tháng tới
                                         n += auto_generate_schedules(ma_hd, start.strftime("%Y-%m"))
                                         start = (start + timedelta(days=32)).replace(day=1)
-                                    st.session_state.add_hd_success = f"✅ Tạo HĐ **{ma_hd}** + sinh {n} ca!"
+                                    st.session_state.add_hd_success = f"✓ Tạo HĐ **{ma_hd}** + sinh {n} ca!"
                                 else:
-                                    st.session_state.add_hd_success = f"✅ Tạo HĐ **{ma_hd}** thành công!"
+                                    st.session_state.add_hd_success = f"✓ Tạo HĐ **{ma_hd}** thành công!"
                                 st.rerun()
                             except Exception as e:
                                 import traceback

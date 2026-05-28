@@ -171,7 +171,7 @@
     <div id="btn-row">
       <button class="btn" id="capture-btn" disabled>📸 Chụp</button>
       <button class="btn" id="retake-btn">🔄 Chụp lại</button>
-      <button class="btn" id="send-btn">✅ Dùng ảnh này</button>
+      <button class="btn" id="send-btn">✓ Dùng ảnh này</button>
     </div>
     <div id="status">Đang khởi động camera...</div>
   </div>
@@ -442,7 +442,7 @@
           overlayCtx.stroke();
         }
 
-        detectEl.textContent = '✅ Đã phát hiện tài liệu';
+        detectEl.textContent = '✓ Đã phát hiện tài liệu';
         detectEl.className = 'detect-ok';
       } else {
         lastCorners = null;
@@ -492,7 +492,7 @@
       detectEl.style.display = 'none';
       document.getElementById('mode-row').style.display = 'none';
 
-      statusEl.textContent = '✅ Ảnh đã xử lý · Kiểm tra rồi bấm "Dùng ảnh này"';
+      statusEl.textContent = '✓ Ảnh đã xử lý · Kiểm tra rồi bấm "Dùng ảnh này"';
       Streamlit.setFrameHeight(document.body.scrollHeight + 20);
     });
 

@@ -70,7 +70,7 @@ def do_checkout_dialog_p4(job, log, hoa_chat, ket_qua, attachments):
                 if ct_row:
                     result = cs_fn(job['id'], dict(ct_row))
                     if result.get('next_ids'):
-                        st.session_state[f"co_msg_{job['id']}"] = f"✅ Đã tự động tạo {len(result['next_ids'])} ca kế tiếp theo cho {job['ten_cty']}!"
+                        st.session_state[f"co_msg_{job['id']}"] = f"✓ Đã tự động tạo {len(result['next_ids'])} ca kế tiếp theo cho {job['ten_cty']}!"
                 else:
                     conn_fallback = __import__('utils.database', fromlist=['get_connection']).get_connection()
                     conn_fallback.execute("UPDATE schedules SET trang_thai='completed' WHERE id=?", (job['id'],))
@@ -242,7 +242,7 @@ def render():
                             with c1:
                                 st.markdown(f"""
     <div style="color:#166534;">
-        <div style="font-size:16px;font-weight:700;">✅ Ca Đã Hoàn Thành</div>
+        <div style="font-size:16px;font-weight:700;">✓ Ca Đã Hoàn Thành</div>
         <div style="font-size:13px;color:#4ade80;margin-top:2px;">
             {log['checkin_time'][11:16]} → {log['checkout_time'][11:16]}
             {f' · Thời gian: {dur_str}' if dur_str else ''}
@@ -294,7 +294,7 @@ def render():
                                                 conn_up = get_connection()
                                                 conn_up.execute("UPDATE logbook SET attachments=? WHERE id=?", (",".join(att_list), log["id"]))
                                                 conn_up.commit(); conn_up.close()
-                                                st.toast("✅ Đã lưu ảnh scan!", icon="📸")
+                                                st.toast("✓ Đã lưu ảnh scan!", icon="📸")
                                                 st.rerun()
                                         if st.session_state[scan_key_act]:
                                             st.markdown(f"**🖼️ Đã scan: {len(st.session_state[scan_key_act])} ảnh**")
@@ -368,7 +368,7 @@ def render():
                                     _out.write(base64.b64decode(b64))
                                 if fname not in st.session_state[scan_key_co]:
                                     st.session_state[scan_key_co].append(fname)
-                                    st.toast("✅ Đã lưu ảnh scan!", icon="📸")
+                                    st.toast("✓ Đã lưu ảnh scan!", icon="📸")
                                     st.rerun()
                             if st.session_state[scan_key_co]:
                                 st.markdown(f"**🖼️ Đã scan: {len(st.session_state[scan_key_co])} ảnh**")
@@ -390,7 +390,7 @@ def render():
                                         _out.write(_f.getbuffer())
                                     saved.append(_fn)
                                 st.session_state[f"dk_saved_{job['id']}"] = saved
-                                st.toast("✅ Đã lưu tạm ảnh đính kèm!", icon="📎")
+                                st.toast("✓ Đã lưu tạm ảnh đính kèm!", icon="📎")
                             co_key = f"confirm_co_{job['id']}"
                             if not st.session_state.get(co_key, False):
                                 if st.button("🚪 CHECK-OUT — KẾT THÚC CA", type="primary", use_container_width=True, key=f"btn_co_{job['id']}"):
@@ -402,7 +402,7 @@ def render():
                                 if col1.button("❌ Quay lại", key=f"cancel_co_{job['id']}", use_container_width=True):
                                     st.session_state[co_key] = False
                                     st.rerun()
-                                if col2.button("✅ Xác nhận Check-out", key=f"do_co_{job['id']}", type="primary", use_container_width=True):
+                                if col2.button("✓ Xác nhận Check-out", key=f"do_co_{job['id']}", type="primary", use_container_width=True):
                                     checkin_time = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
                                     if ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)) - checkin_time).total_seconds() < 300:
                                         st.error("⚠️ Phải thi công ít nhất 5 phút mới được Check-out!")
@@ -446,7 +446,7 @@ def render():
                                                 conn_fallback.commit()
                                                 conn_fallback.close()
                                             st.session_state[co_key] = False
-                                            st.success("✅ Check-out thành công! Ca hoàn thành.")
+                                            st.success("✓ Check-out thành công! Ca hoàn thành.")
                                             st.balloons(); st.rerun()
                                         except Exception as e: st.error(f"❌ {e}")
                     
@@ -484,7 +484,7 @@ def render():
                                 if col1.button("❌ Hủy", key=f"cancel_ci_{job['id']}", use_container_width=True):
                                     st.session_state[ci_key] = False
                                     st.rerun()
-                                if col2.button("✅ Xác nhận Check-in", key=f"do_ci_{job['id']}", type="primary", use_container_width=True):
+                                if col2.button("✓ Xác nhận Check-in", key=f"do_ci_{job['id']}", type="primary", use_container_width=True):
                                     conn = get_connection()
                                     active_other = conn.execute("SELECT c.ten_cty, l.checkin_time FROM logbook l JOIN schedules s ON l.schedule_id=s.id JOIN customers c ON l.ma_kh=c.ma_kh WHERE l.ky_thuat_vien=? AND l.checkout_time IS NULL AND l.schedule_id!=?", (ktv, job["id"])).fetchone()
                                 
@@ -501,7 +501,7 @@ def render():
                                             conn.commit(); conn.close()
                                             if tc["violation"]: st.warning(tc["message"])
                                             st.session_state[ci_key] = False
-                                            st.success(f"✅ Check-in lúc {(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime('%H:%M')} — Chúc làm tốt!")
+                                            st.success(f"✓ Check-in lúc {(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime('%H:%M')} — Chúc làm tốt!")
                                             st.rerun()
                                         except Exception as e: 
                                             st.error(f"❌ {e}")
@@ -550,7 +550,7 @@ def render():
                         dur = f"· {m//60}h{m%60}m"
                     except: pass
                     left_color = "#16a34a" if done else "#d97706"
-                    status_icon = "✅" if done else "⏳"
+                    status_icon = "✓" if done else "⏳"
                     att_html = ""
                     if log.get("attachments"):
                         import os, base64, io
@@ -650,7 +650,7 @@ def render():
                                             conn_up = get_connection()
                                             conn_up.execute("UPDATE logbook SET attachments=? WHERE id=?", (",".join(att_list), log["id"]))
                                             conn_up.commit(); conn_up.close()
-                                            st.toast("✅ Đã lưu ảnh scan!", icon="📸")
+                                            st.toast("✓ Đã lưu ảnh scan!", icon="📸")
                                             st.rerun()
                                     if st.session_state[scan_key_h]:
                                         st.markdown(f"**🖼️ Đã scan: {len(st.session_state[scan_key_h])} ảnh**")

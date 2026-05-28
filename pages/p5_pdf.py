@@ -38,7 +38,7 @@ def render():
     
     with col2:
         doc_type = st.selectbox("📄 Loại Chứng Từ", [
-            "📊 Báo Giá", "📋 Hợp Đồng", "✅ Phiếu Xác Nhận Dịch Vụ"
+            "📊 Báo Giá", "📋 Hợp Đồng", "✓ Phiếu Xác Nhận Dịch Vụ"
         ])
     
     # Lấy dữ liệu khách hàng và hợp đồng
@@ -121,7 +121,7 @@ def render():
                         mime="application/pdf",
                         use_container_width=True
                     )
-                    st.success(f"✅ PDF đã sẵn sàng: **{filename}**")
+                    st.success(f"✓ PDF đã sẵn sàng: **{filename}**")
                     
                 except Exception as e:
                     st.error(f"❌ Lỗi sinh PDF: {e}")

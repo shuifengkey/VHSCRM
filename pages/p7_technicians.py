@@ -105,7 +105,7 @@ def render():
                         conn2.execute("INSERT INTO technicians (ma_ktv, ten, sdt, active) VALUES (?,?,?,?)",
                                       (ma_ktv.strip(), ten.strip(), sdt_clean, 1 if active=="Đang làm việc" else 0))
                         conn2.commit(); conn2.close()
-                        st.success(f"✅ Đã thêm KTV {ten}!")
+                        st.success(f"✓ Đã thêm KTV {ten}!")
                         st.rerun()
                     except Exception as e:
                         st.error(f"Lỗi: {e}")

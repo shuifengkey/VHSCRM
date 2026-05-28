@@ -530,7 +530,7 @@ if page == "🏠 Tổng Quan":
     with c1: st.metric("👥 Khách Hàng",    total_kh)
     with c2: st.metric("📄 HĐ Active",      total_hd)
     with c3: st.metric("💵 Doanh Thu/Tháng",f"{format_money(doanh_thu)} đ")
-    with c4: st.metric("✅ Ca Hoàn Thành",  ca_done)
+    with c4: st.metric("✓ Ca Hoàn Thành",  ca_done)
     with c5: st.metric("⚠️ Công Nợ",        f"{format_money(tong_no)} đ")
 
     st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
@@ -636,7 +636,7 @@ if page == "🏠 Tổng Quan":
                   <span style="font-size:11px;font-weight:700;color:{sc};">{lbl}</span>
                 </div>""", unsafe_allow_html=True)
         else:
-            st.markdown('<div style="text-align:center;padding:24px;color:#94a3b8;font-size:13px;">✅ Tất cả HĐ ổn</div>', unsafe_allow_html=True)
+            st.markdown('<div style="text-align:center;padding:24px;color:#94a3b8;font-size:13px;">✓ Tất cả HĐ ổn</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col_c:
@@ -690,7 +690,7 @@ elif page == "⚙️ Cài đặt":
                         st.error("❌ PIN mới không khớp!")
                     else:
                         _change_pin(new_pin)
-                        st.success("✅ Đã đổi PIN thành công!")
+                        st.success("✓ Đã đổi PIN thành công!")
                         
         with col2:
             st.markdown("**🚪 Tài khoản**")
@@ -736,7 +736,7 @@ elif page == "⚙️ Cài đặt":
                             db_bytes = f.read()
                         
                         st.session_state.backup_bytes = db_bytes
-                        st.success("✅ Tạo file sao lưu thành công!")
+                        st.success("✓ Tạo file sao lưu thành công!")
                     except Exception as e:
                         st.error(f"Lỗi: {e}")
                         
@@ -796,7 +796,7 @@ elif page == "⚙️ Cài đặt":
                             conn_dest.close()
                             conn_src.close()
                             os.remove(path)
-                            st.success("✅ Đã khôi phục dữ liệu thành công!")
+                            st.success("✓ Đã khôi phục dữ liệu thành công!")
                             st.rerun()
                         except Exception as e:
                             st.error(f"Lỗi khôi phục: {e}")

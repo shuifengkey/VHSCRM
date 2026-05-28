@@ -85,7 +85,7 @@ def render():
                                       (ten,dd,sp_clean,da,gc,lh,tpl,mst,dc_pl,r["ma_kh"]))
                         conn2.commit(); conn2.close()
                         import time
-                        st.toast(f"✅ Đã lưu cập nhật cho {ten}!", icon="🎉")
+                        st.toast(f"✓ Đã lưu cập nhật cho {ten}!", icon="🎉")
                         st.balloons()
                         time.sleep(1.2)
                         st.rerun()
@@ -248,7 +248,7 @@ def render():
             st.markdown("**📝 Thông Tin Khách Hàng Mới**")
             st.markdown('<hr style="margin:12px 0">', unsafe_allow_html=True)
             if st.session_state.get("add_kh_success"):
-                st.toast(st.session_state.add_kh_success, icon="✅")
+                st.toast(st.session_state.add_kh_success, icon="✓")
                 st.balloons()
                 st.session_state.add_kh_success = None
                 
@@ -292,7 +292,7 @@ def render():
                             conn.execute("INSERT INTO customers (ma_kh,ten_cty,dai_dien,sdt,dia_chi,phan_khuc,ghi_chu,nguoi_lien_he,ten_phap_ly,ma_so_thue,dia_chi_phap_ly) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                                          (ma_kh.strip(), ten.strip(), dai_dien, sdt_clean, dia_chi, pk, ghi_chu, nguoi_lh, ten_pl, mst, dia_chi_pl))
                             conn.commit(); conn.close()
-                            st.session_state.add_kh_success = f"✅ Đã thêm **{ten}** ({ma_kh})"
+                            st.session_state.add_kh_success = f"✓ Đã thêm **{ten}** ({ma_kh})"
                             st.rerun()
                         except Exception as e: st.error(f"❌ {e}")
             st.markdown('</div>', unsafe_allow_html=True)

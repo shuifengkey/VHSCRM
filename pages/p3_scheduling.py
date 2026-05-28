@@ -44,7 +44,7 @@ def google_sync_dialog(thang, nam):
         next_m = thang + 1 if thang < 12 else 1
         next_y = nam if thang < 12 else nam + 1
         
-        st.success("✅ Đã kết nối với Google Calendar!")
+        st.success("✓ Đã kết nối với Google Calendar!")
         st.markdown(f"Bạn đang chuẩn bị đồng bộ lịch thi công của **Tháng {thang}/{nam}** và **Tháng {next_m}/{next_y}** lên Google Calendar.")
         
         if st.button(f"🚀 Bắt đầu Đồng bộ Tháng {thang} & {next_m}", type="primary", use_container_width=True):
@@ -71,7 +71,7 @@ def google_sync_dialog(thang, nam):
                 conn.close()
                 
                 if success_count == len(schedules):
-                    st.success(f"✅ Đã đồng bộ thành công {success_count}/{len(schedules)} sự kiện!")
+                    st.success(f"✓ Đã đồng bộ thành công {success_count}/{len(schedules)} sự kiện!")
                 else:
                     st.warning(f"Đã đồng bộ {success_count}/{len(schedules)} sự kiện. (Có {len(schedules)-success_count} lỗi)")
                 st.balloons()
@@ -235,7 +235,7 @@ def render():
         if not upcoming_jobs and not overdue_jobs:
             st.markdown("""
             <div class="vhs-card" style="text-align:center;padding:56px;">
-              <div style="font-size:52px;">✅</div>
+              <div style="font-size:52px;">✓</div>
               <div style="font-size:17px;font-weight:700;color:#0f172a;margin-top:10px;">Không có ca nào trong 24h tới!</div>
             </div>""", unsafe_allow_html=True)
         else:
@@ -588,7 +588,7 @@ def render():
                                             from utils.google_sync import auto_sync_schedule_to_google
                                             auto_sync_schedule_to_google(conn, r["id"], "upsert")
                                             conn.commit(); conn.close()
-                                            st.success("✅ Đã cập nhật!"); st.rerun()
+                                            st.success("✓ Đã cập nhật!"); st.rerun()
                                         except Exception as e: st.error(f"❌ {e}")
                                     if skip_btn:
                                         try:
@@ -602,7 +602,7 @@ def render():
                             else:
                                 st.markdown("""
                                 <div style="background:#dcfce7;border-radius:8px;padding:14px;text-align:center;">
-                                  <div style="font-size:24px;">✅</div>
+                                  <div style="font-size:24px;">✓</div>
                                   <div style="font-size:12px;color:#166534;font-weight:600;margin-top:4px;">Đã hoàn thành</div>
                                 </div>""", unsafe_allow_html=True)
     
@@ -611,7 +611,7 @@ def render():
                 st.markdown(f'<div style="background:#fef9c3;border-radius:8px;padding:10px;margin-top:8px;font-size:13px;color:#854d0e;">⚠️ Còn thiếu <b>{expected-len(rows)}</b> ca</div>', unsafe_allow_html=True)
                 if st.button("🤖 Sinh Ca Còn Thiếu", key="gen_miss"):
                     n = auto_generate_schedules(hd["ma_hd"],ky_sel)
-                    st.success(f"✅ Sinh thêm {n} ca.") if n else st.info("Đã đủ.")
+                    st.success(f"✓ Sinh thêm {n} ca.") if n else st.info("Đã đủ.")
                     st.rerun()
 
             # Sinh kỳ kế tiếp
@@ -623,9 +623,9 @@ def render():
             if nc == 0:
                 if st.button(f"📆 Sinh Lịch Kỳ Kế Tiếp ({ky_next})", key="gen_next"):
                     n = auto_generate_schedules(hd["ma_hd"],ky_next)
-                    st.success(f"✅ Đã sinh {n} ca cho {ky_next}"); st.rerun()
+                    st.success(f"✓ Đã sinh {n} ca cho {ky_next}"); st.rerun()
             else:
-                st.markdown(f'<div style="font-size:12px;color:#16a34a;margin-top:8px;">✅ Kỳ {ky_next} đã có {nc} ca</div>', unsafe_allow_html=True)
+                st.markdown(f'<div style="font-size:12px;color:#16a34a;margin-top:8px;">✓ Kỳ {ky_next} đã có {nc} ca</div>', unsafe_allow_html=True)
 
     # ═══════════════════════════════════
     # CALENDAR
@@ -684,7 +684,7 @@ def render():
                     if stt == "completed":
                         bg = "#dcfce7"
                         col = "#166534"
-                        icon = "✅"
+                        icon = "✓"
                     elif stt == "skipped":
                         bg = "#f1f5f9"
                         col = "#94a3b8"
@@ -742,7 +742,7 @@ def render():
             if st.button("🚀 Sinh Tất Cả",use_container_width=True,key="btn_bulk2"):
                 targets = hd_bulk if hd_bulk else [r["ma_hd"] for r in cts]
                 total = sum(auto_generate_schedules(m,ky_bulk) for m in targets)
-                st.success(f"✅ Sinh {total} ca mới cho {ky_bulk}") if total else st.info("Tất cả đã có.")
+                st.success(f"✓ Sinh {total} ca mới cho {ky_bulk}") if total else st.info("Tất cả đã có.")
                 st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
 
@@ -786,6 +786,6 @@ def render():
                             from utils.google_sync import auto_sync_schedule_to_google
                             auto_sync_schedule_to_google(conn, rs["id"], "upsert")
                         conn.commit(); conn.close()
-                        st.success(f"✅ Đã thêm ca ngày {extra_ngay.strftime('%d/%m/%Y')}"); st.rerun()
+                        st.success(f"✓ Đã thêm ca ngày {extra_ngay.strftime('%d/%m/%Y')}"); st.rerun()
                     except Exception as e: st.error(f"❌ {e}")
             st.markdown("</div>", unsafe_allow_html=True)

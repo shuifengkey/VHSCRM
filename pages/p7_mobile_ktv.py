@@ -151,7 +151,7 @@ def action_dialog(job, log):
             if col1.button("❌ Hủy", key=f"cancel_ci_{job['id']}", use_container_width=True):
                 st.session_state[ci_key] = False
                 st.rerun()
-            if col2.button("✅ Xác nhận", key=f"do_ci_{job['id']}", type="primary", use_container_width=True):
+            if col2.button("✓ Xác nhận", key=f"do_ci_{job['id']}", type="primary", use_container_width=True):
                 conn = get_connection()
                 tc = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), job["ngay_du_kien"])
                 conn.execute("""INSERT INTO logbook (schedule_id,ma_kh,ky_thuat_vien,checkin_time,canh_bao_gio)
@@ -197,7 +197,7 @@ def action_dialog(job, log):
                 with open(fpath, "wb") as f:
                     f.write(base64.b64decode(b64data))
                 st.session_state[scan_key].append(fname)
-                st.toast("✅ Đã lưu ảnh scan!", icon="📸")
+                st.toast("✓ Đã lưu ảnh scan!", icon="📸")
                 st.rerun()
         
         if st.session_state[scan_key]:
@@ -212,7 +212,7 @@ def action_dialog(job, log):
         
         co_key = f"confirm_co_{log['id']}"
         if not st.session_state.get(co_key, False):
-            if st.button("✅ HOÀN THÀNH & CHECK-OUT", type="primary", use_container_width=True):
+            if st.button("✓ HOÀN THÀNH & CHECK-OUT", type="primary", use_container_width=True):
                 st.session_state[co_key] = True
                 st.rerun()
         else:
@@ -221,7 +221,7 @@ def action_dialog(job, log):
             if col1.button("❌ Quay lại", key=f"cancel_co_{log['id']}", use_container_width=True):
                 st.session_state[co_key] = False
                 st.rerun()
-            if col2.button("✅ Nộp & Check-out", key=f"do_co_{log['id']}", type="primary", use_container_width=True):
+            if col2.button("✓ Nộp & Check-out", key=f"do_co_{log['id']}", type="primary", use_container_width=True):
                 import os, uuid
                 upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
                 os.makedirs(upload_dir, exist_ok=True)
@@ -303,7 +303,7 @@ def bosung_dialog(job, log):
             else: att_str = fname
             conn.execute("UPDATE logbook SET attachments=? WHERE id=?", (att_str, log["id"]))
             conn.commit(); conn.close()
-            st.toast("✅ Đã lưu ảnh scan!", icon="📸")
+            st.toast("✓ Đã lưu ảnh scan!", icon="📸")
             st.rerun()
             
     if st.session_state[scan_key_bs]:
@@ -463,7 +463,7 @@ def render():
         border_color = "#cbd5e1" if is_completed_local else ("#f59e0b" if is_active_local else ("#ef4444" if is_overdue else "#e2e8f0"))
         
         badge_html = ""
-        if is_completed_local: badge_html = '<div class="status-badge" style="background:#22c55e;color:white;">✅ Đã hoàn thành</div>'
+        if is_completed_local: badge_html = '<div class="status-badge" style="background:#22c55e;color:white;">✓ Đã hoàn thành</div>'
         elif is_active_local: badge_html = '<div class="status-badge" style="background:#f59e0b;color:white;">⏱️ Đang thi công</div>'
         elif is_overdue: badge_html = '<div class="status-badge" style="background:#ef4444;color:white;">⚠️ Quá ca</div>'
         
@@ -502,7 +502,7 @@ def render():
         # Buttons actions
         if not is_completed_local:
             st.markdown("<div class='btn-pull-up'></div>", unsafe_allow_html=True)
-            btn_label = "✅ Hoàn Thành Ca" if is_active_local else "📍 Bắt Đầu (Check-in)"
+            btn_label = "✓ Hoàn Thành Ca" if is_active_local else "📍 Bắt Đầu (Check-in)"
             btn_type = "primary"
             
             if st.button(btn_label, key=f"btn_{job_item['id']}", type=btn_type, use_container_width=True):
@@ -526,7 +526,7 @@ def render():
             for j in pending_jobs: render_job_card(j)
             
         if completed_jobs:
-            st.markdown(f"<div style='font-weight:900;color:#166534;margin:24px 0 16px 0;font-size:15px;'>✅ ĐÃ HOÀN THÀNH ({len(completed_jobs)})</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='font-weight:900;color:#166534;margin:24px 0 16px 0;font-size:15px;'>✓ ĐÃ HOÀN THÀNH ({len(completed_jobs)})</div>", unsafe_allow_html=True)
             for j in completed_jobs: render_job_card(j)
                 
     conn.close()
