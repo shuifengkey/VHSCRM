@@ -133,7 +133,7 @@ def generate_payment_request_pdf(debt_data, attachments=None):
     # Giới hạn tên 25 ký tự để QR code không bị quá tải/nội dung quá dài
     ten_khong_dau = ten_khong_dau[:25].strip()
     
-    noidung_ck = f"{ten_khong_dau} TT PKSCT T{month_num}"
+    noidung_ck = f"{ten_khong_dau} TT PKSCT T{month_num} cho VHS"
 
     # ── Build doc ─────────────────────────────────────────────
     output = io.BytesIO()
