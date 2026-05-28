@@ -41,18 +41,24 @@ def google_sync_dialog(thang, nam):
 
     # Đã có token hợp lệ → hiện nút đồng bộ
     if creds and creds.valid:
-        st.success("✅ Đã kết nối với Google Calendar!")
-        st.markdown(f"Bạn đang chuẩn bị đồng bộ lịch thi công của **Tháng {thang}/{nam}** lên Google Calendar.")
+        next_m = thang + 1 if thang < 12 else 1
+        next_y = nam if thang < 12 else nam + 1
         
-        if st.button(f"🚀 Bắt đầu Đồng bộ Tháng {thang}", type="primary", use_container_width=True):
+        st.success("✅ Đã kết nối với Google Calendar!")
+        st.markdown(f"Bạn đang chuẩn bị đồng bộ lịch thi công của **Tháng {thang}/{nam}** và **Tháng {next_m}/{next_y}** lên Google Calendar.")
+        
+        if st.button(f"🚀 Bắt đầu Đồng bộ Tháng {thang} & {next_m}", type="primary", use_container_width=True):
             with st.spinner("Đang đẩy dữ liệu sang Google Calendar..."):
                 ky_str = f"{nam}-{thang:02d}"
+                next_ky_str = f"{next_y}-{next_m:02d}"
+                
                 conn = get_connection()
                 schedules = conn.execute('''
                     SELECT s.id
                     FROM schedules s
-                    WHERE strftime('%Y-%m', s.ngay_du_kien) = ? AND s.trang_thai != 'skipped'
-                ''', (ky_str,)).fetchall()
+                    WHERE (strftime('%Y-%m', s.ngay_du_kien) = ? OR strftime('%Y-%m', s.ngay_du_kien) = ?) 
+                      AND s.trang_thai != 'skipped'
+                ''', (ky_str, next_ky_str)).fetchall()
                 
                 success_count = 0
                 from utils.google_sync import auto_sync_schedule_to_google
