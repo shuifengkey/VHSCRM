@@ -13,24 +13,30 @@ def order_points(pts):
 
 def enhance_scan(warped):
     """
-    Giữ nguyên màu sắc (Color Document), chỉ tăng tương phản nhẹ và làm nét.
-    Sử dụng CLAHE trên kênh độ sáng (L) để làm nổi bật nét chữ mà không hỏng màu.
+    Nền giấy trắng sáng (White Paper), chữ đậm (Dark Text), GIỮ NGUYÊN MÀU SẮC (Color).
+    Sử dụng kỹ thuật Stretch Contrast dựa trên phân vị (Percentile) để làm trắng nền.
     """
-    # 1. Chuyển sang không gian màu LAB để tách kênh độ sáng (L) ra khỏi màu (A, B)
-    lab = cv2.cvtColor(warped, cv2.COLOR_BGR2LAB)
-    l, a, b = cv2.split(lab)
+    # Lấy ảnh xám để phân tích độ sáng
+    gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
     
-    # 2. Cân bằng tương phản tự động trên kênh L
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-    cl = clahe.apply(l)
+    # Tìm điểm tối nhất (chữ) và sáng nhất (nền giấy)
+    # Loại bỏ 3% nhiễu ở hai đầu để không bị nhiễu do điểm đen/trắng bất thường
+    black_point = np.percentile(gray, 3)
+    white_point = np.percentile(gray, 95)
     
-    # 3. Gộp lại và chuyển về BGR
-    limg = cv2.merge((cl, a, b))
-    enhanced = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
+    # Kéo giãn dải màu (Stretch Contrast) trên từng kênh BGR
+    # Điểm sáng nhất thành 255 (trắng tinh), điểm tối nhất thành 0 (đen thui)
+    warped_f = warped.astype(np.float32)
+    diff = white_point - black_point
+    if diff < 10:
+        diff = 10  # Tránh lỗi chia cho 0 nếu ảnh quá mờ
+        
+    # Công thức: Pixel_mới = (Pixel_cũ - Black) * (255 / Diff)
+    adjusted = np.clip((warped_f - black_point) * (255.0 / diff), 0, 255).astype(np.uint8)
     
-    # 4. Làm nét nhẹ để chữ sắc sảo (Unsharp Masking)
-    blurred = cv2.GaussianBlur(enhanced, (0, 0), sigmaX=3)
-    sharpened = cv2.addWeighted(enhanced, 1.5, blurred, -0.5, 0)
+    # Làm nét nhẹ (Unsharp Masking) để chữ sắc sảo hơn
+    blurred = cv2.GaussianBlur(adjusted, (0, 0), sigmaX=3)
+    sharpened = cv2.addWeighted(adjusted, 1.5, blurred, -0.5, 0)
     
     return sharpened
 
@@ -54,47 +60,58 @@ def auto_crop_document(image_path):
             process_img = orig.copy()
             ratio = 1.0
 
-        # --- SIÊU BẮT GÓC: Lọc chữ bằng Median Blur + Otsu Threshold + Convex Hull ---
-        # Phương pháp này KHÔNG dùng Canny để tránh nhiễu do text trên giấy
+        # --- SIÊU BẮT GÓC V2: Kết hợp Canny Edge và Convex Hull ---
+        # Khắc phục lỗi: Mặt bàn có màu sáng/bóng mờ làm Otsu Threshold bị lem ra ngoài mặt bàn.
+        # Dùng Canny để tìm sự thay đổi đột ngột giữa mép giấy và mặt bàn.
         gray = cv2.cvtColor(process_img, cv2.COLOR_BGR2GRAY)
         
-        # 1. Median Blur (11x11) xoá sạch chữ và nhiễu, nhưng giữ lại CỰC KỲ SẮC NÉT viền giấy
-        blurred = cv2.medianBlur(gray, 11)
+        # 1. Blur nhẹ để giảm nhiễu (giữ lại các mép rõ ràng)
+        gray_blur = cv2.GaussianBlur(gray, (5, 5), 0)
         
-        # 2. Otsu threshold để tách hẳn mảng giấy trắng và nền tối
-        _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        # 2. Canny Edge Detection với ngưỡng tự động (Otsu)
+        high_thresh, _ = cv2.threshold(gray_blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        edged = cv2.Canny(gray_blur, 0.5 * high_thresh, high_thresh)
         
-        # 3. Morphological close để lấp đầy các lỗ thủng trên mảng giấy (nếu có)
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (11, 11))
-        mask = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+        # 3. Dilate để nối liền các đứt gãy ở mép giấy
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+        edged = cv2.dilate(edged, kernel, iterations=2)
+        edged = cv2.erode(edged, kernel, iterations=1)
         
-        # 4. Tìm viền ngoài cùng (RETR_EXTERNAL) để bỏ qua các chi tiết bên trong tờ giấy
-        cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:3]
+        # 4. Tìm TẤT CẢ các đường viền
+        cnts, _ = cv2.findContours(edged, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:10]
         
         doc_cnt = None
         img_area = process_img.shape[0] * process_img.shape[1]
+        best_area = 0
         
-        if len(cnts) > 0:
-            c = cnts[0] # Lấy mảng lớn nhất (chắc chắn là tờ giấy)
-            if cv2.contourArea(c) > img_area * 0.05:
-                # 5. Dùng Convex Hull để bọc mảng giấy như kéo một sợi dây thun xung quanh, 
-                # loại bỏ các phần lõm do bị rách hay nhiễu
-                hull = cv2.convexHull(c)
-                peri = cv2.arcLength(hull, True)
-                
-                # 6. Ép về đa giác 4 cạnh
-                for eps in np.linspace(0.01, 0.1, 10):
-                    approx = cv2.approxPolyDP(hull, eps * peri, True)
-                    if len(approx) == 4:
+        for c in cnts:
+            if cv2.contourArea(c) < img_area * 0.05:
+                continue
+            
+            # Dùng Convex Hull để quấn dây thun quanh hình (bỏ qua các nét lõm/rách)
+            hull = cv2.convexHull(c)
+            peri = cv2.arcLength(hull, True)
+            
+            # Ép về đa giác 4 cạnh
+            for eps in np.linspace(0.02, 0.1, 10):
+                approx = cv2.approxPolyDP(hull, eps * peri, True)
+                if len(approx) == 4 and cv2.isContourConvex(approx):
+                    area = cv2.contourArea(approx)
+                    # Lấy khung hình 4 góc LỚN NHẤT tìm được (để không lấy nhầm cái logo hay ô checkbox)
+                    if area > best_area:
+                        best_area = area
                         doc_cnt = approx.reshape(4, 2)
-                        break
-                        
-                # 7. Fallback CỰC KỲ QUAN TRỌNG: minAreaRect
-                if doc_cnt is None:
-                    rect = cv2.minAreaRect(c)
-                    box = cv2.boxPoints(rect)
-                    doc_cnt = np.int32(box)
+                    break
+        
+        # 5. Fallback: Nếu không tìm được 4 góc hoàn hảo, lấy hình chữ nhật bao quanh đường viền lớn nhất
+        if doc_cnt is None and len(cnts) > 0:
+            c = cnts[0]
+            if cv2.contourArea(c) > img_area * 0.05:
+                hull = cv2.convexHull(c)
+                rect = cv2.minAreaRect(hull)
+                box = cv2.boxPoints(rect)
+                doc_cnt = np.int32(box)
 
         # Nếu hoàn toàn không thấy gì, lấy nguyên cái ảnh
         if doc_cnt is None:
