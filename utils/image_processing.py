@@ -145,27 +145,29 @@ class DocumentScanner:
     def post_process(self, warped):
         """
         Xử lý sau (Post-processing):
-        - Chuyển thành ảnh đen trắng rõ nét (Binary + Adaptive Threshold)
-        - Điều chỉnh contrast và brightness
-        - Tăng sharpness
+        Giữ nguyên màu sắc, ép nền giấy thành trắng tinh (Stretch Contrast), chữ nét và đậm.
+        Đây là phương pháp thay thế ưu việt hơn Adaptive Threshold (tránh lỗi trắng xóa).
         """
-        # Chuyển ảnh warped sang grayscale
+        # Chuyển sang ảnh xám để phân tích cường độ sáng nền giấy
         gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
         
-        # 1. Tăng sharpness
-        blurred = cv2.GaussianBlur(gray, (0, 0), sigmaX=3)
-        sharpened = cv2.addWeighted(gray, 1.5, blurred, -0.5, 0)
+        # Tìm điểm tối nhất (chữ) và sáng nhất (nền giấy) - bỏ vài % nhiễu hai đầu
+        black_point = np.percentile(gray, 3)
+        white_point = np.percentile(gray, 95)
         
-        # 2. Chuyển thành ảnh đen trắng rõ nét (Adaptive Threshold)
-        # Sử dụng Adaptive Gaussian Threshold để xử lý vùng sáng tối không đều
-        binary = cv2.adaptiveThreshold(
-            sharpened, 255, 
-            cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-            cv2.THRESH_BINARY, 21, 10
-        )
+        warped_f = warped.astype(np.float32)
+        diff = white_point - black_point
+        if diff < 10:
+            diff = 10
+            
+        # Kéo giãn dải màu (Stretch Contrast) cho cả 3 kênh màu BGR
+        # Điểm sáng nhất thành 255 (trắng tinh), điểm tối nhất thành 0 (đen)
+        adjusted = np.clip((warped_f - black_point) * (255.0 / diff), 0, 255).astype(np.uint8)
         
-        # Chuyển lại hệ màu BGR để lưu đè lên ảnh gốc (JPG/PNG mặc định là 3 kênh)
-        final = cv2.cvtColor(binary, cv2.COLOR_GRAY2BGR)
+        # Làm nét chữ (Unsharp Mask)
+        blurred = cv2.GaussianBlur(adjusted, (0, 0), sigmaX=3)
+        final = cv2.addWeighted(adjusted, 1.5, blurred, -0.5, 0)
+        
         return final
 
     def scan(self, image_path):
