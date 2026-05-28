@@ -40,13 +40,19 @@
       }
     };
   </script>
-  <style>
+    :root {
+      --primary-color: #ff4b4b;
+      --background-color: transparent;
+      --secondary-background-color: #f0f2f6;
+      --text-color: #31333F;
+      --font: "Source Sans Pro", sans-serif;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: #0f172a; color: #fff;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--background-color); color: var(--text-color);
+      font-family: var(--font);
       display: flex; flex-direction: column; align-items: center;
-      padding: 8px; min-height: 100%;
+      padding: 8px 0; min-height: 100%;
     }
 
     /* === LOADING === */
@@ -55,23 +61,23 @@
       justify-content: center; padding: 40px 20px; width: 100%;
     }
     .spinner {
-      width: 40px; height: 40px; border: 4px solid #334155;
-      border-top: 4px solid #3b82f6; border-radius: 50%;
+      width: 40px; height: 40px; border: 4px solid var(--secondary-background-color);
+      border-top: 4px solid var(--primary-color); border-radius: 50%;
       animation: spin 0.8s linear infinite; margin-bottom: 16px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    #loading-text { font-size: 14px; color: #94a3b8; text-align: center; }
-    #loading-progress { font-size: 12px; color: #64748b; margin-top: 6px; }
+    #loading-text { font-size: 14px; color: var(--text-color); text-align: center; opacity: 0.8; }
+    #loading-progress { font-size: 12px; color: var(--text-color); margin-top: 6px; opacity: 0.6; }
 
     /* === MAIN === */
-    #main-ui { display: none; width: 100%; }
+    #main-ui { display: none; width: 100%; max-width: 600px; padding: 0 8px; }
 
     /* === VIEWFINDER === */
     #viewfinder {
       position: relative; width: 100%; border-radius: 12px;
       overflow: hidden; background: #000;
       display: flex; align-items: center; justify-content: center;
-      min-height: 240px;
+      min-height: 240px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     video { width: 100%; display: block; border-radius: 12px; }
     #overlay-canvas {
@@ -80,57 +86,59 @@
     }
     #preview-img {
       width: 100%; display: none; border-radius: 12px;
-      object-fit: contain; max-height: 400px; background: #1e293b;
+      object-fit: contain; max-height: 400px; background: #eee;
     }
     #guide-text {
       position: absolute; bottom: 8%; width: 100%; text-align: center;
-      font-size: 12px; color: rgba(255,255,255,0.9);
-      text-shadow: 0 1px 6px rgba(0,0,0,0.8); letter-spacing: 0.3px;
+      font-size: 13px; color: #fff; font-weight: 500;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.8); letter-spacing: 0.3px;
     }
     #detect-status {
       position: absolute; top: 10px; left: 10px;
       font-size: 11px; padding: 4px 10px; border-radius: 20px;
       font-weight: 600; transition: all 0.3s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
-    .detect-ok { background: rgba(34,197,94,0.85); color: #fff; }
-    .detect-no { background: rgba(239,68,68,0.7); color: #fff; }
+    .detect-ok { background: #10b981; color: #fff; }
+    .detect-no { background: rgba(0,0,0,0.6); color: #fff; }
 
     /* === MODE TOGGLE === */
     #mode-row {
-      display: flex; gap: 6px; margin: 8px 0; width: 100%;
-      justify-content: center;
+      display: flex; gap: 6px; margin: 12px 0 8px 0; width: 100%;
+      justify-content: center; flex-wrap: wrap;
     }
     .mode-btn {
-      padding: 6px 14px; font-size: 12px; font-weight: 600;
-      border: 2px solid #334155; border-radius: 20px;
-      background: transparent; color: #94a3b8; cursor: pointer;
-      transition: all 0.2s;
+      padding: 6px 12px; font-size: 13px; font-weight: 500;
+      border: 1px solid var(--secondary-background-color); border-radius: 20px;
+      background: var(--secondary-background-color); color: var(--text-color); cursor: pointer;
+      transition: all 0.2s; opacity: 0.7;
     }
     .mode-btn.active {
-      border-color: #3b82f6; color: #3b82f6; background: rgba(59,130,246,0.1);
+      border-color: var(--primary-color); color: var(--primary-color); 
+      background: transparent; opacity: 1; font-weight: 600;
     }
 
     /* === BUTTONS === */
     #btn-row {
-      display: flex; gap: 8px; margin-top: 8px; width: 100%;
+      display: flex; gap: 8px; margin-top: 12px; width: 100%;
       justify-content: center;
     }
     .btn {
       flex: 1; max-width: 200px; padding: 12px 10px;
-      font-size: 15px; font-weight: 600; border: none;
-      border-radius: 10px; cursor: pointer;
+      font-size: 15px; font-weight: 600; border: 1px solid transparent;
+      border-radius: 8px; cursor: pointer;
       display: flex; align-items: center; justify-content: center; gap: 6px;
       transition: all 0.15s;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     .btn:active { transform: scale(0.97); }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    #capture-btn { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; }
-    #retake-btn  { background: #334155; color: #cbd5e1; display: none; }
-    #send-btn    { background: linear-gradient(135deg, #10b981, #059669); color: #fff; display: none; }
+    
+    #capture-btn { background: var(--primary-color); color: #fff; }
+    #retake-btn  { background: transparent; color: var(--text-color); border-color: var(--secondary-background-color); display: none; }
+    #send-btn    { background: var(--primary-color); color: #fff; display: none; }
 
     /* Status */
-    #status { margin-top: 6px; font-size: 12px; color: #94a3b8; text-align: center; min-height: 18px; }
+    #status { margin-top: 10px; font-size: 13px; color: var(--text-color); text-align: center; min-height: 18px; opacity: 0.7; }
   </style>
 </head>
 <body>
@@ -192,7 +200,15 @@
     let capturedDataURL = null;
 
     // ===== STREAMLIT =====
-    Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, () => {
+    Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, (event) => {
+      if (event.data && event.data.theme) {
+        const t = event.data.theme;
+        document.documentElement.style.setProperty('--primary-color', t.primaryColor);
+        document.documentElement.style.setProperty('--background-color', t.backgroundColor);
+        document.documentElement.style.setProperty('--secondary-background-color', t.secondaryBackgroundColor);
+        document.documentElement.style.setProperty('--text-color', t.textColor);
+        document.documentElement.style.setProperty('--font', t.font);
+      }
       Streamlit.setFrameHeight(document.body.scrollHeight + 20);
     });
     Streamlit.setComponentReady();
