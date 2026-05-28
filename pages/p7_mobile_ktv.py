@@ -159,35 +159,26 @@ def action_dialog(job, log):
         pest_found = st.text_area("Côn trùng phát hiện / Ghi chú", value=log.get("ket_qua", ""), height=80)
         chemical   = st.text_area("Hóa chất sử dụng", value=log.get("hoa_chat", ""), height=80)
         
-        cam_photo = st.file_uploader("📷 Mở Camera (Nét cao)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=False, key=f"cam_{log['id']}")
-        img_att = st.file_uploader("🖼️ Chọn ảnh từ thư viện", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"checkout_img_{log['id']}")
+        img_att = st.file_uploader("📷 Chụp hoặc tải ảnh (JPG, PNG)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"checkout_img_{log['id']}")
+        if img_att:
+            st.markdown("**🖼️ Đã chọn:**")
+            cols = st.columns(min(len(img_att), 3))
+            for i, f_img in enumerate(img_att):
+                cols[i % 3].image(f_img, width=80)
+        
         pdf_att = st.file_uploader("📄 Đính kèm tệp (PDF)", type=['pdf'], accept_multiple_files=True, key=f"checkout_pdf_{log['id']}")
+        if pdf_att:
+            st.markdown(f"**📄 Đã chọn:** {', '.join([p.name for p in pdf_att])}")
         
         if st.button("✅ HOÀN THÀNH & CHECK-OUT", type="primary", use_container_width=True):
             file_names = []
             
             all_attachments = (img_att or []) + (pdf_att or [])
-            if all_attachments or cam_photo:
+            if all_attachments:
                 import os, uuid
                 upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
                 os.makedirs(upload_dir, exist_ok=True)
                 
-                if cam_photo:
-                    fname = f"{uuid.uuid4().hex[:8]}_camera.jpg"
-                    fpath = os.path.join(upload_dir, fname)
-                    with open(fpath, "wb") as f:
-                        f.write(cam_photo.getbuffer())
-                    try:
-                        from utils.image_processing import auto_crop_document
-                        auto_crop_document(fpath)
-                    except Exception as e:
-                        pass
-                    file_names.append(fname)
-                    
-                if all_attachments:
-                import os, uuid
-                upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
-                os.makedirs(upload_dir, exist_ok=True)
                 for uploaded_file in all_attachments:
                     fname = f"{uuid.uuid4().hex[:8]}_{uploaded_file.name}"
                     fpath = os.path.join(upload_dir, fname)
