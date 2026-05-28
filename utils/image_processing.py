@@ -1,4 +1,4 @@
-﻿import cv2
+import cv2
 import numpy as np
 import traceback
 
@@ -48,16 +48,22 @@ class DocumentScanner:
     def detect_edges(self, blurred_img):
         """
         Phát hiện biên (Edge Detection): Sử dụng Canny Edge Detection
+        Kết hợp với Morphological Closing để nối liền các đường đứt nét.
         """
         edged = cv2.Canny(blurred_img, 75, 200)
+        
+        # Dùng phép toán hình thái học (Closing) để nối các nét đứt trên viền giấy
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+        edged = cv2.morphologyEx(edged, cv2.MORPH_CLOSE, kernel)
+        
         return edged
 
     def find_document_contour(self, edged, img_area):
         """
         Tìm contour và phát hiện trang tài liệu
         """
-        # 1. Tìm tất cả contours
-        cnts, _ = cv2.findContours(edged.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        # 1. Tìm viền ngoài cùng (RETR_EXTERNAL) để lờ đi các text/nhiễu bên trong giấy
+        cnts, _ = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
         # Sắp xếp theo diện tích giảm dần
         cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:5]
@@ -71,10 +77,15 @@ class DocumentScanner:
                 
             # 3. Xấp xỉ contour đó thành hình 4 cạnh (4 góc) bằng approxPolyDP
             peri = cv2.arcLength(c, True)
-            approx = cv2.approxPolyDP(c, 0.02 * peri, True)
             
-            if len(approx) == 4:
-                doc_cnt = approx.reshape(4, 2)
+            # Thử nhiều hệ số epsilon để tăng tỷ lệ tìm thấy 4 góc
+            for eps in np.linspace(0.01, 0.08, 10):
+                approx = cv2.approxPolyDP(c, eps * peri, True)
+                if len(approx) == 4:
+                    doc_cnt = approx.reshape(4, 2)
+                    break
+                    
+            if doc_cnt is not None:
                 break
                 
         # 4. Fallback: Nếu không tìm thấy contour 4 cạnh thì thử lấy bounding box của contour lớn nhất
