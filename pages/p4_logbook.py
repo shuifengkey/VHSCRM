@@ -269,7 +269,7 @@ def render():
                                         st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
 
                                     with st.form(f"form_attach_{job['id']}"):
-                                        cam_photo = st.camera_input("📷 Chụp ảnh biên bản trực tiếp", key=f"cam_{job['id']}")
+                                        cam_photo = st.file_uploader("📷 Chụp 1 ảnh (Nét cao / Native Camera)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=False, key=f"cam_{job['id']}")
                                         extra_att = st.file_uploader("📂 Hoặc chọn file từ máy (PDF, JPG, PNG)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"extra_file_{job['id']}")
                                         if st.form_submit_button("Lưu bổ sung", use_container_width=True):
                                             if extra_att or cam_photo:
@@ -552,7 +552,7 @@ def render():
                                     st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
 
                                 with st.form(f"hist_form_attach_{log['id']}"):
-                                    cam_photo = st.camera_input("📷 Chụp ảnh biên bản trực tiếp", key=f"hist_cam_{log['id']}")
+                                    cam_photo = st.file_uploader("📷 Chụp 1 ảnh (Nét cao / Native Camera)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=False, key=f"hist_cam_{log['id']}")
                                     extra_att = st.file_uploader("📂 Hoặc chọn file từ máy (PDF, JPG, PNG)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"hist_extra_file_{log['id']}")
                                     if st.form_submit_button("Lưu bổ sung", use_container_width=True):
                                         if extra_att or cam_photo:

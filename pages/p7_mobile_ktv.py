@@ -159,7 +159,7 @@ def action_dialog(job, log):
         pest_found = st.text_area("Côn trùng phát hiện / Ghi chú", value=log.get("ket_qua", ""), height=80)
         chemical   = st.text_area("Hóa chất sử dụng", value=log.get("hoa_chat", ""), height=80)
         
-        cam_photo = st.camera_input("📷 Chụp ảnh biên bản trực tiếp", key=f"cam_{log['id']}")
+        cam_photo = st.file_uploader("📷 Chụp 1 ảnh (Nét cao / Native Camera)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=False, key=f"cam_{log['id']}")
         attachments = st.file_uploader(
             "📂 Hoặc chọn file từ máy (PDF, JPG, PNG)",
             type=['pdf', 'png', 'jpg', 'jpeg'],
