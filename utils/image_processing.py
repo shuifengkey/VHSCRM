@@ -1,4 +1,4 @@
-import cv2
+﻿import cv2
 import numpy as np
 
 def order_points(pts):
@@ -20,11 +20,10 @@ def auto_crop_document(image_path):
         stream.close()
 
         if image is None:
-            return (False, "OpenCV could not decode the image file (might be corrupted or unsupported format).")
+            return (False, "OpenCV could not decode the image file.")
 
         orig = image.copy()
         
-        # Resize for processing
         ratio = image.shape[0] / 800.0
         new_width = int(image.shape[1] / ratio)
         if ratio > 1:
@@ -36,36 +35,49 @@ def auto_crop_document(image_path):
         gray = cv2.cvtColor(process_img, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (5, 5), 0)
         
-        # 1. Use static threshold 75, 200 which works perfectly for subtle paper edges
-        edged = cv2.Canny(gray, 75, 200)
+        img_area = process_img.shape[0] * process_img.shape[1]
+        doc_cnt = None
 
+        # METHOD 1: Auto Canny
+        v = np.median(gray)
+        lower = int(max(0, (1.0 - 0.33) * v))
+        upper = int(min(255, (1.0 + 0.33) * v))
+        edged = cv2.Canny(gray, lower, upper)
+        
         cnts, _ = cv2.findContours(edged.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:5]
         
-        doc_cnt = None
-        img_area = process_img.shape[0] * process_img.shape[1]
-        
         for c in cnts:
             peri = cv2.arcLength(c, True)
-            approx = cv2.approxPolyDP(c, 0.02 * peri, True)
-            if len(approx) == 4:
-                area = cv2.contourArea(c)
-                if area > img_area * 0.15:
+            for eps in np.linspace(0.02, 0.08, 5):
+                approx = cv2.approxPolyDP(c, eps * peri, True)
+                if len(approx) == 4 and cv2.contourArea(c) > img_area * 0.15:
                     doc_cnt = approx
                     break
-                    
-        # Fallback 1: Try slightly larger epsilon if strict one failed
+            if doc_cnt is not None:
+                break
+                
+        # METHOD 2: Otsu Thresholding (If Canny fails, Otsu often separates paper from desk perfectly)
         if doc_cnt is None:
-            for c in cnts:
-                peri = cv2.arcLength(c, True)
-                approx = cv2.approxPolyDP(c, 0.05 * peri, True)
-                if len(approx) == 4:
-                    area = cv2.contourArea(c)
-                    if area > img_area * 0.15:
-                        doc_cnt = approx
+            _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            
+            # Find contours on the inverted threshold too, just in case
+            for binary_img in [thresh, cv2.bitwise_not(thresh)]:
+                cnts_thresh, _ = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                cnts_thresh = sorted(cnts_thresh, key=cv2.contourArea, reverse=True)[:5]
+                for c in cnts_thresh:
+                    peri = cv2.arcLength(c, True)
+                    for eps in np.linspace(0.02, 0.08, 5):
+                        approx = cv2.approxPolyDP(c, eps * peri, True)
+                        if len(approx) == 4 and cv2.contourArea(c) > img_area * 0.15:
+                            doc_cnt = approx
+                            break
+                    if doc_cnt is not None:
                         break
+                if doc_cnt is not None:
+                    break
 
-        # Fallback 2: minAreaRect of largest contour
+        # METHOD 3: minAreaRect Fallback
         if doc_cnt is None and len(cnts) > 0:
             c = cnts[0]
             if cv2.contourArea(c) > img_area * 0.15:
@@ -74,30 +86,13 @@ def auto_crop_document(image_path):
                 box = np.int32(box)
                 doc_cnt = box.reshape(4, 1, 2)
                 
-        # Fallback 3: Global Convex Hull of all significant text boxes
         if doc_cnt is None:
-            all_pts = []
-            for c in cnts:
-                if cv2.contourArea(c) > img_area * 0.005: # At least 0.5% of image (a block of text)
-                    all_pts.extend(c)
-            if len(all_pts) > 0:
-                all_pts = np.array(all_pts)
-                hull = cv2.convexHull(all_pts)
-                if cv2.contourArea(hull) > img_area * 0.2:
-                    rect = cv2.minAreaRect(hull)
-                    box = cv2.boxPoints(rect)
-                    box = np.int32(box)
-                    doc_cnt = box.reshape(4, 1, 2)
-                
-        if doc_cnt is None:
-            # Fallback: Geometric crop failed. Just enhance the original image.
+            # Fallback: Enhance full image
             alpha = 1.2
             beta = 10
             enhanced = cv2.convertScaleAbs(orig, alpha=alpha, beta=beta)
-            kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
-            scanned = cv2.filter2D(enhanced, -1, kernel)
-            cv2.imencode('.jpg', scanned)[1].tofile(image_path)
-            return (True, "Document corners not found. Applied scanner enhancement to full image.")
+            cv2.imencode('.jpg', enhanced)[1].tofile(image_path)
+            return (True, "Document corners not found. Enhanced original.")
             
         doc_cnt = doc_cnt.reshape(4, 2) * ratio
         rect = order_points(doc_cnt)
@@ -121,16 +116,13 @@ def auto_crop_document(image_path):
         M = cv2.getPerspectiveTransform(rect, dst)
         warped = cv2.warpPerspective(orig, M, (maxWidth, maxHeight))
         
-        # --- ENHANCE TO LOOK LIKE SCANNED DOCUMENT ---
         alpha = 1.2
         beta = 10
         enhanced = cv2.convertScaleAbs(warped, alpha=alpha, beta=beta)
-        kernel = np.array([[0, -1, 0], [-1, 5,-1], [0, -1, 0]])
-        scanned = cv2.filter2D(enhanced, -1, kernel)
         
-        cv2.imencode('.jpg', scanned)[1].tofile(image_path)
-        return (True, "Document successfully cropped and enhanced.")
+        cv2.imencode('.jpg', enhanced)[1].tofile(image_path)
+        return (True, "Document successfully cropped.")
         
     except Exception as e:
         print(f"Auto crop error: {e}")
-        return (False, f"Python error during processing: {str(e)}")
+        return (False, f"Python error: {str(e)}")
