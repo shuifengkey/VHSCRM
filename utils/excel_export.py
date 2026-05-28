@@ -346,9 +346,34 @@ def generate_payment_request_pdf(debt_data, attachments=None):
     content.append(sign)
 
     # ── ĐÍNH KÈM (ATTACHMENTS) ───────────────────────────────
-    # NOTE: Images are NOT embedded inline here to avoid duplication.
-    # They are merged as separate full-page PDF pages after doc.build() via pypdf.
-    # (Fallback: if pypdf is unavailable, we embed inline below)
+    if attachments:
+        from reportlab.platypus import PageBreak
+        try:
+            from PIL import Image as PILImage
+            for fname, fpath in attachments:
+                if fpath.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif', '.webp')):
+                    content.append(PageBreak())
+                    # Thêm tiêu đề cho ảnh đính kèm
+                    content.append(P(f"<b>ĐÍNH KÈM:</b> {fname}", size=11, align=TA_CENTER, bold=True, color=VHS_BLUE))
+                    content.append(Spacer(1, 0.5*cm))
+                    try:
+                        with PILImage.open(fpath) as img:
+                            orig_w, orig_h = img.size
+                        
+                        # Fit vừa khít vào trang A4
+                        max_w = A4[0] - 3*cm
+                        max_h = A4[1] - 4*cm
+                        ratio = min(max_w / orig_w, max_h / orig_h)
+                        
+                        new_w = orig_w * ratio
+                        new_h = orig_h * ratio
+                        
+                        content.append(Image(fpath, width=new_w, height=new_h))
+                    except Exception as e:
+                        content.append(P(f"(Lỗi đọc file ảnh: {e})", size=9, align=TA_CENTER, color=colors.red))
+        except ImportError:
+            content.append(PageBreak())
+            content.append(P("Thiếu thư viện Pillow để hiển thị ảnh đính kèm.", size=10, align=TA_CENTER, color=colors.red))
 
     doc.build(content)
     output.seek(0)
@@ -370,18 +395,7 @@ def generate_payment_request_pdf(debt_data, attachments=None):
                     except Exception:
                         pass
                 elif ext in ['jpg', 'jpeg', 'png']:
-                    try:
-                        from PIL import Image as _PILImg
-                        with _PILImg.open(fpath) as img:
-                            if img.mode in ('RGBA', 'P'):
-                                img = img.convert('RGB')
-                            img_pdf_io = _io.BytesIO()
-                            img.save(img_pdf_io, format='PDF', resolution=150.0)
-                            img_pdf_io.seek(0)
-                            merger.append(img_pdf_io)
-                            has_valid = True
-                    except Exception as e:
-                        print(f"Merge image error: {e}")
+                    pass # Images are already embedded in ReportLab!
             if has_valid:
                 merged_output = _io.BytesIO()
                 merger.write(merged_output)

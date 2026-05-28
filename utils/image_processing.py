@@ -149,11 +149,13 @@ def auto_crop_document(image_path):
         doc_cnt = find_document_contour(process_img)
 
         if doc_cnt is None:
-            # No document found → enhance original without cropping
-            scanned = enhance_scan(orig)
-            scanned_bgr = cv2.cvtColor(scanned, cv2.COLOR_GRAY2BGR)
-            cv2.imencode('.jpg', scanned_bgr, [cv2.IMWRITE_JPEG_QUALITY, 92])[1].tofile(image_path)
-            return (True, "No document boundary found; enhanced original image.")
+            # No document found → assume the entire image is the document
+            doc_cnt = np.array([
+                [0, 0],
+                [process_img.shape[1] - 1, 0],
+                [process_img.shape[1] - 1, process_img.shape[0] - 1],
+                [0, process_img.shape[0] - 1]
+            ])
 
         # --- Scale corners back to original resolution ---
         doc_cnt = doc_cnt.reshape(4, 2).astype(np.float32) * ratio
