@@ -178,6 +178,14 @@ def action_dialog(job, log):
                     fpath = os.path.join(upload_dir, fname)
                     with open(fpath, "wb") as f:
                         f.write(uploaded_file.getbuffer())
+                    
+                    if fname.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
+                        try:
+                            from utils.image_processing import auto_crop_document
+                            auto_crop_document(fpath)
+                        except Exception as e:
+                            print(f"Crop warning: {e}")
+                            
                     file_names.append(fname)
             
             att_str = ",".join(file_names)
