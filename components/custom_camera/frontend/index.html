@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>VHS Document Scanner</title>
-  <script src="https://cdn.jsdelivr.net/npm/streamlit-component-lib@1.3.0/dist/streamlit.js"></script>
+  <script src="./streamlit.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -647,6 +647,8 @@
 
     // Notify Streamlit that component is ready
     Streamlit.setComponentReady();
+    // Set initial height to clear skeleton loader immediately
+    Streamlit.setFrameHeight(150);
   </script>
 </body>
 </html>
