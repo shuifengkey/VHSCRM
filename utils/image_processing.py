@@ -18,70 +18,65 @@ def order_points(pts):
 
 def find_document_contour(process_img):
     """
-    Try multiple strategies to find the document's 4-corner contour.
-    Returns a (4,2) numpy array of corners, or None if not found.
+    Very robust document contour detection.
+    Scales down to 500px for solid edge detection and uses multiple strategies.
     """
     img_h, img_w = process_img.shape[:2]
-    img_area = img_h * img_w
+    
+    # 1. Scale down for robust edge bridging
+    scale_ratio = 500.0 / img_h
+    small_w = int(img_w * scale_ratio)
+    small = cv2.resize(process_img, (small_w, 500))
+    small_area = 500 * small_w
 
-    gray = cv2.cvtColor(process_img, cv2.COLOR_BGR2GRAY)
-    gray = cv2.GaussianBlur(gray, (7, 7), 0)
+    gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+    # 2. Bilateral filter removes paper texture while keeping edges sharp
+    gray = cv2.bilateralFilter(gray, 11, 17, 17)
 
     def search_contours(edge_img, min_area_ratio=0.10):
-        """Search for 4-point quadrilateral in an edge map."""
         cnts, _ = cv2.findContours(edge_img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-        cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:10]
+        cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:5]
         for c in cnts:
-            area = cv2.contourArea(c)
-            if area < img_area * min_area_ratio:
+            if cv2.contourArea(c) < small_area * min_area_ratio:
                 continue
             peri = cv2.arcLength(c, True)
-            # Try progressively looser approximations
-            for eps in np.linspace(0.01, 0.12, 15):
+            # Try multiple epsilons to find a convex 4-point shape
+            for eps in np.linspace(0.015, 0.08, 10):
                 approx = cv2.approxPolyDP(c, eps * peri, True)
-                if len(approx) == 4:
-                    return approx
+                if len(approx) == 4 and cv2.isContourConvex(approx):
+                    # Scale coordinates back up
+                    return (approx / scale_ratio).astype(np.int32)
         return None
 
-    # --- Strategy 1: Otsu-Canny (best for paper on desk) ---
-    otsu_val, _ = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    canny1 = cv2.Canny(gray, otsu_val * 0.5, otsu_val)
-    kernel = np.ones((5, 5), np.uint8)
-    canny1 = cv2.dilate(canny1, kernel, iterations=2)
-    canny1 = cv2.erode(canny1, kernel, iterations=1)
-    cnt = search_contours(canny1, min_area_ratio=0.10)
-    if cnt is not None:
-        return cnt
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
 
-    # --- Strategy 2: Auto-Canny based on median brightness ---
+    # --- Strategy 1: Auto-Canny (Median-based) ---
     v = np.median(gray)
     lo = int(max(0, (1.0 - 0.33) * v))
     hi = int(min(255, (1.0 + 0.33) * v))
-    canny2 = cv2.Canny(gray, lo, hi)
-    canny2 = cv2.dilate(canny2, kernel, iterations=2)
-    canny2 = cv2.erode(canny2, kernel, iterations=1)
-    cnt = search_contours(canny2, min_area_ratio=0.08)
-    if cnt is not None:
-        return cnt
+    edged = cv2.Canny(gray, lo, hi)
+    edged = cv2.dilate(edged, kernel, iterations=2)
+    edged = cv2.erode(edged, kernel, iterations=1)
+    
+    cnt = search_contours(edged)
+    if cnt is not None: return cnt
 
-    # --- Strategy 3: Otsu threshold on inverted image (dark paper on light bg) ---
-    _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    thresh = cv2.dilate(thresh, kernel, iterations=2)
-    cnt = search_contours(thresh, min_area_ratio=0.08)
-    if cnt is not None:
-        return cnt
+    # --- Strategy 2: Adaptive Threshold (handles shadows & uneven lighting) ---
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+    thresh = cv2.dilate(thresh, kernel, iterations=1)
+    
+    cnt = search_contours(thresh, 0.08)
+    if cnt is not None: return cnt
 
-    # --- Strategy 4: minAreaRect of largest contour (last resort) ---
-    cnts_all, _ = cv2.findContours(canny1, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-    if cnts_all:
-        biggest = max(cnts_all, key=cv2.contourArea)
-        if cv2.contourArea(biggest) > img_area * 0.05:
-            rect = cv2.minAreaRect(biggest)
-            box = cv2.boxPoints(rect)
-            return np.int32(box)
+    # --- Strategy 3: Otsu Inverse ---
+    _, thresh_otsu = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    thresh_otsu = cv2.dilate(thresh_otsu, kernel, iterations=1)
+    
+    cnt = search_contours(thresh_otsu, 0.08)
+    if cnt is not None: return cnt
 
-    return None  # Couldn't find a document
-
+    return None
 
 def enhance_scan(warped):
     """
