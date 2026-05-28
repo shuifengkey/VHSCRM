@@ -170,20 +170,20 @@ def action_dialog(job, log):
             st.session_state[scan_key] = []
         
         if scanned_img and isinstance(scanned_img, str) and scanned_img.startswith("data:image"):
-            import base64, os, uuid
+            import base64, os, hashlib
             upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
             os.makedirs(upload_dir, exist_ok=True)
             
             # Decode base64 JPEG
             header, b64data = scanned_img.split(",", 1)
-            img_bytes = base64.b64decode(b64data)
-            fname = f"{uuid.uuid4().hex[:8]}_scan.jpg"
-            fpath = os.path.join(upload_dir, fname)
-            with open(fpath, "wb") as f:
-                f.write(img_bytes)
+            img_hash = hashlib.md5(b64data.encode('utf-8')).hexdigest()[:12]
+            fname = f"{img_hash}_scan.jpg"
             
             # Thêm vào danh sách đã scan (tránh trùng)
             if fname not in st.session_state[scan_key]:
+                fpath = os.path.join(upload_dir, fname)
+                with open(fpath, "wb") as f:
+                    f.write(base64.b64decode(b64data))
                 st.session_state[scan_key].append(fname)
                 st.toast("✅ Đã lưu ảnh scan!", icon="📸")
                 st.rerun()
@@ -259,16 +259,17 @@ def bosung_dialog(job, log):
         st.session_state[scan_key_bs] = []
     
     if scanned_bs and isinstance(scanned_bs, str) and scanned_bs.startswith("data:image"):
-        import base64, os, uuid
+        import base64, os, hashlib
         upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
         os.makedirs(upload_dir, exist_ok=True)
         _, b64 = scanned_bs.split(",", 1)
-        fname = f"{uuid.uuid4().hex[:8]}_scan.jpg"
-        fpath = os.path.join(upload_dir, fname)
-        with open(fpath, "wb") as out:
-            out.write(base64.b64decode(b64))
+        img_hash = hashlib.md5(b64.encode('utf-8')).hexdigest()[:12]
+        fname = f"{img_hash}_scan.jpg"
         
         if fname not in st.session_state[scan_key_bs]:
+            fpath = os.path.join(upload_dir, fname)
+            with open(fpath, "wb") as out:
+                out.write(base64.b64decode(b64))
             st.session_state[scan_key_bs].append(fname)
             from utils.database import get_connection
             conn = get_connection()

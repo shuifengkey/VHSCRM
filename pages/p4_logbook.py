@@ -615,11 +615,13 @@ def render():
                                         st.session_state[scan_key_h] = []
                                     if scanned_h and isinstance(scanned_h, str) and scanned_h.startswith("data:image"):
                                         _, b64 = scanned_h.split(",", 1)
-                                        fname = f"{uuid.uuid4().hex[:8]}_scan.jpg"
-                                        fpath = os.path.join(upload_dir, fname)
-                                        with open(fpath, "wb") as out:
-                                            out.write(base64.b64decode(b64))
+                                        import hashlib
+                                        img_hash = hashlib.md5(b64.encode('utf-8')).hexdigest()[:12]
+                                        fname = f"{img_hash}_scan.jpg"
                                         if fname not in st.session_state[scan_key_h]:
+                                            fpath = os.path.join(upload_dir, fname)
+                                            with open(fpath, "wb") as out:
+                                                out.write(base64.b64decode(b64))
                                             st.session_state[scan_key_h].append(fname)
                                             att_list = [x for x in log["attachments"].split(",") if x] if log.get("attachments") else []
                                             att_list.append(fname)
