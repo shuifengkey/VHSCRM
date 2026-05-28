@@ -277,19 +277,19 @@ def render():
                                                     uploaded_paths.append(fname)
                                                     
                                                 if extra_att:
-                                                for f in extra_att:
-                                                    filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
-                                                    filepath = os.path.join(upload_dir, filename)
-                                                    with open(filepath, "wb") as out:
-                                                        out.write(f.getbuffer())
-                                                    
-                                                    if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
-                                                        try:
-                                                            from utils.image_processing import auto_crop_document
-                                                            auto_crop_document(filepath)
-                                                        except Exception as e:
-                                                            print(f"Crop warning: {e}")
-                                                    uploaded_paths.append(filename)
+                                                    for f in extra_att:
+                                                        filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
+                                                        filepath = os.path.join(upload_dir, filename)
+                                                        with open(filepath, "wb") as out:
+                                                            out.write(f.getbuffer())
+                                                        
+                                                        if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
+                                                            try:
+                                                                from utils.image_processing import auto_crop_document
+                                                                auto_crop_document(filepath)
+                                                            except Exception as e:
+                                                                print(f"Crop warning: {e}")
+                                                        uploaded_paths.append(filename)
                                                 new_att_str = ",".join(uploaded_paths)
                                                 old_att = log.get("attachments", "")
                                                 final_att = (old_att + "," + new_att_str).strip(",") if old_att else new_att_str
@@ -527,17 +527,38 @@ def render():
                                     cam_photo = st.camera_input("📷 Chụp ảnh biên bản trực tiếp", key=f"hist_cam_{log['id']}")
                                     extra_att = st.file_uploader("📂 Hoặc chọn file từ máy (PDF, JPG, PNG)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"hist_extra_file_{log['id']}")
                                     if st.form_submit_button("Lưu bổ sung", use_container_width=True):
-                                        if extra_att:
+                                        if extra_att or cam_photo:
                                             import os, uuid
                                             uploaded_paths = []
                                             upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
                                             os.makedirs(upload_dir, exist_ok=True)
-                                            for f in extra_att:
-                                                filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
-                                                filepath = os.path.join(upload_dir, filename)
-                                                with open(filepath, "wb") as out:
-                                                    out.write(f.getbuffer())
-                                                uploaded_paths.append(filename)
+                                            
+                                            if cam_photo:
+                                                fname = f"{uuid.uuid4().hex[:8]}_camera.jpg"
+                                                fpath = os.path.join(upload_dir, fname)
+                                                with open(fpath, "wb") as f:
+                                                    f.write(cam_photo.getbuffer())
+                                                try:
+                                                    from utils.image_processing import auto_crop_document
+                                                    auto_crop_document(fpath)
+                                                except Exception as e:
+                                                    pass
+                                                uploaded_paths.append(fname)
+                                                
+                                            if extra_att:
+                                                for f in extra_att:
+                                                    filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
+                                                    filepath = os.path.join(upload_dir, filename)
+                                                    with open(filepath, "wb") as out:
+                                                        out.write(f.getbuffer())
+                                                    
+                                                    if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
+                                                        try:
+                                                            from utils.image_processing import auto_crop_document
+                                                            auto_crop_document(filepath)
+                                                        except Exception as e:
+                                                            print(f"Crop warning: {e}")
+                                                    uploaded_paths.append(filename)
                                             new_att_str = ",".join(uploaded_paths)
                                             old_att = log.get("attachments", "")
                                             final_att = (old_att + "," + new_att_str).strip(",") if old_att else new_att_str
