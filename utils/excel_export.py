@@ -390,22 +390,40 @@ def generate_payment_request_pdf(debt_data, attachments=None):
             from pypdf import PdfWriter
             import io as _io
             
-            has_pdf = any(fpath.lower().endswith('.pdf') for _, fpath in attachments)
-            if has_pdf:
+            if attachments:
                 merger = PdfWriter()
                 merger.append(output)
+                has_valid = False
                 for fname, fpath in attachments:
-                    if fpath.lower().endswith('.pdf'):
+                    ext = fpath.lower().split('.')[-1]
+                    if ext == 'pdf':
                         try:
                             merger.append(fpath)
+                            has_valid = True
                         except Exception:
                             pass
+                    elif ext in ['jpg', 'jpeg', 'png']:
+                        try:
+                            from PIL import Image
+                            with Image.open(fpath) as img:
+                                if img.mode in ('RGBA', 'P'):
+                                    img = img.convert('RGB')
+                                img_pdf_io = _io.BytesIO()
+                                img.save(img_pdf_io, format='PDF', resolution=100.0)
+                                img_pdf_io.seek(0)
+                                merger.append(img_pdf_io)
+                                has_valid = True
+                        except Exception as e:
+                            print(f"Merge image error: {e}")
                 
-                merged_output = _io.BytesIO()
-                merger.write(merged_output)
-                merger.close()
-                merged_output.seek(0)
-                final_output = merged_output
+                if has_valid:
+                    merged_output = _io.BytesIO()
+                    merger.write(merged_output)
+                    merger.close()
+                    merged_output.seek(0)
+                    final_output = merged_output
+                else:
+                    merger.close()
         except ImportError:
             pass
 
