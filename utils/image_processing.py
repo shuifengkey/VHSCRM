@@ -20,7 +20,7 @@ def auto_crop_document(image_path):
         stream.close()
 
         if image is None:
-            return (False, "OpenCV could not decode the image file (might be corrupted or unsupported format).")
+            return False
 
         orig = image.copy()
         
@@ -33,71 +33,63 @@ def auto_crop_document(image_path):
             process_img = orig.copy()
             ratio = 1.0
 
+        # Preprocessing: Grayscale and Bilateral Filter (keeps edges sharp)
         gray = cv2.cvtColor(process_img, cv2.COLOR_BGR2GRAY)
-        gray = cv2.GaussianBlur(gray, (5, 5), 0)
+        gray = cv2.bilateralFilter(gray, 11, 17, 17)
         
-        # 1. Use static threshold 75, 200 which works perfectly for subtle paper edges
-        edged = cv2.Canny(gray, 75, 200)
+        # Edge detection
+        edged = cv2.Canny(gray, 30, 200)
+        
+        # Morphological Closing to connect broken paper edges
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
+        edged = cv2.morphologyEx(edged, cv2.MORPH_CLOSE, kernel)
 
-        cnts, _ = cv2.findContours(edged.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        # RETR_EXTERNAL to ignore text inside the document
+        cnts, _ = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:5]
         
         doc_cnt = None
         img_area = process_img.shape[0] * process_img.shape[1]
         
         for c in cnts:
+            if cv2.contourArea(c) < img_area * 0.1:
+                continue
+                
             peri = cv2.arcLength(c, True)
-            approx = cv2.approxPolyDP(c, 0.02 * peri, True)
-            if len(approx) == 4:
-                area = cv2.contourArea(c)
-                if area > img_area * 0.15:
+            
+            # 1. Try to approx directly
+            for eps in np.linspace(0.01, 0.05, 5):
+                approx = cv2.approxPolyDP(c, eps * peri, True)
+                if len(approx) == 4:
+                    doc_cnt = approx
+                    break
+            
+            if doc_cnt is not None:
+                break
+                
+            # 2. Try approx on Convex Hull (smoothes out jagged edges)
+            hull = cv2.convexHull(c)
+            hull_peri = cv2.arcLength(hull, True)
+            for eps in np.linspace(0.01, 0.1, 10):
+                approx = cv2.approxPolyDP(hull, eps * hull_peri, True)
+                if len(approx) == 4:
                     doc_cnt = approx
                     break
                     
-        # Fallback 1: Try slightly larger epsilon if strict one failed
-        if doc_cnt is None:
-            for c in cnts:
-                peri = cv2.arcLength(c, True)
-                approx = cv2.approxPolyDP(c, 0.05 * peri, True)
-                if len(approx) == 4:
-                    area = cv2.contourArea(c)
-                    if area > img_area * 0.15:
-                        doc_cnt = approx
-                        break
-
-        # Fallback 2: minAreaRect of largest contour
+            if doc_cnt is not None:
+                break
+                
+        # 3. Fallback: minAreaRect of the largest contour if it's large enough
         if doc_cnt is None and len(cnts) > 0:
             c = cnts[0]
-            if cv2.contourArea(c) > img_area * 0.15:
+            if cv2.contourArea(c) > img_area * 0.1:
                 rect = cv2.minAreaRect(c)
                 box = cv2.boxPoints(rect)
                 box = np.int32(box)
                 doc_cnt = box.reshape(4, 1, 2)
                 
-        # Fallback 3: Global Convex Hull of all significant text boxes
         if doc_cnt is None:
-            all_pts = []
-            for c in cnts:
-                if cv2.contourArea(c) > img_area * 0.005: # At least 0.5% of image (a block of text)
-                    all_pts.extend(c)
-            if len(all_pts) > 0:
-                all_pts = np.array(all_pts)
-                hull = cv2.convexHull(all_pts)
-                if cv2.contourArea(hull) > img_area * 0.2:
-                    rect = cv2.minAreaRect(hull)
-                    box = cv2.boxPoints(rect)
-                    box = np.int32(box)
-                    doc_cnt = box.reshape(4, 1, 2)
-                
-        if doc_cnt is None:
-            # Fallback: Geometric crop failed. Just enhance the original image.
-            alpha = 1.2
-            beta = 10
-            enhanced = cv2.convertScaleAbs(orig, alpha=alpha, beta=beta)
-            kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
-            scanned = cv2.filter2D(enhanced, -1, kernel)
-            cv2.imencode('.jpg', scanned)[1].tofile(image_path)
-            return (True, "Document corners not found. Applied scanner enhancement to full image.")
+            return False
             
         doc_cnt = doc_cnt.reshape(4, 2) * ratio
         rect = order_points(doc_cnt)
@@ -122,15 +114,19 @@ def auto_crop_document(image_path):
         warped = cv2.warpPerspective(orig, M, (maxWidth, maxHeight))
         
         # --- ENHANCE TO LOOK LIKE SCANNED DOCUMENT ---
-        alpha = 1.2
-        beta = 10
+        alpha = 1.1 # Contrast control
+        beta = 5    # Brightness control
         enhanced = cv2.convertScaleAbs(warped, alpha=alpha, beta=beta)
-        kernel = np.array([[0, -1, 0], [-1, 5,-1], [0, -1, 0]])
-        scanned = cv2.filter2D(enhanced, -1, kernel)
+        
+        # Sharpen the image slightly
+        kernel_sharp = np.array([[0, -0.5, 0], 
+                                 [-0.5, 3,-0.5], 
+                                 [0, -0.5, 0]])
+        scanned = cv2.filter2D(enhanced, -1, kernel_sharp)
         
         cv2.imencode('.jpg', scanned)[1].tofile(image_path)
-        return (True, "Document successfully cropped and enhanced.")
+        return True
         
     except Exception as e:
         print(f"Auto crop error: {e}")
-        return (False, f"Python error during processing: {str(e)}")
+        return False
