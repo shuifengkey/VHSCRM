@@ -269,11 +269,41 @@ def render():
                                         st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
 
                                     with st.container(border=False):
-                                        import os, uuid
+                                        import os, uuid, base64
                                         upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
                                         os.makedirs(upload_dir, exist_ok=True)
+                                        
+                                        # === Document Scanner (cho điện thoại) ===
+                                        st.markdown("**📸 Scan tài liệu**")
+                                        from components.custom_camera import custom_camera
+                                        scanned = custom_camera(key=f"scan_act_{job['id']}", height=540)
+                                        scan_key_act = f"scanned_act_{job['id']}"
+                                        if scan_key_act not in st.session_state:
+                                            st.session_state[scan_key_act] = []
+                                        if scanned and isinstance(scanned, str) and scanned.startswith("data:image"):
+                                            _, b64 = scanned.split(",", 1)
+                                            fname = f"{uuid.uuid4().hex[:8]}_scan.jpg"
+                                            fpath = os.path.join(upload_dir, fname)
+                                            with open(fpath, "wb") as out:
+                                                out.write(base64.b64decode(b64))
+                                            if fname not in st.session_state[scan_key_act]:
+                                                st.session_state[scan_key_act].append(fname)
+                                                # Lưu vào DB luôn
+                                                att_list = [x for x in log["attachments"].split(",") if x] if log.get("attachments") else []
+                                                att_list.append(fname)
+                                                conn_up = get_connection()
+                                                conn_up.execute("UPDATE logbook SET attachments=? WHERE id=?", (",".join(att_list), log["id"]))
+                                                conn_up.commit(); conn_up.close()
+                                                st.toast("✅ Đã lưu ảnh scan!", icon="📸")
+                                                st.rerun()
+                                        if st.session_state[scan_key_act]:
+                                            st.markdown(f"**🖼️ Đã scan: {len(st.session_state[scan_key_act])} ảnh**")
+                                        
+                                        st.markdown("---")
+                                        
+                                        # === File uploader (cho PDF & ảnh từ máy tính) ===
                                         new_files = st.file_uploader(
-                                            "📷 Chụp ảnh / đính kèm file",
+                                            "📎 Đính kèm thêm (PDF/Ảnh)",
                                             type=['pdf', 'png', 'jpg', 'jpeg'],
                                             accept_multiple_files=True,
                                             key=f"bosung_act_{job['id']}",
@@ -286,12 +316,6 @@ def render():
                                                     filepath = os.path.join(upload_dir, filename)
                                                     with open(filepath, "wb") as out:
                                                         out.write(f.getbuffer())
-                                                    if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
-                                                        try:
-                                                            from utils.image_processing import auto_crop_document
-                                                            auto_crop_document(filepath)
-                                                        except Exception:
-                                                            pass
                                                     att_list.append(filename)
                                                 conn_up = get_connection()
                                                 conn_up.execute("UPDATE logbook SET attachments=? WHERE id=?", (",".join(att_list), log["id"]))
@@ -325,9 +349,35 @@ def render():
                             ket_qua = st.text_area("📊 Kết Quả / Nhận Xét",
                                 placeholder="VD: Phát hiện ổ gián lớn tại khu bếp, đã xử lý...",
                                 height=80)
-                            attachments = st.file_uploader("📷 Đính kèm Hình ảnh / Tài liệu", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"file_{job['id']}")
+                            # === Document Scanner (cho điện thoại) ===
+                            st.markdown("**📸 Scan tài liệu**")
+                            from components.custom_camera import custom_camera
+                            scanned_co = custom_camera(key=f"scan_co_{job['id']}", height=540)
+                            scan_key_co = f"scanned_co_{job['id']}"
+                            if scan_key_co not in st.session_state:
+                                st.session_state[scan_key_co] = []
+                            if scanned_co and isinstance(scanned_co, str) and scanned_co.startswith("data:image"):
+                                import base64
+                                _, b64 = scanned_co.split(",", 1)
+                                import os, uuid
+                                upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+                                os.makedirs(upload_dir, exist_ok=True)
+                                fname = f"{uuid.uuid4().hex[:8]}_scan.jpg"
+                                fpath = os.path.join(upload_dir, fname)
+                                with open(fpath, "wb") as _out:
+                                    _out.write(base64.b64decode(b64))
+                                if fname not in st.session_state[scan_key_co]:
+                                    st.session_state[scan_key_co].append(fname)
+                                    st.toast("✅ Đã lưu ảnh scan!", icon="📸")
+                                    st.rerun()
+                            if st.session_state[scan_key_co]:
+                                st.markdown(f"**🖼️ Đã scan: {len(st.session_state[scan_key_co])} ảnh**")
+                            
+                            st.markdown("---")
+                            
+                            # === File uploader (cho PDF & ảnh từ máy tính) ===
+                            attachments = st.file_uploader("📎 Đính kèm thêm (PDF/Ảnh)", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"file_{job['id']}")
                             # Auto-save files immediately when selected (before checkout)
-                            # This prevents file loss if page reloads after camera use on mobile
                             if attachments and f"dk_saved_{job['id']}" not in st.session_state:
                                 import os, uuid
                                 upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
@@ -338,12 +388,6 @@ def render():
                                     _fp = os.path.join(upload_dir, _fn)
                                     with open(_fp, "wb") as _out:
                                         _out.write(_f.getbuffer())
-                                    if _fn.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
-                                        try:
-                                            from utils.image_processing import auto_crop_document
-                                            auto_crop_document(_fp)
-                                        except Exception:
-                                            pass
                                     saved.append(_fn)
                                 st.session_state[f"dk_saved_{job['id']}"] = saved
                                 st.toast("✅ Đã lưu tạm ảnh đính kèm!", icon="📎")
@@ -557,11 +601,40 @@ def render():
                                     st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
 
                                 with st.container(border=False):
-                                    import os, uuid
+                                    import os, uuid, base64
                                     upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
                                     os.makedirs(upload_dir, exist_ok=True)
+                                    
+                                    # === Document Scanner (cho điện thoại) ===
+                                    st.markdown("**📸 Scan tài liệu**")
+                                    from components.custom_camera import custom_camera
+                                    scanned_h = custom_camera(key=f"scan_hist_{log['id']}", height=540)
+                                    scan_key_h = f"scanned_hist_{log['id']}"
+                                    if scan_key_h not in st.session_state:
+                                        st.session_state[scan_key_h] = []
+                                    if scanned_h and isinstance(scanned_h, str) and scanned_h.startswith("data:image"):
+                                        _, b64 = scanned_h.split(",", 1)
+                                        fname = f"{uuid.uuid4().hex[:8]}_scan.jpg"
+                                        fpath = os.path.join(upload_dir, fname)
+                                        with open(fpath, "wb") as out:
+                                            out.write(base64.b64decode(b64))
+                                        if fname not in st.session_state[scan_key_h]:
+                                            st.session_state[scan_key_h].append(fname)
+                                            att_list = [x for x in log["attachments"].split(",") if x] if log.get("attachments") else []
+                                            att_list.append(fname)
+                                            conn_up = get_connection()
+                                            conn_up.execute("UPDATE logbook SET attachments=? WHERE id=?", (",".join(att_list), log["id"]))
+                                            conn_up.commit(); conn_up.close()
+                                            st.toast("✅ Đã lưu ảnh scan!", icon="📸")
+                                            st.rerun()
+                                    if st.session_state[scan_key_h]:
+                                        st.markdown(f"**🖼️ Đã scan: {len(st.session_state[scan_key_h])} ảnh**")
+                                    
+                                    st.markdown("---")
+                                    
+                                    # === File uploader (cho PDF & ảnh từ máy tính) ===
                                     new_files = st.file_uploader(
-                                        "📷 Chụp ảnh / đính kèm file",
+                                        "📎 Đính kèm thêm (PDF/Ảnh)",
                                         type=['pdf', 'png', 'jpg', 'jpeg'],
                                         accept_multiple_files=True,
                                         key=f"bosung_hist_{log['id']}",
@@ -574,12 +647,6 @@ def render():
                                                 filepath = os.path.join(upload_dir, filename)
                                                 with open(filepath, "wb") as out:
                                                     out.write(f.getbuffer())
-                                                if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
-                                                    try:
-                                                        from utils.image_processing import auto_crop_document
-                                                        auto_crop_document(filepath)
-                                                    except Exception:
-                                                        pass
                                                 att_list.append(filename)
                                             conn_up = get_connection()
                                             conn_up.execute("UPDATE logbook SET attachments=? WHERE id=?", (",".join(att_list), log["id"]))
