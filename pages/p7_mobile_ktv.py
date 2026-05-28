@@ -228,6 +228,39 @@ def action_dialog(job, log):
                 
             st.rerun()
 
+@st.dialog("Bổ sung file (PDF/Ảnh)")
+def bosung_dialog(job, log):
+    st.markdown(f"**🏢 {job['ten_cty']}**")
+    st.markdown("Bạn có thể tải thêm hình ảnh hoặc file PDF (ví dụ: Hóa đơn, Nghiệm thu).")
+    
+    new_files = st.file_uploader("Chọn file", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"bosung_{log['id']}")
+    
+    if st.button("Lưu bổ sung", type="primary", use_container_width=True):
+        if new_files:
+            import os, uuid
+            upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
+            os.makedirs(upload_dir, exist_ok=True)
+            saved = []
+            for f in new_files:
+                fname = f"{uuid.uuid4().hex[:8]}_{f.name}"
+                fpath = os.path.join(upload_dir, fname)
+                with open(fpath, "wb") as out:
+                    out.write(f.getbuffer())
+                saved.append(fname)
+            
+            if saved:
+                from utils.database import get_connection
+                conn = get_connection()
+                curr = conn.execute("SELECT attachments FROM logbook WHERE id=?", (log["id"],)).fetchone()
+                att_str = curr["attachments"] if curr and curr["attachments"] else ""
+                
+                if att_str: att_str += "," + ",".join(saved)
+                else: att_str = ",".join(saved)
+                
+                conn.execute("UPDATE logbook SET attachments=? WHERE id=?", (att_str, log["id"]))
+                conn.commit(); conn.close()
+                st.rerun()
+
 def render():
     st.markdown(MOBILE_CSS, unsafe_allow_html=True)
     
