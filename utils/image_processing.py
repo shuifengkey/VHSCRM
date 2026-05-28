@@ -91,27 +91,28 @@ def auto_crop_document(image_path):
             
             # Dùng Convex Hull để quấn dây thun quanh hình (bỏ qua các nét lõm/rách)
             hull = cv2.convexHull(c)
-            peri = cv2.arcLength(hull, True)
             
-            # Ép về đa giác 4 cạnh
-            for eps in np.linspace(0.02, 0.1, 10):
-                approx = cv2.approxPolyDP(hull, eps * peri, True)
-                if len(approx) == 4 and cv2.isContourConvex(approx):
-                    area = cv2.contourArea(approx)
-                    # Lấy khung hình 4 góc LỚN NHẤT tìm được (để không lấy nhầm cái logo hay ô checkbox)
-                    if area > best_area:
-                        best_area = area
-                        doc_cnt = approx.reshape(4, 2)
-                    break
-        
-        # 5. Fallback: Nếu không tìm được 4 góc hoàn hảo, lấy hình chữ nhật bao quanh đường viền lớn nhất
-        if doc_cnt is None and len(cnts) > 0:
-            c = cnts[0]
-            if cv2.contourArea(c) > img_area * 0.05:
-                hull = cv2.convexHull(c)
-                rect = cv2.minAreaRect(hull)
-                box = cv2.boxPoints(rect)
-                doc_cnt = np.int32(box)
+            # TUYỆT KỸ: Thay vì dùng approxPolyDP (dễ thất bại nếu giấy cong làm thành 5-6 góc),
+            # ta chủ động trích xuất ĐÚNG 4 ĐIỂM GÓC NGOÀI CÙNG từ bao lồi (Top-Left, Top-Right, Bottom-Right, Bottom-Left)
+            pts = hull.reshape(-1, 2)
+            if len(pts) < 4:
+                continue
+                
+            s = pts.sum(axis=1)
+            diff = np.diff(pts, axis=1)
+            
+            tl = pts[np.argmin(s)]
+            br = pts[np.argmax(s)]
+            tr = pts[np.argmin(diff)]
+            bl = pts[np.argmax(diff)]
+            
+            approx = np.array([tl, tr, br, bl], dtype=np.int32)
+            area = cv2.contourArea(approx)
+            
+            # Lấy mảng 4 góc có diện tích lớn nhất (chính là tờ giấy)
+            if area > best_area:
+                best_area = area
+                doc_cnt = approx.reshape(4, 2)
 
         # Nếu hoàn toàn không thấy gì, lấy nguyên cái ảnh
         if doc_cnt is None:
