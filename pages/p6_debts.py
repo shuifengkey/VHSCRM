@@ -197,10 +197,62 @@ def render():
                 
                 try:
                     from utils.excel_export import generate_payment_request_pdf
-                    file_data, filename, mime_type = generate_payment_request_pdf(u)
-                    st.download_button("📄 Tải Phiếu Yêu Cầu Thanh Toán (PDF)", data=file_data, file_name=filename, mime=mime_type, use_container_width=True)
+                    import zipfile, io as _io, os as _os
+
+                    pdf_data, pdf_filename, _ = generate_payment_request_pdf(u)
+
+                    # Tìm file đính kèm từ logbook của kỳ thanh toán này
+                    conn_att = get_connection()
+                    att_rows = conn_att.execute("""
+                        SELECT l.attachments 
+                        FROM logbook l
+                        JOIN schedules s ON l.schedule_id = s.id
+                        WHERE s.ma_hd = ? AND s.ky_thang = ?
+                          AND l.attachments IS NOT NULL AND l.attachments != ''
+                          AND l.checkout_time IS NOT NULL
+                    """, (u["ma_hd"], u["ky_thanh_toan"])).fetchall()
+                    conn_att.close()
+
+                    upload_dir = _os.path.join(
+                        _os.path.dirname(_os.path.dirname(__file__)), "uploads"
+                    )
+                    attach_files = []
+                    for row in att_rows:
+                        for fname in (row["attachments"] or "").split(","):
+                            fname = fname.strip()
+                            if fname:
+                                fpath = _os.path.join(upload_dir, fname)
+                                if _os.path.exists(fpath):
+                                    attach_files.append((fname, fpath))
+
+                    if attach_files:
+                        # Đóng gói ZIP: PDF + ảnh đính kèm
+                        zip_buf = _io.BytesIO()
+                        with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
+                            zf.writestr(pdf_filename, pdf_data)
+                            for fname, fpath in attach_files:
+                                zf.write(fpath, fname)
+                        zip_buf.seek(0)
+                        zip_name = pdf_filename.replace(".pdf", ".zip")
+                        st.download_button(
+                            f"📦 Tải Phiếu + {len(attach_files)} Đính Kèm (ZIP)",
+                            data=zip_buf.getvalue(),
+                            file_name=zip_name,
+                            mime="application/zip",
+                            use_container_width=True,
+                        )
+                    else:
+                        # Không có đính kèm → tải PDF thường
+                        st.download_button(
+                            "📄 Tải Phiếu Yêu Cầu Thanh Toán (PDF)",
+                            data=pdf_data,
+                            file_name=pdf_filename,
+                            mime="application/pdf",
+                            use_container_width=True,
+                        )
                 except Exception as e:
                     st.error(f"Lỗi xuất PDF: {e}")
+
 
                 con_no = u["can_thu"] - u["da_thu"]
                 so_tien = st.number_input("Số tiền khách trả (gồm VAT nếu có)", min_value=0, value=int(con_no), step=100000, key="pay_amount")
