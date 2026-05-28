@@ -249,11 +249,46 @@ def action_dialog(job, log):
 @st.dialog("Bổ sung file (PDF/Ảnh)")
 def bosung_dialog(job, log):
     st.markdown(f"**🏢 {job['ten_cty']}**")
-    st.markdown("Bạn có thể tải thêm hình ảnh hoặc file PDF (ví dụ: Hóa đơn, Nghiệm thu).")
     
-    new_files = st.file_uploader("Chọn file", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"bosung_{log['id']}")
+    # === Document Scanner (cho điện thoại) ===
+    st.markdown("**📸 Scan tài liệu**")
+    from components.custom_camera import custom_camera
+    scanned_bs = custom_camera(key=f"scan_bs_{log['id']}", height=540)
+    scan_key_bs = f"scanned_bs_{log['id']}"
+    if scan_key_bs not in st.session_state:
+        st.session_state[scan_key_bs] = []
     
-    if st.button("Lưu bổ sung", type="primary", use_container_width=True):
+    if scanned_bs and isinstance(scanned_bs, str) and scanned_bs.startswith("data:image"):
+        import base64, os, uuid
+        upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
+        os.makedirs(upload_dir, exist_ok=True)
+        _, b64 = scanned_bs.split(",", 1)
+        fname = f"{uuid.uuid4().hex[:8]}_scan.jpg"
+        fpath = os.path.join(upload_dir, fname)
+        with open(fpath, "wb") as out:
+            out.write(base64.b64decode(b64))
+        
+        if fname not in st.session_state[scan_key_bs]:
+            st.session_state[scan_key_bs].append(fname)
+            from utils.database import get_connection
+            conn = get_connection()
+            curr = conn.execute("SELECT attachments FROM logbook WHERE id=?", (log["id"],)).fetchone()
+            att_str = curr["attachments"] if curr and curr["attachments"] else ""
+            if att_str: att_str += "," + fname
+            else: att_str = fname
+            conn.execute("UPDATE logbook SET attachments=? WHERE id=?", (att_str, log["id"]))
+            conn.commit(); conn.close()
+            st.toast("✅ Đã lưu ảnh scan!", icon="📸")
+            st.rerun()
+            
+    if st.session_state[scan_key_bs]:
+        st.markdown(f"**🖼️ Đã scan: {len(st.session_state[scan_key_bs])} ảnh**")
+    
+    st.markdown("---")
+    st.markdown("**📎 Đính kèm thêm file** (Dùng tải PDF hoặc ảnh có sẵn)")
+    new_files = st.file_uploader("Chọn file", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"bosung_{log['id']}", label_visibility="collapsed")
+    
+    if st.button("Lưu bổ sung file đính kèm", type="primary", use_container_width=True):
         if new_files:
             import os, uuid
             upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
