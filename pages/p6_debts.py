@@ -197,9 +197,7 @@ def render():
                 
                 try:
                     from utils.excel_export import generate_payment_request_pdf
-                    import zipfile, io as _io, os as _os
-
-                    pdf_data, pdf_filename, _ = generate_payment_request_pdf(u)
+                    import os as _os
 
                     # Tìm file đính kèm từ logbook của kỳ thanh toán này
                     conn_att = get_connection()
@@ -225,31 +223,21 @@ def render():
                                 if _os.path.exists(fpath):
                                     attach_files.append((fname, fpath))
 
+                    # Gọi hàm với tham số attachments
+                    pdf_data, pdf_filename, _ = generate_payment_request_pdf(u, attachments=attach_files)
+
                     if attach_files:
-                        # Đóng gói ZIP: PDF + ảnh đính kèm
-                        zip_buf = _io.BytesIO()
-                        with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
-                            zf.writestr(pdf_filename, pdf_data)
-                            for fname, fpath in attach_files:
-                                zf.write(fpath, fname)
-                        zip_buf.seek(0)
-                        zip_name = pdf_filename.replace(".pdf", ".zip")
-                        st.download_button(
-                            f"📦 Tải Phiếu + {len(attach_files)} Đính Kèm (ZIP)",
-                            data=zip_buf.getvalue(),
-                            file_name=zip_name,
-                            mime="application/zip",
-                            use_container_width=True,
-                        )
+                        label = f"📄 Tải Phiếu + {len(attach_files)} Đính Kèm (PDF)"
                     else:
-                        # Không có đính kèm → tải PDF thường
-                        st.download_button(
-                            "📄 Tải Phiếu Yêu Cầu Thanh Toán (PDF)",
-                            data=pdf_data,
-                            file_name=pdf_filename,
-                            mime="application/pdf",
-                            use_container_width=True,
-                        )
+                        label = "📄 Tải Phiếu Yêu Cầu Thanh Toán (PDF)"
+
+                    st.download_button(
+                        label,
+                        data=pdf_data,
+                        file_name=pdf_filename,
+                        mime="application/pdf",
+                        use_container_width=True,
+                    )
                 except Exception as e:
                     st.error(f"Lỗi xuất PDF: {e}")
 

@@ -67,7 +67,7 @@ def number_to_words_vn(n):
     return (" ".join(parts).strip() + " đồng").capitalize()
 
 
-def generate_payment_request_pdf(debt_data):
+def generate_payment_request_pdf(debt_data, attachments=None):
     from reportlab.lib.pagesizes import A4
     from reportlab.lib import colors
     from reportlab.lib.units import cm
@@ -344,6 +344,40 @@ def generate_payment_request_pdf(debt_data):
         ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
     ]))
     content.append(sign)
+
+    # ── ĐÍNH KÈM (ATTACHMENTS) ───────────────────────────────
+    if attachments:
+        from reportlab.platypus import PageBreak
+        try:
+            from PIL import Image as PILImage
+            for fname, fpath in attachments:
+                content.append(PageBreak())
+                content.append(P(f"<b>ĐÍNH KÈM:</b> {fname}", size=11, align=TA_CENTER, bold=True, color=VHS_BLUE))
+                content.append(Spacer(1, 0.5*cm))
+                
+                if fpath.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif', '.webp')):
+                    try:
+                        with PILImage.open(fpath) as img:
+                            orig_w, orig_h = img.size
+                        
+                        max_w = A4[0] - 3*cm
+                        max_h = A4[1] - 4*cm
+                        ratio = min(max_w / orig_w, max_h / orig_h)
+                        
+                        # Chỉ zoom in tối đa 1.5x để ảnh không bị vỡ quá mức
+                        if ratio > 1.5: ratio = 1.5
+                        
+                        new_w = orig_w * ratio
+                        new_h = orig_h * ratio
+                        
+                        content.append(Image(fpath, width=new_w, height=new_h))
+                    except Exception as e:
+                        content.append(P(f"(Lỗi đọc file ảnh: {e})", size=9, align=TA_CENTER, color=colors.red))
+                else:
+                    content.append(P("(File đính kèm không phải là định dạng ảnh, không thể hiển thị trực tiếp trong PDF)", size=9, align=TA_CENTER))
+        except ImportError:
+            content.append(PageBreak())
+            content.append(P("Thiếu thư viện Pillow để hiển thị ảnh đính kèm.", size=10, align=TA_CENTER, color=colors.red))
 
     doc.build(content)
     output.seek(0)
