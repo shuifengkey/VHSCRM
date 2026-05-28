@@ -253,7 +253,7 @@ def render():
     """, unsafe_allow_html=True)
                             with c2:
                                 st.markdown('<div class="color-bosung"></div>', unsafe_allow_html=True)
-                                with st.popover("➕ Bổ sung"):
+                                with st.expander("➕ Bổ sung", expanded=False):
                                     if log.get("attachments"):
                                         st.markdown("<div style='font-size:13px;font-weight:bold;margin-bottom:8px;color:#1e293b;'>📁 File đã đính kèm:</div>", unsafe_allow_html=True)
                                         att_list = [x for x in log["attachments"].split(",") if x]
@@ -326,6 +326,27 @@ def render():
                                 placeholder="VD: Phát hiện ổ gián lớn tại khu bếp, đã xử lý...",
                                 height=80)
                             attachments = st.file_uploader("📷 Đính kèm Hình ảnh / Tài liệu", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"file_{job['id']}")
+                            # Auto-save files immediately when selected (before checkout)
+                            # This prevents file loss if page reloads after camera use on mobile
+                            if attachments and f"dk_saved_{job['id']}" not in st.session_state:
+                                import os, uuid
+                                upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+                                os.makedirs(upload_dir, exist_ok=True)
+                                saved = []
+                                for _f in attachments:
+                                    _fn = f"{uuid.uuid4().hex[:8]}_{_f.name}"
+                                    _fp = os.path.join(upload_dir, _fn)
+                                    with open(_fp, "wb") as _out:
+                                        _out.write(_f.getbuffer())
+                                    if _fn.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
+                                        try:
+                                            from utils.image_processing import auto_crop_document
+                                            auto_crop_document(_fp)
+                                        except Exception:
+                                            pass
+                                    saved.append(_fn)
+                                st.session_state[f"dk_saved_{job['id']}"] = saved
+                                st.toast("✅ Đã lưu tạm ảnh đính kèm!", icon="📎")
                             if st.button("🚪 CHECK-OUT — KẾT THÚC CA", type="primary", use_container_width=True, key=f"btn_co_{job['id']}"):
                                 checkin_time = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
                                 if ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)) - checkin_time).total_seconds() < 300:
@@ -333,8 +354,10 @@ def render():
                                 else:
                                     try:
                                         import os, uuid
-                                        uploaded_paths = []
-                                        if attachments:
+                                        # Use pre-saved files from session_state (saved on select, not on checkout)
+                                        uploaded_paths = st.session_state.pop(f"dk_saved_{job['id']}", [])
+                                        if not uploaded_paths and attachments:
+                                            # Fallback: save now if not pre-saved
                                             upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
                                             os.makedirs(upload_dir, exist_ok=True)
                                             for f in attachments:
@@ -518,7 +541,7 @@ def render():
 """, unsafe_allow_html=True)
                         with c2:
                             st.markdown('<div class="color-bosung"></div>', unsafe_allow_html=True)
-                            with st.popover("➕ Bổ sung", use_container_width=True):
+                            with st.expander("➕ Bổ sung", expanded=False):
                                 if log.get("attachments"):
                                     st.markdown("<div style='font-size:13px;font-weight:bold;margin-bottom:8px;color:#1e293b;'>📁 File đã đính kèm:</div>", unsafe_allow_html=True)
                                     att_list = [x for x in log["attachments"].split(",") if x]
