@@ -4,7 +4,42 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>VHS Document Scanner</title>
-  <script src="./streamlit.js"></script>
+  <script>
+    // Inline Streamlit Adapter to guarantee messaging without external files
+    const Streamlit = {
+      setComponentReady: function() {
+        window.parent.postMessage({
+          isStreamlitMessage: true,
+          type: "streamlit:componentReady",
+          apiVersion: 1
+        }, "*");
+      },
+      setFrameHeight: function(height) {
+        window.parent.postMessage({
+          isStreamlitMessage: true,
+          type: "streamlit:setFrameHeight",
+          height: height
+        }, "*");
+      },
+      setComponentValue: function(value) {
+        window.parent.postMessage({
+          isStreamlitMessage: true,
+          type: "streamlit:setComponentValue",
+          value: value
+        }, "*");
+      },
+      RENDER_EVENT: "streamlit:render",
+      events: {
+        addEventListener: function(type, callback) {
+          window.addEventListener("message", function(event) {
+            if (event.data.type === type) {
+              callback(event);
+            }
+          });
+        }
+      }
+    };
+  </script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
