@@ -16,10 +16,15 @@ _component_func = components.declare_component(
     path=_FRONTEND_DIR,
 )
 
-def custom_camera(key=None):
+def custom_camera(key=None, height=520):
     """
-    Render an embedded high-res WebRTC camera inside the Streamlit page.
+    Render an embedded document scanner with live edge detection.
+    Uses OpenCV.js client-side for:
+      - Realtime document boundary detection (Canny + Contour)
+      - Perspective warp (top-down correction)
+      - Enhancement (CLAHE / Adaptive Threshold)
+
     Returns a JPEG data-URL string when the user clicks "Dùng ảnh này",
     or None while the user is still viewing/retaking.
     """
-    return _component_func(key=key, default=None)
+    return _component_func(key=key, default=None, height=height)

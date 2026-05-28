@@ -1,190 +1,641 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>VHS Scan Camera</title>
-    <script src="https://cdn.jsdelivr.net/npm/streamlit-component-lib@1.3.0/dist/streamlit.js"></script>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #0f172a; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 10px; min-height: 100%; }
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>VHS Document Scanner</title>
+  <script src="https://cdn.jsdelivr.net/npm/streamlit-component-lib@1.3.0/dist/streamlit.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0f172a; color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 8px; min-height: 100%;
+    }
 
-        /* === VIEWFINDER === */
-        #viewfinder { position: relative; width: 100%; border-radius: 12px; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center; min-height: 200px; }
-        video, #preview-img { width: 100%; display: block; border-radius: 12px; }
-        #preview-img { object-fit: contain; max-height: 300px; display: none; }
+    /* === LOADING === */
+    #loading-screen {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 40px 20px; width: 100%;
+    }
+    .spinner {
+      width: 40px; height: 40px; border: 4px solid #334155;
+      border-top: 4px solid #3b82f6; border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin-bottom: 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loading-text { font-size: 14px; color: #94a3b8; text-align: center; }
+    #loading-progress { font-size: 12px; color: #64748b; margin-top: 6px; }
 
-        /* Corner brackets as document guide */
-        .corner { position: absolute; width: 28px; height: 28px; border-color: #3b82f6; border-style: solid; opacity: 0.9; }
-        .tl { top: 14%; left: 8%;  border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
-        .tr { top: 14%; right: 8%; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
-        .bl { bottom: 14%; left: 8%;  border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
-        .br { bottom: 14%; right: 8%; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
-        #guide-text { position: absolute; bottom: 8%; width: 100%; text-align: center; font-size: 12px; color: rgba(255,255,255,0.85); text-shadow: 0 1px 4px #000; letter-spacing: 0.3px; }
+    /* === MAIN === */
+    #main-ui { display: none; width: 100%; }
 
-        /* === BUTTONS === */
-        #btn-row { display: flex; gap: 10px; margin-top: 10px; width: 100%; justify-content: center; }
-        .btn { flex: 1; max-width: 180px; padding: 12px 10px; font-size: 15px; font-weight: 600; border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.15s; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-        .btn:active { transform: scale(0.97); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        #capture-btn { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; }
-        #retake-btn  { background: #334155; color: #cbd5e1; display: none; }
-        #send-btn    { background: linear-gradient(135deg, #10b981, #059669); color: #fff; display: none; }
+    /* === VIEWFINDER === */
+    #viewfinder {
+      position: relative; width: 100%; border-radius: 12px;
+      overflow: hidden; background: #000;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 240px;
+    }
+    video { width: 100%; display: block; border-radius: 12px; }
+    #overlay-canvas {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+    }
+    #preview-img {
+      width: 100%; display: none; border-radius: 12px;
+      object-fit: contain; max-height: 400px; background: #1e293b;
+    }
+    #guide-text {
+      position: absolute; bottom: 8%; width: 100%; text-align: center;
+      font-size: 12px; color: rgba(255,255,255,0.9);
+      text-shadow: 0 1px 6px rgba(0,0,0,0.8); letter-spacing: 0.3px;
+    }
+    #detect-status {
+      position: absolute; top: 10px; left: 10px;
+      font-size: 11px; padding: 4px 10px; border-radius: 20px;
+      font-weight: 600; transition: all 0.3s;
+    }
+    .detect-ok { background: rgba(34,197,94,0.85); color: #fff; }
+    .detect-no { background: rgba(239,68,68,0.7); color: #fff; }
 
-        /* Status */
-        #status { margin-top: 8px; font-size: 13px; color: #94a3b8; text-align: center; min-height: 20px; }
-        #error-msg { margin-top: 8px; font-size: 13px; color: #f87171; text-align: center; display: none; }
-    </style>
-  </head>
-  <body>
+    /* === MODE TOGGLE === */
+    #mode-row {
+      display: flex; gap: 6px; margin: 8px 0; width: 100%;
+      justify-content: center;
+    }
+    .mode-btn {
+      padding: 6px 14px; font-size: 12px; font-weight: 600;
+      border: 2px solid #334155; border-radius: 20px;
+      background: transparent; color: #94a3b8; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mode-btn.active {
+      border-color: #3b82f6; color: #3b82f6; background: rgba(59,130,246,0.1);
+    }
+
+    /* === BUTTONS === */
+    #btn-row {
+      display: flex; gap: 8px; margin-top: 8px; width: 100%;
+      justify-content: center;
+    }
+    .btn {
+      flex: 1; max-width: 200px; padding: 12px 10px;
+      font-size: 15px; font-weight: 600; border: none;
+      border-radius: 10px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: all 0.15s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    #capture-btn { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; }
+    #retake-btn  { background: #334155; color: #cbd5e1; display: none; }
+    #send-btn    { background: linear-gradient(135deg, #10b981, #059669); color: #fff; display: none; }
+
+    /* Status */
+    #status { margin-top: 6px; font-size: 12px; color: #94a3b8; text-align: center; min-height: 18px; }
+  </style>
+</head>
+<body>
+
+  <!-- LOADING SCREEN -->
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <div id="loading-text">Đang tải OpenCV.js...</div>
+    <div id="loading-progress">0%</div>
+  </div>
+
+  <!-- MAIN UI (hidden until OpenCV loads) -->
+  <div id="main-ui">
     <div id="viewfinder">
       <video id="video" autoplay playsinline muted></video>
-      <img id="preview-img" alt="Ảnh xem trước">
-      <div class="corner tl"></div>
-      <div class="corner tr"></div>
-      <div class="corner bl"></div>
-      <div class="corner br"></div>
-      <div id="guide-text">Căn biên bản vào khung · Camera sau · 2K</div>
+      <canvas id="overlay-canvas"></canvas>
+      <img id="preview-img" alt="Preview">
+      <div id="detect-status" class="detect-no">Chưa phát hiện</div>
+      <div id="guide-text">Đặt tài liệu vào khung hình</div>
     </div>
-    <canvas id="canvas" style="display:none;"></canvas>
+
+    <div id="mode-row">
+      <button class="mode-btn active" data-mode="color" onclick="setMode('color')">🎨 Màu gốc</button>
+      <button class="mode-btn" data-mode="enhance" onclick="setMode('enhance')">✨ Tăng sáng</button>
+      <button class="mode-btn" data-mode="bw" onclick="setMode('bw')">📄 Scan B&W</button>
+    </div>
 
     <div id="btn-row">
-      <button class="btn" id="capture-btn">📸 Chụp biên bản</button>
+      <button class="btn" id="capture-btn" disabled>📸 Chụp</button>
       <button class="btn" id="retake-btn">🔄 Chụp lại</button>
       <button class="btn" id="send-btn">✅ Dùng ảnh này</button>
     </div>
     <div id="status">Đang khởi động camera...</div>
-    <div id="error-msg"></div>
+  </div>
 
-    <script>
-      const video      = document.getElementById('video');
-      const canvas     = document.getElementById('canvas');
-      const previewImg = document.getElementById('preview-img');
-      const captureBtn = document.getElementById('capture-btn');
-      const retakeBtn  = document.getElementById('retake-btn');
-      const sendBtn    = document.getElementById('send-btn');
-      const status     = document.getElementById('status');
-      const errorMsg   = document.getElementById('error-msg');
+  <canvas id="work-canvas" style="display:none;"></canvas>
 
-      let stream = null;
-      let capturedDataURL = null;
+  <script>
+    // ===== GLOBALS =====
+    const video       = document.getElementById('video');
+    const overlayC    = document.getElementById('overlay-canvas');
+    const overlayCtx  = overlayC.getContext('2d');
+    const previewImg  = document.getElementById('preview-img');
+    const captureBtn  = document.getElementById('capture-btn');
+    const retakeBtn   = document.getElementById('retake-btn');
+    const sendBtn     = document.getElementById('send-btn');
+    const statusEl    = document.getElementById('status');
+    const detectEl    = document.getElementById('detect-status');
+    const guideEl     = document.getElementById('guide-text');
+    const workCanvas  = document.getElementById('work-canvas');
+    const workCtx     = workCanvas.getContext('2d');
 
-      // Streamlit bootstrap
-      Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, () => {
-          Streamlit.setFrameHeight(document.body.scrollHeight + 20);
-      });
-      Streamlit.setComponentReady();
-      Streamlit.setFrameHeight(380);
+    let stream = null;
+    let cvReady = false;
+    let animFrameId = null;
+    let lastCorners = null; // last detected 4 corners
+    let processMode = 'color'; // 'color' | 'enhance' | 'bw'
+    let capturedDataURL = null;
 
-      // === START CAMERA ===
-      function startCamera() {
-          const constraints = {
-              video: {
-                  facingMode: { ideal: "environment" },
-                  width:  { ideal: 3840, min: 1280 },
-                  height: { ideal: 2160, min: 720 }
-              }
+    // ===== STREAMLIT =====
+    Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, () => {
+      Streamlit.setFrameHeight(document.body.scrollHeight + 20);
+    });
+    Streamlit.setComponentReady();
+    Streamlit.setFrameHeight(420);
+
+    // ===== LOAD OPENCV.JS =====
+    function loadOpenCV() {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://docs.opencv.org/4.10.0/opencv.js';
+        script.async = true;
+
+        // Progress simulation (opencv.js doesn't emit progress events)
+        let progress = 0;
+        const progressEl = document.getElementById('loading-progress');
+        const progressInterval = setInterval(() => {
+          progress = Math.min(progress + Math.random() * 15, 90);
+          progressEl.textContent = Math.round(progress) + '%';
+        }, 300);
+
+        script.onload = () => {
+          // opencv.js sets a global `cv` but needs Module.onRuntimeInitialized
+          const waitForCV = () => {
+            if (typeof cv !== 'undefined' && cv.Mat) {
+              clearInterval(progressInterval);
+              progressEl.textContent = '100%';
+              resolve();
+            } else {
+              setTimeout(waitForCV, 100);
+            }
           };
+          // If cv.onRuntimeInitialized exists, use it
+          if (typeof cv === 'object' && !cv.Mat) {
+            cv['onRuntimeInitialized'] = () => {
+              clearInterval(progressInterval);
+              progressEl.textContent = '100%';
+              resolve();
+            };
+          } else {
+            waitForCV();
+          }
+        };
+        script.onerror = () => {
+          clearInterval(progressInterval);
+          reject(new Error('Failed to load OpenCV.js'));
+        };
+        document.head.appendChild(script);
+      });
+    }
 
-          navigator.mediaDevices.getUserMedia(constraints)
-              .then(s => {
-                  stream = s;
-                  video.srcObject = stream;
-                  video.style.display = 'block';
-                  previewImg.style.display = 'none';
-                  video.onloadedmetadata = () => {
-                      video.play();
-                      const settings = stream.getVideoTracks()[0].getSettings();
-                      status.textContent = `📷 ${settings.width}×${settings.height}px · Sẵn sàng`;
-                      document.getElementById('guide-text').textContent = `Camera sẵn sàng · ${settings.width}×${settings.height}`;
-                      Streamlit.setFrameHeight(document.body.scrollHeight + 20);
-                  };
-                  captureBtn.disabled = false;
-              })
-              .catch(err => {
-                  console.error('Camera error:', err);
-                  errorMsg.style.display = 'block';
-                  if (err.name === 'NotAllowedError') {
-                      errorMsg.textContent = '⚠️ Trình duyệt chặn quyền truy cập Camera. Vui lòng cho phép và tải lại trang.';
-                  } else if (err.name === 'NotFoundError') {
-                      errorMsg.textContent = '⚠️ Không tìm thấy Camera. Hãy dùng nút chọn file bên dưới.';
-                  } else {
-                      errorMsg.textContent = `⚠️ Lỗi Camera: ${err.message}`;
-                  }
-                  captureBtn.disabled = true;
-                  status.textContent = 'Camera không khả dụng';
-                  Streamlit.setFrameHeight(document.body.scrollHeight + 20);
-              });
+    // ===== INIT =====
+    async function init() {
+      try {
+        document.getElementById('loading-text').textContent = 'Đang tải OpenCV.js (~8MB)...';
+        await loadOpenCV();
+        cvReady = true;
+        document.getElementById('loading-screen').style.display = 'none';
+        document.getElementById('main-ui').style.display = 'block';
+        Streamlit.setFrameHeight(document.body.scrollHeight + 20);
+        startCamera();
+      } catch (err) {
+        document.getElementById('loading-text').textContent = '❌ Không tải được OpenCV.js';
+        document.getElementById('loading-progress').textContent = err.message;
+      }
+    }
+    init();
+
+    // ===== CAMERA =====
+    function startCamera() {
+      const constraints = {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width:  { ideal: 3840, min: 1280 },
+          height: { ideal: 2160, min: 720 }
+        }
+      };
+
+      navigator.mediaDevices.getUserMedia(constraints)
+        .then(s => {
+          stream = s;
+          video.srcObject = stream;
+          video.style.display = 'block';
+          previewImg.style.display = 'none';
+          video.onloadedmetadata = () => {
+            video.play();
+            const settings = stream.getVideoTracks()[0].getSettings();
+            statusEl.textContent = `📷 ${settings.width}×${settings.height}px · Sẵn sàng`;
+            captureBtn.disabled = false;
+            startDetectionLoop();
+            Streamlit.setFrameHeight(document.body.scrollHeight + 20);
+          };
+        })
+        .catch(err => {
+          statusEl.textContent = '⚠️ Lỗi Camera: ' + err.message;
+          captureBtn.disabled = true;
+          Streamlit.setFrameHeight(document.body.scrollHeight + 20);
+        });
+    }
+
+    // ===== REALTIME DETECTION LOOP =====
+    let frameSkip = 0;
+
+    function startDetectionLoop() {
+      function loop() {
+        animFrameId = requestAnimationFrame(loop);
+        frameSkip++;
+        if (frameSkip % 3 !== 0) return; // Process every 3rd frame (~10fps detection)
+        if (!cvReady || video.paused || video.ended) return;
+
+        try {
+          detectDocument();
+        } catch (e) {
+          // Silently handle detection errors
+        }
+      }
+      animFrameId = requestAnimationFrame(loop);
+    }
+
+    function detectDocument() {
+      // Resize overlay canvas to match video display size
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      const dw = video.clientWidth;
+      const dh = video.clientHeight;
+      overlayC.width = dw;
+      overlayC.height = dh;
+
+      // Draw video frame to work canvas at reduced resolution for speed
+      const PROC_H = 480;
+      const ratio = vh / PROC_H;
+      const procW = Math.round(vw / ratio);
+      workCanvas.width = procW;
+      workCanvas.height = PROC_H;
+      workCtx.drawImage(video, 0, 0, procW, PROC_H);
+
+      // OpenCV processing
+      const src = cv.imread(workCanvas);
+      const gray = new cv.Mat();
+      const blurred = new cv.Mat();
+      const edged = new cv.Mat();
+
+      cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+
+      // Heavy blur to remove text noise
+      const ksize = new cv.Size(5, 5);
+      cv.GaussianBlur(gray, blurred, ksize, 2);
+
+      // Canny edge detection
+      cv.Canny(blurred, edged, 50, 150);
+
+      // Dilate to close gaps
+      const kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(3, 3));
+      cv.dilate(edged, edged, kernel);
+
+      // Find contours
+      const contours = new cv.MatVector();
+      const hierarchy = new cv.Mat();
+      cv.findContours(edged, contours, hierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
+
+      // Find the largest 4-point contour
+      let bestContour = null;
+      let bestArea = 0;
+      const imgArea = procW * PROC_H;
+
+      for (let i = 0; i < contours.size(); i++) {
+        const cnt = contours.get(i);
+        const area = cv.contourArea(cnt);
+        if (area < imgArea * 0.08) continue; // Must be at least 8% of frame
+
+        const peri = cv.arcLength(cnt, true);
+        const approx = new cv.Mat();
+        cv.approxPolyDP(cnt, approx, 0.02 * peri, true);
+
+        if (approx.rows === 4 && area > bestArea) {
+          bestArea = area;
+          bestContour = [];
+          for (let j = 0; j < 4; j++) {
+            bestContour.push({
+              x: approx.data32S[j * 2],
+              y: approx.data32S[j * 2 + 1]
+            });
+          }
+        }
+        approx.delete();
       }
 
-      startCamera();
+      // Draw overlay
+      overlayCtx.clearRect(0, 0, dw, dh);
+      const scaleX = dw / procW;
+      const scaleY = dh / PROC_H;
 
-      // === CAPTURE ===
-      captureBtn.addEventListener('click', () => {
-          if (!video.videoWidth) {
-              status.textContent = 'Camera chưa sẵn sàng, vui lòng đợi...';
-              return;
-          }
+      if (bestContour) {
+        lastCorners = bestContour.map(p => ({
+          x: p.x * ratio, // Scale back to original video resolution
+          y: p.y * ratio
+        }));
 
-          // Freeze frame
-          canvas.width  = video.videoWidth;
-          canvas.height = video.videoHeight;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          capturedDataURL = canvas.toDataURL('image/jpeg', 0.95);
+        // Draw green polygon overlay
+        overlayCtx.beginPath();
+        overlayCtx.moveTo(bestContour[0].x * scaleX, bestContour[0].y * scaleY);
+        for (let i = 1; i < 4; i++) {
+          overlayCtx.lineTo(bestContour[i].x * scaleX, bestContour[i].y * scaleY);
+        }
+        overlayCtx.closePath();
 
-          // Switch to preview mode
-          previewImg.src = capturedDataURL;
-          previewImg.style.display = 'block';
-          video.style.display = 'none';
+        // Fill with semi-transparent blue
+        overlayCtx.fillStyle = 'rgba(59, 130, 246, 0.12)';
+        overlayCtx.fill();
 
-          // Stop camera to free memory
-          if (stream) stream.getTracks().forEach(t => t.pause());
+        // Stroke with bright blue
+        overlayCtx.strokeStyle = '#3b82f6';
+        overlayCtx.lineWidth = 3;
+        overlayCtx.stroke();
 
-          captureBtn.style.display = 'none';
-          retakeBtn.style.display  = 'flex';
-          sendBtn.style.display    = 'flex';
-          document.getElementById('guide-text').style.display = 'none';
+        // Draw corner dots
+        for (let i = 0; i < 4; i++) {
+          overlayCtx.beginPath();
+          overlayCtx.arc(bestContour[i].x * scaleX, bestContour[i].y * scaleY, 6, 0, Math.PI * 2);
+          overlayCtx.fillStyle = '#3b82f6';
+          overlayCtx.fill();
+          overlayCtx.strokeStyle = '#fff';
+          overlayCtx.lineWidth = 2;
+          overlayCtx.stroke();
+        }
 
-          status.textContent = `✅ ${canvas.width}×${canvas.height}px · Kiểm tra ảnh rồi bấm "Dùng ảnh này"`;
-          Streamlit.setFrameHeight(document.body.scrollHeight + 20);
+        detectEl.textContent = '✅ Đã phát hiện tài liệu';
+        detectEl.className = 'detect-ok';
+      } else {
+        lastCorners = null;
+        detectEl.textContent = '🔍 Đang tìm...';
+        detectEl.className = 'detect-no';
+      }
+
+      // Cleanup
+      src.delete(); gray.delete(); blurred.delete(); edged.delete();
+      kernel.delete(); contours.delete(); hierarchy.delete();
+    }
+
+    // ===== CAPTURE =====
+    captureBtn.addEventListener('click', () => {
+      if (!video.videoWidth) return;
+
+      // Stop detection loop
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+
+      // Capture full-res frame
+      workCanvas.width = video.videoWidth;
+      workCanvas.height = video.videoHeight;
+      workCtx.drawImage(video, 0, 0);
+
+      let resultDataURL;
+
+      if (lastCorners && cvReady) {
+        // We have detected corners → warp + enhance
+        resultDataURL = warpAndEnhance(lastCorners);
+      } else {
+        // No corners detected → just enhance the full image
+        resultDataURL = enhanceFullImage();
+      }
+
+      capturedDataURL = resultDataURL;
+      previewImg.src = capturedDataURL;
+      previewImg.style.display = 'block';
+      video.style.display = 'none';
+      overlayC.style.display = 'none';
+
+      if (stream) stream.getTracks().forEach(t => t.enabled = false);
+
+      captureBtn.style.display = 'none';
+      retakeBtn.style.display = 'flex';
+      sendBtn.style.display = 'flex';
+      guideEl.style.display = 'none';
+      detectEl.style.display = 'none';
+      document.getElementById('mode-row').style.display = 'none';
+
+      statusEl.textContent = '✅ Ảnh đã xử lý · Kiểm tra rồi bấm "Dùng ảnh này"';
+      Streamlit.setFrameHeight(document.body.scrollHeight + 20);
+    });
+
+    // ===== WARP + ENHANCE =====
+    function orderPoints(pts) {
+      // Sort by sum (x+y) for TL and BR, diff (y-x) for TR and BL
+      const sorted = [...pts];
+      sorted.sort((a, b) => (a.x + a.y) - (b.x + b.y));
+      const tl = sorted[0];
+      const br = sorted[3];
+
+      const remaining = [sorted[1], sorted[2]];
+      remaining.sort((a, b) => (a.y - a.x) - (b.y - b.x));
+      const tr = remaining[0];
+      const bl = remaining[1];
+
+      return [tl, tr, br, bl];
+    }
+
+    function warpAndEnhance(corners) {
+      const src = cv.imread(workCanvas);
+      const ordered = orderPoints(corners);
+
+      // Calculate output dimensions
+      const widthA = Math.hypot(ordered[2].x - ordered[3].x, ordered[2].y - ordered[3].y);
+      const widthB = Math.hypot(ordered[1].x - ordered[0].x, ordered[1].y - ordered[0].y);
+      const maxW = Math.round(Math.max(widthA, widthB));
+
+      const heightA = Math.hypot(ordered[1].x - ordered[2].x, ordered[1].y - ordered[2].y);
+      const heightB = Math.hypot(ordered[0].x - ordered[3].x, ordered[0].y - ordered[3].y);
+      const maxH = Math.round(Math.max(heightA, heightB));
+
+      // Enforce A4 ratio
+      const a4Ratio = 1.4142;
+      let outW = maxW, outH = maxH;
+      if (maxH >= maxW) {
+        outH = Math.round(outW * a4Ratio);
+      } else {
+        outH = Math.round(outW / a4Ratio);
+      }
+
+      // Source points
+      const srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
+        ordered[0].x, ordered[0].y,
+        ordered[1].x, ordered[1].y,
+        ordered[2].x, ordered[2].y,
+        ordered[3].x, ordered[3].y
+      ]);
+
+      // Destination points
+      const dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
+        0, 0,
+        outW - 1, 0,
+        outW - 1, outH - 1,
+        0, outH - 1
+      ]);
+
+      const M = cv.getPerspectiveTransform(srcPts, dstPts);
+      const warped = new cv.Mat();
+      const dsize = new cv.Size(outW, outH);
+      cv.warpPerspective(src, warped, M, dsize, cv.INTER_LINEAR, cv.BORDER_CONSTANT);
+
+      // Apply enhancement based on mode
+      const enhanced = applyEnhancement(warped);
+
+      // Output to canvas
+      const outCanvas = document.createElement('canvas');
+      cv.imshow(outCanvas, enhanced);
+      const dataURL = outCanvas.toDataURL('image/jpeg', 0.92);
+
+      // Cleanup
+      src.delete(); srcPts.delete(); dstPts.delete();
+      M.delete(); warped.delete(); enhanced.delete();
+
+      return dataURL;
+    }
+
+    function enhanceFullImage() {
+      const src = cv.imread(workCanvas);
+      const enhanced = applyEnhancement(src);
+
+      const outCanvas = document.createElement('canvas');
+      cv.imshow(outCanvas, enhanced);
+      const dataURL = outCanvas.toDataURL('image/jpeg', 0.92);
+
+      src.delete(); enhanced.delete();
+      return dataURL;
+    }
+
+    function applyEnhancement(src) {
+      if (processMode === 'color') {
+        // Color mode: just return as-is (already warped)
+        return src.clone();
+      }
+
+      if (processMode === 'enhance') {
+        // Enhanced color: CLAHE on L channel of LAB
+        const lab = new cv.Mat();
+        cv.cvtColor(src, lab, cv.COLOR_RGBA2RGB);
+        const labColor = new cv.Mat();
+        cv.cvtColor(lab, labColor, cv.COLOR_RGB2Lab);
+
+        const channels = new cv.MatVector();
+        cv.split(labColor, channels);
+
+        // Apply CLAHE to L channel
+        const clahe = new cv.CLAHE(3.0, new cv.Size(8, 8));
+        const lEnhanced = new cv.Mat();
+        clahe.apply(channels.get(0), lEnhanced);
+
+        // Replace L channel
+        channels.set(0, lEnhanced);
+        const merged = new cv.Mat();
+        cv.merge(channels, merged);
+
+        // Convert back to RGB
+        const result = new cv.Mat();
+        cv.cvtColor(merged, result, cv.COLOR_Lab2RGB);
+
+        // Convert to RGBA for imshow
+        const rgba = new cv.Mat();
+        cv.cvtColor(result, rgba, cv.COLOR_RGB2RGBA);
+
+        lab.delete(); labColor.delete(); channels.delete();
+        lEnhanced.delete(); merged.delete(); result.delete();
+        clahe.delete();
+
+        return rgba;
+      }
+
+      if (processMode === 'bw') {
+        // B&W Scan mode: Grayscale + Sharpen + Adaptive Threshold
+        const gray = new cv.Mat();
+        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+
+        // Sharpen
+        const blurred = new cv.Mat();
+        const ksize = new cv.Size(0, 0);
+        cv.GaussianBlur(gray, blurred, ksize, 3);
+        const sharpened = new cv.Mat();
+        cv.addWeighted(gray, 1.5, blurred, -0.5, 0, sharpened);
+
+        // Adaptive threshold
+        const binary = new cv.Mat();
+        cv.adaptiveThreshold(sharpened, binary, 255,
+          cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 21, 10);
+
+        // Convert to RGBA for imshow
+        const rgba = new cv.Mat();
+        cv.cvtColor(binary, rgba, cv.COLOR_GRAY2RGBA);
+
+        gray.delete(); blurred.delete(); sharpened.delete(); binary.delete();
+        return rgba;
+      }
+
+      return src.clone();
+    }
+
+    // ===== MODE TOGGLE =====
+    function setMode(mode) {
+      processMode = mode;
+      document.querySelectorAll('.mode-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.mode === mode);
       });
+    }
 
-      // === RETAKE ===
-      retakeBtn.addEventListener('click', () => {
-          previewImg.style.display = 'none';
-          video.style.display = 'block';
-          document.getElementById('guide-text').style.display = 'block';
+    // ===== RETAKE =====
+    retakeBtn.addEventListener('click', () => {
+      previewImg.style.display = 'none';
+      video.style.display = 'block';
+      overlayC.style.display = 'block';
+      guideEl.style.display = 'block';
+      detectEl.style.display = 'block';
+      document.getElementById('mode-row').style.display = 'flex';
 
-          captureBtn.style.display = 'flex';
-          retakeBtn.style.display  = 'none';
-          sendBtn.style.display    = 'none';
+      captureBtn.style.display = 'flex';
+      retakeBtn.style.display = 'none';
+      sendBtn.style.display = 'none';
+      capturedDataURL = null;
+      lastCorners = null;
+      statusEl.textContent = '📷 Sẵn sàng chụp lại';
 
-          capturedDataURL = null;
-          status.textContent = '📷 Sẵn sàng chụp lại';
+      if (stream) {
+        stream.getTracks().forEach(t => t.enabled = true);
+        startDetectionLoop();
+      } else {
+        startCamera();
+      }
+      Streamlit.setFrameHeight(document.body.scrollHeight + 20);
+    });
 
-          // Resume camera
-          if (stream) {
-              stream.getTracks().forEach(t => t.enabled = true);
-          } else {
-              startCamera();
-          }
-          Streamlit.setFrameHeight(document.body.scrollHeight + 20);
-      });
+    // ===== SEND =====
+    sendBtn.addEventListener('click', () => {
+      if (!capturedDataURL) return;
+      sendBtn.disabled = true;
+      retakeBtn.disabled = true;
+      sendBtn.textContent = '⏳ Đang gửi...';
+      statusEl.textContent = '🔄 Đang gửi ảnh lên hệ thống...';
 
-      // === SEND TO STREAMLIT ===
-      sendBtn.addEventListener('click', () => {
-          if (!capturedDataURL) return;
-          sendBtn.disabled    = true;
-          retakeBtn.disabled  = true;
-          sendBtn.textContent = '⏳ Đang xử lý AI...';
-          status.textContent  = '🔄 Đang gửi ảnh và xử lý AI... Vui lòng chờ.';
+      if (stream) stream.getTracks().forEach(t => t.stop());
 
-          // Stop camera entirely to free all RAM
-          if (stream) stream.getTracks().forEach(t => t.stop());
-
-          Streamlit.setComponentValue(capturedDataURL);
-      });
-    </script>
-  </body>
+      Streamlit.setComponentValue(capturedDataURL);
+    });
+  </script>
+</body>
 </html>

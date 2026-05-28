@@ -159,41 +159,59 @@ def action_dialog(job, log):
         pest_found = st.text_area("Côn trùng phát hiện / Ghi chú", value=log.get("ket_qua", ""), height=80)
         chemical   = st.text_area("Hóa chất sử dụng", value=log.get("hoa_chat", ""), height=80)
         
-        img_att = st.file_uploader("📷 Chụp hoặc tải ảnh (JPG, PNG)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"checkout_img_{log['id']}")
-        if img_att:
-            st.markdown("**🖼️ Đã chọn:**")
-            cols = st.columns(min(len(img_att), 3))
-            for i, f_img in enumerate(img_att):
-                cols[i % 3].image(f_img, width=80)
+        # === CAMERA SCAN (xử lý client-side bằng OpenCV.js) ===
+        st.markdown("**📸 Chụp ảnh biên bản (Document Scanner)**")
+        from components.custom_camera import custom_camera
+        scanned_img = custom_camera(key=f"scan_{log['id']}", height=540)
         
-        pdf_att = st.file_uploader("📄 Đính kèm tệp (PDF)", type=['pdf'], accept_multiple_files=True, key=f"checkout_pdf_{log['id']}")
-        if pdf_att:
-            st.markdown(f"**📄 Đã chọn:** {', '.join([p.name for p in pdf_att])}")
+        # Lưu ảnh đã scan vào session nếu nhận được
+        scan_key = f"scanned_files_{log['id']}"
+        if scan_key not in st.session_state:
+            st.session_state[scan_key] = []
+        
+        if scanned_img and isinstance(scanned_img, str) and scanned_img.startswith("data:image"):
+            import base64, os, uuid
+            upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            # Decode base64 JPEG
+            header, b64data = scanned_img.split(",", 1)
+            img_bytes = base64.b64decode(b64data)
+            fname = f"{uuid.uuid4().hex[:8]}_scan.jpg"
+            fpath = os.path.join(upload_dir, fname)
+            with open(fpath, "wb") as f:
+                f.write(img_bytes)
+            
+            # Thêm vào danh sách đã scan (tránh trùng)
+            if fname not in st.session_state[scan_key]:
+                st.session_state[scan_key].append(fname)
+                st.toast("✅ Đã lưu ảnh scan!", icon="📸")
+                st.rerun()
+        
+        if st.session_state[scan_key]:
+            st.markdown(f"**🖼️ Đã scan: {len(st.session_state[scan_key])} ảnh**")
+        
+        st.markdown("---")
+        
+        # === FILE UPLOADER (cho PDF và ảnh thường) ===
+        extra_files = st.file_uploader("📎 Đính kèm thêm (PDF/Ảnh)", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"extra_{log['id']}")
+        if extra_files:
+            st.markdown(f"**📎 Đã chọn:** {', '.join([p.name for p in extra_files])}")
         
         if st.button("✅ HOÀN THÀNH & CHECK-OUT", type="primary", use_container_width=True):
-            file_names = []
+            import os, uuid
+            upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
+            os.makedirs(upload_dir, exist_ok=True)
             
-            all_attachments = (img_att or []) + (pdf_att or [])
-            if all_attachments:
-                import os, uuid
-                upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
-                os.makedirs(upload_dir, exist_ok=True)
-                
-                for uploaded_file in all_attachments:
+            file_names = list(st.session_state.get(scan_key, []))
+            
+            # Lưu các file đính kèm thêm (PDF/Ảnh từ file_uploader)
+            if extra_files:
+                for uploaded_file in extra_files:
                     fname = f"{uuid.uuid4().hex[:8]}_{uploaded_file.name}"
                     fpath = os.path.join(upload_dir, fname)
                     with open(fpath, "wb") as f:
                         f.write(uploaded_file.getbuffer())
-                    
-                    if fname.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
-                        try:
-                            from utils.image_processing import auto_crop_document
-                            success, msg = auto_crop_document(fpath)
-                            if not success:
-                                st.toast(f"Lỗi AI: {msg}", icon="❌")
-                        except Exception as e:
-                            st.toast(f"Lỗi hệ thống khi crop: {e}", icon="❌")
-                            
                     file_names.append(fname)
             
             att_str = ",".join(file_names)
