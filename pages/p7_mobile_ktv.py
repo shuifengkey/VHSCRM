@@ -159,8 +159,7 @@ def action_dialog(job, log):
         pest_found = st.text_area("Côn trùng phát hiện / Ghi chú", value=log.get("ket_qua", ""), height=80)
         chemical   = st.text_area("Hóa chất sử dụng", value=log.get("hoa_chat", ""), height=80)
         
-        cam_photo = st.camera_input("📷 Chụp trực tiếp (Tránh lỗi văng ảnh)", key=f"checkout_cam_{log['id']}")
-        img_att = st.file_uploader("🖼️ Hoặc chọn ảnh từ Thư viện", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"checkout_img_{log['id']}")
+        img_att = st.file_uploader("📷 Chụp hoặc tải ảnh (JPG, PNG)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"checkout_img_{log['id']}")
         if img_att:
             st.markdown("**🖼️ Đã chọn:**")
             cols = st.columns(min(len(img_att), 3))
@@ -175,9 +174,6 @@ def action_dialog(job, log):
             file_names = []
             
             all_attachments = (img_att or []) + (pdf_att or [])
-            if cam_photo:
-                all_attachments.insert(0, cam_photo)
-                
             if all_attachments:
                 import os, uuid
                 upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")

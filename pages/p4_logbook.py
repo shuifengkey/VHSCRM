@@ -269,8 +269,7 @@ def render():
                                         st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
 
                                     with st.container(border=False):
-                                        cam_photo = st.camera_input("📷 Chụp trực tiếp", key=f"cam_act_{job['id']}")
-                                        img_att = st.file_uploader("🖼️ Chọn ảnh từ Thư viện", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"img_file_{job['id']}")
+                                        img_att = st.file_uploader("📷 Chụp hoặc tải ảnh (JPG, PNG)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"img_file_{job['id']}")
                                         if img_att:
                                             st.markdown("**🖼️ Đã chọn:**")
                                             cols = st.columns(min(len(img_att), 3))
@@ -283,8 +282,6 @@ def render():
                                             
                                         if st.button("Lưu bổ sung", use_container_width=True, type="primary", key=f"btn_luu_act_{job['id']}"):
                                             all_attachments = (img_att or []) + (pdf_att or [])
-                                            if cam_photo:
-                                                all_attachments.insert(0, cam_photo)
                                             if all_attachments:
                                                 import os, uuid
                                                 uploaded_paths = []
@@ -555,8 +552,7 @@ def render():
                                     st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
 
                                 with st.container(border=False):
-                                    cam_photo = st.camera_input("📷 Chụp trực tiếp", key=f"cam_hist_{log['id']}")
-                                    img_att = st.file_uploader("🖼️ Chọn ảnh từ Thư viện", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"hist_img_file_{log['id']}")
+                                    img_att = st.file_uploader("📷 Chụp hoặc tải ảnh (JPG, PNG)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"hist_img_file_{log['id']}")
                                     if img_att:
                                         st.markdown("**🖼️ Đã chọn:**")
                                         cols = st.columns(min(len(img_att), 3))
@@ -569,8 +565,6 @@ def render():
                                         
                                     if st.button("Lưu bổ sung", use_container_width=True, type="primary", key=f"btn_luu_hist_{log['id']}"):
                                         all_attachments = (img_att or []) + (pdf_att or [])
-                                        if cam_photo:
-                                            all_attachments.insert(0, cam_photo)
                                         if all_attachments:
                                             import os, uuid
                                             uploaded_paths = []
