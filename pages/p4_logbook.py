@@ -269,29 +269,17 @@ def render():
                                         st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
 
                                     with st.container(border=False):
-                                        cam_photo = st.file_uploader("📷 Chụp 1 ảnh (Nét cao / Native Camera)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=False, key=f"cam_{job['id']}")
-                                        extra_att = st.file_uploader("📂 Hoặc chọn file từ máy (PDF, JPG, PNG)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"extra_file_{job['id']}")
+                                        img_att = st.file_uploader("📷 Chụp hoặc tải ảnh (JPG, PNG)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"img_file_{job['id']}")
+                                        pdf_att = st.file_uploader("📄 Đính kèm tệp (PDF)", type=['pdf'], accept_multiple_files=True, key=f"pdf_file_{job['id']}")
                                         if st.button("Lưu bổ sung", use_container_width=True, type="primary", key=f"btn_luu_act_{job['id']}"):
-                                            if extra_att or cam_photo:
+                                            all_attachments = (img_att or []) + (pdf_att or [])
+                                            if all_attachments:
                                                 import os, uuid
                                                 uploaded_paths = []
                                                 upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
                                                 os.makedirs(upload_dir, exist_ok=True)
                                                 
-                                                if cam_photo:
-                                                    fname = f"{uuid.uuid4().hex[:8]}_camera.jpg"
-                                                    fpath = os.path.join(upload_dir, fname)
-                                                    with open(fpath, "wb") as f:
-                                                        f.write(cam_photo.getbuffer())
-                                                    try:
-                                                        from utils.image_processing import auto_crop_document
-                                                        auto_crop_document(fpath)
-                                                    except Exception as e:
-                                                        pass
-                                                    uploaded_paths.append(fname)
-                                                    
-                                                if extra_att:
-                                                    for f in extra_att:
+                                                for f in all_attachments:
                                                         filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
                                                         filepath = os.path.join(upload_dir, filename)
                                                         with open(filepath, "wb") as out:
@@ -552,29 +540,17 @@ def render():
                                     st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
 
                                 with st.container(border=False):
-                                    cam_photo = st.file_uploader("📷 Chụp 1 ảnh (Nét cao / Native Camera)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=False, key=f"hist_cam_{log['id']}")
-                                    extra_att = st.file_uploader("📂 Hoặc chọn file từ máy (PDF, JPG, PNG)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"hist_extra_file_{log['id']}")
+                                    img_att = st.file_uploader("📷 Chụp hoặc tải ảnh (JPG, PNG)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"hist_img_file_{log['id']}")
+                                    pdf_att = st.file_uploader("📄 Đính kèm tệp (PDF)", type=['pdf'], accept_multiple_files=True, key=f"hist_pdf_file_{log['id']}")
                                     if st.button("Lưu bổ sung", use_container_width=True, type="primary", key=f"btn_luu_hist_{log['id']}"):
-                                        if extra_att or cam_photo:
+                                        all_attachments = (img_att or []) + (pdf_att or [])
+                                        if all_attachments:
                                             import os, uuid
                                             uploaded_paths = []
                                             upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
                                             os.makedirs(upload_dir, exist_ok=True)
                                             
-                                            if cam_photo:
-                                                fname = f"{uuid.uuid4().hex[:8]}_camera.jpg"
-                                                fpath = os.path.join(upload_dir, fname)
-                                                with open(fpath, "wb") as f:
-                                                    f.write(cam_photo.getbuffer())
-                                                try:
-                                                    from utils.image_processing import auto_crop_document
-                                                    auto_crop_document(fpath)
-                                                except Exception as e:
-                                                    pass
-                                                uploaded_paths.append(fname)
-                                                
-                                            if extra_att:
-                                                for f in extra_att:
+                                            for f in all_attachments:
                                                     filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
                                                     filepath = os.path.join(upload_dir, filename)
                                                     with open(filepath, "wb") as out:
