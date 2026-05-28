@@ -566,6 +566,15 @@
       return dataURL;
     }
 
+    function applySharpening(mat, strength=1.5) {
+      const blurred = new cv.Mat();
+      cv.GaussianBlur(mat, blurred, new cv.Size(0, 0), 2);
+      const sharpened = new cv.Mat();
+      cv.addWeighted(mat, strength, blurred, 1.0 - strength, 0, sharpened);
+      blurred.delete();
+      return sharpened;
+    }
+
     function applyEnhancement(src) {
       if (processMode === 'photo') {
         // Photo mode: just return as-is
@@ -595,18 +604,21 @@
         // Convert back to RGB
         const result = new cv.Mat();
         cv.cvtColor(merged, result, cv.COLOR_Lab2RGB);
+        
+        // Apply Sharpening to make text pop
+        const sharpenedColor = applySharpening(result, 1.5);
 
         // Increase contrast and brightness overall
         // alpha (contrast) 1.2, beta (brightness) 20
         const finalColor = new cv.Mat();
-        result.convertTo(finalColor, -1, 1.2, 20);
+        sharpenedColor.convertTo(finalColor, -1, 1.2, 20);
 
         const rgba = new cv.Mat();
         cv.cvtColor(finalColor, rgba, cv.COLOR_RGB2RGBA);
 
         lab.delete(); labColor.delete(); channels.delete();
         lEnhanced.delete(); merged.delete(); result.delete(); finalColor.delete();
-        clahe.delete();
+        sharpenedColor.delete(); clahe.delete();
 
         return rgba;
       }
@@ -622,11 +634,15 @@
 
         const finalGray = new cv.Mat();
         grayEnhanced.convertTo(finalGray, -1, 1.3, 30);
+        
+        // Apply Sharpening to make text pop
+        const sharpenedGray = applySharpening(finalGray, 1.5);
 
         const rgba = new cv.Mat();
-        cv.cvtColor(finalGray, rgba, cv.COLOR_GRAY2RGBA);
+        cv.cvtColor(sharpenedGray, rgba, cv.COLOR_GRAY2RGBA);
 
         gray.delete(); clahe.delete(); grayEnhanced.delete(); finalGray.delete();
+        sharpenedGray.delete();
         return rgba;
       }
 
