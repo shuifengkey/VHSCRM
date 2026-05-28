@@ -20,7 +20,7 @@ def auto_crop_document(image_path):
         stream.close()
 
         if image is None:
-            return (False, "OpenCV could not decode the image file.")
+            return (False, "OpenCV could not decode.")
 
         orig = image.copy()
         
@@ -51,17 +51,15 @@ def auto_crop_document(image_path):
             peri = cv2.arcLength(c, True)
             for eps in np.linspace(0.02, 0.08, 5):
                 approx = cv2.approxPolyDP(c, eps * peri, True)
-                if len(approx) == 4 and cv2.contourArea(c) > img_area * 0.15:
+                if len(approx) == 4 and cv2.contourArea(c) > img_area * 0.05: # Lowered to 5%
                     doc_cnt = approx
                     break
             if doc_cnt is not None:
                 break
                 
-        # METHOD 2: Otsu Thresholding (If Canny fails, Otsu often separates paper from desk perfectly)
+        # METHOD 2: Otsu Thresholding
         if doc_cnt is None:
             _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-            
-            # Find contours on the inverted threshold too, just in case
             for binary_img in [thresh, cv2.bitwise_not(thresh)]:
                 cnts_thresh, _ = cv2.findContours(binary_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                 cnts_thresh = sorted(cnts_thresh, key=cv2.contourArea, reverse=True)[:5]
@@ -69,7 +67,7 @@ def auto_crop_document(image_path):
                     peri = cv2.arcLength(c, True)
                     for eps in np.linspace(0.02, 0.08, 5):
                         approx = cv2.approxPolyDP(c, eps * peri, True)
-                        if len(approx) == 4 and cv2.contourArea(c) > img_area * 0.15:
+                        if len(approx) == 4 and cv2.contourArea(c) > img_area * 0.05:
                             doc_cnt = approx
                             break
                     if doc_cnt is not None:
@@ -80,14 +78,14 @@ def auto_crop_document(image_path):
         # METHOD 3: minAreaRect Fallback
         if doc_cnt is None and len(cnts) > 0:
             c = cnts[0]
-            if cv2.contourArea(c) > img_area * 0.15:
+            if cv2.contourArea(c) > img_area * 0.05:
                 rect = cv2.minAreaRect(c)
                 box = cv2.boxPoints(rect)
                 box = np.int32(box)
                 doc_cnt = box.reshape(4, 1, 2)
                 
         if doc_cnt is None:
-            # Fallback: Enhance full image
+            # Fallback: Enhance full image if really can't find anything
             alpha = 1.2
             beta = 10
             enhanced = cv2.convertScaleAbs(orig, alpha=alpha, beta=beta)
@@ -104,7 +102,15 @@ def auto_crop_document(image_path):
         
         heightA = np.sqrt(((tr[0] - br[0]) ** 2) + ((tr[1] - br[1]) ** 2))
         heightB = np.sqrt(((tl[0] - bl[0]) ** 2) + ((tl[1] - bl[1]) ** 2))
-        maxHeight = max(int(heightA), int(heightB))
+        maxHeight_orig = max(int(heightA), int(heightB))
+        
+        # --- ENFORCE A4 PROPORTIONS ---
+        if maxHeight_orig >= maxWidth:
+            # Portrait A4: Height = Width * 1.414
+            maxHeight = int(maxWidth * 1.414)
+        else:
+            # Landscape A4: Height = Width / 1.414
+            maxHeight = int(maxWidth / 1.414)
         
         dst = np.array([
             [0, 0],
@@ -116,12 +122,18 @@ def auto_crop_document(image_path):
         M = cv2.getPerspectiveTransform(rect, dst)
         warped = cv2.warpPerspective(orig, M, (maxWidth, maxHeight))
         
-        alpha = 1.2
-        beta = 10
-        enhanced = cv2.convertScaleAbs(warped, alpha=alpha, beta=beta)
+        # --- ENHANCE TO LOOK EXACTLY LIKE A BLACK & WHITE SCANNER ---
+        warped_gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
         
-        cv2.imencode('.jpg', enhanced)[1].tofile(image_path)
-        return (True, "Document successfully cropped.")
+        # Use Adaptive Thresholding to simulate a clean black & white scan
+        # This completely removes shadows and gradients on the paper
+        scanned = cv2.adaptiveThreshold(warped_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 21, 10)
+        
+        # Convert back to BGR so it saves as a normal color image format (though content is B&W)
+        scanned_color = cv2.cvtColor(scanned, cv2.COLOR_GRAY2BGR)
+        
+        cv2.imencode('.jpg', scanned_color)[1].tofile(image_path)
+        return (True, "Document successfully cropped, deskewed, proportioned to A4, and converted to B&W scan.")
         
     except Exception as e:
         print(f"Auto crop error: {e}")
