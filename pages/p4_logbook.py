@@ -608,7 +608,6 @@ def render():
                                     # === Document Scanner (cho điện thoại) ===
                                     st.markdown("**📸 Scan tài liệu**")
                                     from components.custom_camera import custom_camera
-                                    st.caption(f"🔧 Version: V6 (B&W Filter Tune)")
                                     scanned_h = custom_camera(key=f"scan_hist_{log['id']}", height=540)
                                     scan_key_h = f"scanned_hist_{log['id']}"
                                     if scan_key_h not in st.session_state:
