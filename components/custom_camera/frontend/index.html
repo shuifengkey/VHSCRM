@@ -1,0 +1,74 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>High Res Camera</title>
+    <!-- Streamlit Component API -->
+    <script src="https://cdn.jsdelivr.net/npm/streamlit-component-lib@1.3.0/dist/streamlit.js"></script>
+    <style>
+        body { margin: 0; padding: 0; background: #1e293b; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+        #video-container { position: relative; width: 100%; max-width: 100%; border-radius: 12px; overflow: hidden; }
+        video { width: 100%; display: block; object-fit: cover; border-radius: 12px; }
+        #overlay { position: absolute; top: 15%; left: 10%; right: 10%; bottom: 15%; border: 2px dashed rgba(255,255,255,0.8); border-radius: 8px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.6); pointer-events: none; }
+        #overlay::after { content: "Căn chỉnh biên bản vào khung này"; position: absolute; bottom: -30px; left: 0; width: 100%; text-align: center; font-size: 14px; color: #fff; text-shadow: 1px 1px 2px #000; }
+        #capture-btn { margin-top: 15px; padding: 12px 24px; font-size: 16px; background: #3b82f6; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; width: 80%; max-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        #capture-btn:active { background: #2563eb; transform: scale(0.98); }
+        #capture-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+    </style>
+  </head>
+  <body>
+    <div id="video-container">
+        <video id="video" autoplay playsinline></video>
+        <div id="overlay"></div>
+    </div>
+    <button id="capture-btn">📸 CHỤP BIÊN BẢN</button>
+    <canvas id="canvas" style="display:none;"></canvas>
+
+    <script>
+      let video = document.getElementById('video');
+      let canvas = document.getElementById('canvas');
+      let btn = document.getElementById('capture-btn');
+
+      function onRender(event) {
+          Streamlit.setFrameHeight(document.body.scrollHeight + 50);
+      }
+      Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, onRender);
+      Streamlit.setComponentReady();
+      Streamlit.setFrameHeight(450);
+
+      // Request High-Res Back Camera
+      navigator.mediaDevices.getUserMedia({
+          video: {
+              facingMode: "environment",
+              width: { ideal: 1920 },
+              height: { ideal: 1080 }
+          }
+      }).then(stream => {
+          video.srcObject = stream;
+          video.onloadedmetadata = () => { 
+              video.play(); 
+              Streamlit.setFrameHeight(document.body.scrollHeight + 50);
+          };
+      }).catch(err => {
+          console.error("Camera error:", err);
+          btn.innerText = "⚠️ Trình duyệt chặn Camera";
+          btn.style.background = "#ef4444";
+      });
+
+      btn.addEventListener('click', () => {
+          if(!video.videoWidth) return;
+          // Capture at actual video resolution
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          let ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          let dataURL = canvas.toDataURL('image/jpeg', 0.95);
+          
+          // Send to Streamlit
+          btn.innerText = "⏳ Đang xử lý AI...";
+          btn.disabled = true;
+          Streamlit.setComponentValue(dataURL);
+      });
+    </script>
+  </body>
+</html>

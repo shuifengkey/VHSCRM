@@ -269,16 +269,23 @@ def render():
                                         st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
 
                                     with st.container(border=False):
-                                        cam_photo = st.file_uploader("📷 Chụp 1 ảnh (Camera gốc / Nét căng)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=False, key=f"cam_act_{job['id']}")
-                                        if cam_photo is not None:
+                                        import base64
+                                        import sys, os
+                                        # Add component path just in case
+                                        from components.custom_camera import custom_camera
+                                        cam_photo_b64 = custom_camera(key=f"cam_act_{job['id']}")
+                                        if cam_photo_b64 is not None:
                                             with st.spinner("Đang Cắt viền & Khử bóng..."):
                                                 import os, uuid
                                                 upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
                                                 os.makedirs(upload_dir, exist_ok=True)
                                                 fname = f"{uuid.uuid4().hex[:8]}_camera.jpg"
                                                 fpath = os.path.join(upload_dir, fname)
+                                                
+                                                header, encoded = cam_photo_b64.split(",", 1)
+                                                data = base64.b64decode(encoded)
                                                 with open(fpath, "wb") as f_out:
-                                                    f_out.write(cam_photo.getbuffer())
+                                                    f_out.write(data)
                                                 
                                                 from utils.image_processing import auto_crop_document
                                                 auto_crop_document(fpath)
@@ -292,7 +299,7 @@ def render():
                                                 del st.session_state[f"cam_act_{job['id']}"]
                                                 st.rerun()
 
-                                        extra_att = st.file_uploader("📂 Hoặc chọn nhiều file (PDF, JPG...)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"file_act_{job['id']}")
+                                        extra_att = st.file_uploader("📂 Hoặc tải từ máy (PDF, JPG...)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"file_act_{job['id']}")
                                         if extra_att:
                                             if st.button("Lưu các file đã chọn", use_container_width=True, type="primary", key=f"btn_luu_act_{job['id']}"):
                                                 import os, uuid
@@ -549,16 +556,22 @@ def render():
                                     st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
 
                                 with st.container(border=False):
-                                    cam_photo = st.file_uploader("📷 Chụp 1 ảnh (Camera gốc / Nét căng)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=False, key=f"cam_hist_{log['id']}")
-                                    if cam_photo is not None:
+                                    import base64
+                                    import sys, os
+                                    from components.custom_camera import custom_camera
+                                    cam_photo_b64 = custom_camera(key=f"cam_hist_{log['id']}")
+                                    if cam_photo_b64 is not None:
                                         with st.spinner("Đang Cắt viền & Khử bóng..."):
                                             import os, uuid
                                             upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
                                             os.makedirs(upload_dir, exist_ok=True)
                                             fname = f"{uuid.uuid4().hex[:8]}_camera.jpg"
                                             fpath = os.path.join(upload_dir, fname)
+                                            
+                                            header, encoded = cam_photo_b64.split(",", 1)
+                                            data = base64.b64decode(encoded)
                                             with open(fpath, "wb") as f_out:
-                                                f_out.write(cam_photo.getbuffer())
+                                                f_out.write(data)
                                             
                                             from utils.image_processing import auto_crop_document
                                             auto_crop_document(fpath)
@@ -572,7 +585,7 @@ def render():
                                             del st.session_state[f"cam_hist_{log['id']}"]
                                             st.rerun()
 
-                                    extra_att = st.file_uploader("📂 Hoặc chọn nhiều file (PDF, JPG...)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"file_hist_{log['id']}")
+                                    extra_att = st.file_uploader("📂 Hoặc tải từ máy (PDF, JPG...)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"file_hist_{log['id']}")
                                     if extra_att:
                                         if st.button("Lưu các file đã chọn", use_container_width=True, type="primary", key=f"btn_luu_hist_{log['id']}"):
                                             import os, uuid
