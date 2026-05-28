@@ -255,7 +255,8 @@ def render():
                                 st.markdown('<div class="color-bosung"></div>', unsafe_allow_html=True)
                                 with st.popover("➕ Bổ sung"):
                                     with st.form(f"form_attach_{job['id']}"):
-                                        extra_att = st.file_uploader("Thêm ảnh/tài liệu", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"extra_file_{job['id']}")
+                                        extra_att = st.file_uploader("📄 Chụp/Tải lên biên bản (PDF, JPG, PNG)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"extra_file_{job['id']}")
+                                        st.caption("💡 Mẹo: Điện thoại có thể chọn mở Camera hoặc chọn File. Nếu chụp nhiều trang, hãy scan thành PDF trước rồi tải lên.")
                                         if st.form_submit_button("Lưu bổ sung", use_container_width=True):
                                             if extra_att:
                                                 import os, uuid
@@ -503,7 +504,8 @@ def render():
                             st.markdown('<div class="color-bosung"></div>', unsafe_allow_html=True)
                             with st.popover("➕ Bổ sung", use_container_width=True):
                                 with st.form(f"hist_form_attach_{log['id']}"):
-                                    extra_att = st.file_uploader("Thêm ảnh/tài liệu", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"hist_extra_file_{log['id']}")
+                                    extra_att = st.file_uploader("📄 Chụp/Tải lên biên bản (PDF, JPG, PNG)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"hist_extra_file_{log['id']}")
+                                    st.caption("💡 Mẹo: Điện thoại có thể chọn mở Camera hoặc chọn File. Nếu chụp nhiều trang, hãy scan thành PDF trước rồi tải lên.")
                                     if st.form_submit_button("Lưu bổ sung", use_container_width=True):
                                         if extra_att:
                                             import os, uuid
