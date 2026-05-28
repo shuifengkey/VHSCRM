@@ -268,10 +268,10 @@ def render():
                                                 st.rerun()
                                         st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
 
-                                    with st.form(f"form_attach_{job['id']}"):
+                                    with st.container(border=False):
                                         cam_photo = st.file_uploader("📷 Chụp 1 ảnh (Nét cao / Native Camera)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=False, key=f"cam_{job['id']}")
                                         extra_att = st.file_uploader("📂 Hoặc chọn file từ máy (PDF, JPG, PNG)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"extra_file_{job['id']}")
-                                        if st.form_submit_button("Lưu bổ sung", use_container_width=True):
+                                        if st.button("Lưu bổ sung", use_container_width=True, type="primary", key=f"btn_luu_act_{job['id']}"):
                                             if extra_att or cam_photo:
                                                 import os, uuid
                                                 uploaded_paths = []
@@ -335,7 +335,7 @@ def render():
                         if time_check["violation"]:
                             st.warning(time_check["message"])
         
-                        with st.form(f"form_checkout_{job['id']}"):
+                        with st.container(border=True):
                             hoa_chat = st.text_area("💊 Hóa Chất Sử Dụng",
                                 value=log.get("hoa_chat",""),
                                 placeholder="VD: Permethrin 0.5% phun tường + Bẫy dính 10 chiếc...",
@@ -344,7 +344,7 @@ def render():
                                 placeholder="VD: Phát hiện ổ gián lớn tại khu bếp, đã xử lý...",
                                 height=80)
                             attachments = st.file_uploader("📷 Đính kèm Hình ảnh / Tài liệu", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"file_{job['id']}")
-                            if st.form_submit_button("🚪 CHECK-OUT — KẾT THÚC CA", type="primary", use_container_width=True):
+                            if st.button("🚪 CHECK-OUT — KẾT THÚC CA", type="primary", use_container_width=True, key=f"btn_co_{job['id']}"):
                                 checkin_time = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
                                 if ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)) - checkin_time).total_seconds() < 300:
                                     st.error("⚠️ Phải thi công ít nhất 5 phút mới được Check-out!")
@@ -551,10 +551,10 @@ def render():
                                             st.rerun()
                                     st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
 
-                                with st.form(f"hist_form_attach_{log['id']}"):
+                                with st.container(border=False):
                                     cam_photo = st.file_uploader("📷 Chụp 1 ảnh (Nét cao / Native Camera)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=False, key=f"hist_cam_{log['id']}")
                                     extra_att = st.file_uploader("📂 Hoặc chọn file từ máy (PDF, JPG, PNG)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"hist_extra_file_{log['id']}")
-                                    if st.form_submit_button("Lưu bổ sung", use_container_width=True):
+                                    if st.button("Lưu bổ sung", use_container_width=True, type="primary", key=f"btn_luu_hist_{log['id']}"):
                                         if extra_att or cam_photo:
                                             import os, uuid
                                             uploaded_paths = []
