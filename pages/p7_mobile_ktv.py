@@ -159,16 +159,34 @@ def action_dialog(job, log):
         pest_found = st.text_area("Côn trùng phát hiện / Ghi chú", value=log.get("ket_qua", ""), height=80)
         chemical   = st.text_area("Hóa chất sử dụng", value=log.get("hoa_chat", ""), height=80)
         
+        cam_photo = st.camera_input("📷 Chụp ảnh biên bản trực tiếp", key=f"cam_{log['id']}")
         attachments = st.file_uploader(
-            "📄 Chụp/Tải lên biên bản (PDF, JPG, PNG)",
+            "📂 Hoặc chọn file từ máy (PDF, JPG, PNG)",
             type=['pdf', 'png', 'jpg', 'jpeg'],
             accept_multiple_files=True,
             key=f"checkout_files_{log['id']}"
         )
-        st.caption("💡 Mẹo: Điện thoại có thể chọn mở Camera hoặc chọn File. Nếu chụp nhiều trang, hãy scan thành PDF trước rồi tải lên.")
         
         if st.button("✅ HOÀN THÀNH & CHECK-OUT", type="primary", use_container_width=True):
             file_names = []
+            
+            # Xử lý ảnh từ camera_input
+            if cam_photo:
+                import os, uuid
+                from datetime import datetime
+                upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
+                os.makedirs(upload_dir, exist_ok=True)
+                fname = f"{uuid.uuid4().hex[:8]}_camera.jpg"
+                fpath = os.path.join(upload_dir, fname)
+                with open(fpath, "wb") as f:
+                    f.write(cam_photo.getbuffer())
+                try:
+                    from utils.image_processing import auto_crop_document
+                    auto_crop_document(fpath)
+                except Exception as e:
+                    print(f"Crop warning: {e}")
+                file_names.append(fname)
+                
             if attachments:
                 import os, uuid
                 upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")

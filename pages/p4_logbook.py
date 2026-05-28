@@ -255,14 +255,28 @@ def render():
                                 st.markdown('<div class="color-bosung"></div>', unsafe_allow_html=True)
                                 with st.popover("➕ Bổ sung"):
                                     with st.form(f"form_attach_{job['id']}"):
-                                        extra_att = st.file_uploader("📄 Chụp/Tải lên biên bản (PDF, JPG, PNG)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"extra_file_{job['id']}")
-                                        st.caption("💡 Mẹo: Điện thoại có thể chọn mở Camera hoặc chọn File. Nếu chụp nhiều trang, hãy scan thành PDF trước rồi tải lên.")
+                                        cam_photo = st.camera_input("📷 Chụp ảnh biên bản trực tiếp", key=f"cam_{job['id']}")
+                                        extra_att = st.file_uploader("📂 Hoặc chọn file từ máy (PDF, JPG, PNG)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"extra_file_{job['id']}")
                                         if st.form_submit_button("Lưu bổ sung", use_container_width=True):
-                                            if extra_att:
+                                            if extra_att or cam_photo:
                                                 import os, uuid
                                                 uploaded_paths = []
                                                 upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
                                                 os.makedirs(upload_dir, exist_ok=True)
+                                                
+                                                if cam_photo:
+                                                    fname = f"{uuid.uuid4().hex[:8]}_camera.jpg"
+                                                    fpath = os.path.join(upload_dir, fname)
+                                                    with open(fpath, "wb") as f:
+                                                        f.write(cam_photo.getbuffer())
+                                                    try:
+                                                        from utils.image_processing import auto_crop_document
+                                                        auto_crop_document(fpath)
+                                                    except Exception as e:
+                                                        pass
+                                                    uploaded_paths.append(fname)
+                                                    
+                                                if extra_att:
                                                 for f in extra_att:
                                                     filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
                                                     filepath = os.path.join(upload_dir, filename)
@@ -510,8 +524,8 @@ def render():
                             st.markdown('<div class="color-bosung"></div>', unsafe_allow_html=True)
                             with st.popover("➕ Bổ sung", use_container_width=True):
                                 with st.form(f"hist_form_attach_{log['id']}"):
-                                    extra_att = st.file_uploader("📄 Chụp/Tải lên biên bản (PDF, JPG, PNG)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"hist_extra_file_{log['id']}")
-                                    st.caption("💡 Mẹo: Điện thoại có thể chọn mở Camera hoặc chọn File. Nếu chụp nhiều trang, hãy scan thành PDF trước rồi tải lên.")
+                                    cam_photo = st.camera_input("📷 Chụp ảnh biên bản trực tiếp", key=f"hist_cam_{log['id']}")
+                                    extra_att = st.file_uploader("📂 Hoặc chọn file từ máy (PDF, JPG, PNG)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"hist_extra_file_{log['id']}")
                                     if st.form_submit_button("Lưu bổ sung", use_container_width=True):
                                         if extra_att:
                                             import os, uuid
