@@ -234,6 +234,14 @@
         }
       };
 
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        statusEl.textContent = '⚠️ Trình duyệt chặn Camera (Cần mở qua HTTPS hoặc localhost)';
+        statusEl.style.color = '#ef4444';
+        captureBtn.disabled = true;
+        Streamlit.setFrameHeight(document.body.scrollHeight + 20);
+        return;
+      }
+
       navigator.mediaDevices.getUserMedia(constraints)
         .then(s => {
           stream = s;
