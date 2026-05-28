@@ -19,7 +19,17 @@ def render():
         conn = get_connection()
         
         # Lấy dữ liệu hợp đồng (doanh thu kỳ vọng)
-        summary_contract = conn.execute("SELECT SUM(gia_tri_thang) expected FROM contracts WHERE trang_thai='active'").fetchone()
+        current_ky_overview = (datetime.now(timezone.utc) + timedelta(hours=7)).strftime("%Y-%m")
+        summary_contract = conn.execute("""
+            SELECT SUM(
+                CASE 
+                    WHEN don_vi_tinh = '/tháng' THEN gia_tri_thang 
+                    ELSE gia_tri_thang * COALESCE(tan_suat, 1) 
+                END
+            ) as expected 
+            FROM contracts 
+            WHERE trang_thai='active' AND strftime('%Y-%m', ngay_thi_cong_dau) <= ?
+        """, (current_ky_overview,)).fetchone()
         doanh_thu_du_kien = summary_contract["expected"] or 0
         
         # Lấy dữ liệu công nợ
@@ -155,12 +165,14 @@ def render():
                 FROM contracts ct
                 JOIN customers c ON ct.ma_kh = c.ma_kh
                 WHERE ct.trang_thai = 'active'
+                  AND ct.don_vi_tinh = '/tháng'
+                  AND strftime('%Y-%m', ct.ngay_thi_cong_dau) <= ?
                   AND NOT EXISTS (
                       SELECT 1 FROM debts d 
                       WHERE d.ma_hd = ct.ma_hd AND d.ky_thanh_toan = ?
                   )
             """
-            unbilled_contracts = conn.execute(unbilled_q, (current_ky,)).fetchall()
+            unbilled_contracts = conn.execute(unbilled_q, (current_ky, current_ky)).fetchall()
             if not unbilled_contracts:
                 st.success("Tất cả hợp đồng đang chạy đều đã được sinh công nợ trong tháng này.")
             else:

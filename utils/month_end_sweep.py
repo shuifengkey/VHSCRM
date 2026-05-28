@@ -12,12 +12,14 @@ def run_month_end_sweep():
     now_dt = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)
     ky_thang = now_dt.strftime("%Y-%m")
     
-    # Lấy các hợp đồng đang active có don_vi_tinh = '/tháng'
+    # Lấy các hợp đồng đang active có don_vi_tinh = '/tháng' và đã bắt đầu
     contracts = conn.execute("""
         SELECT ma_hd, ma_kh, gia_tri_thang, tan_suat, vat_pct 
         FROM contracts 
-        WHERE trang_thai='active' AND don_vi_tinh='/tháng'
-    """).fetchall()
+        WHERE trang_thai='active' 
+          AND don_vi_tinh='/tháng'
+          AND strftime('%Y-%m', ngay_thi_cong_dau) <= ?
+    """, (ky_thang,)).fetchall()
     
     count_generated = 0
     count_warnings = 0
