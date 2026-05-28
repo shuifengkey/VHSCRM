@@ -13,19 +13,25 @@ def order_points(pts):
 
 def enhance_scan(warped):
     """
-    CamScanner 'Magic Color' effect (Giữ nguyên phần làm nét xuất sắc của phiên bản mới)
+    Giữ nguyên màu sắc (Color Document), chỉ tăng tương phản nhẹ và làm nét.
+    Sử dụng CLAHE trên kênh độ sáng (L) để làm nổi bật nét chữ mà không hỏng màu.
     """
-    gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
-    bg = cv2.GaussianBlur(gray, (0, 0), sigmaX=50)
-    gray_f = gray.astype(np.float32)
-    bg_f   = bg.astype(np.float32)
-    divided = np.clip((gray_f / (bg_f + 1e-6)) * 200.0, 0, 255).astype(np.uint8)
-    p2  = int(np.percentile(divided, 2))
-    p98 = int(np.percentile(divided, 98))
-    if p98 > p2:
-        divided = np.clip((divided.astype(np.int32) - p2) * 255 // (p98 - p2), 0, 255).astype(np.uint8)
-    blurred = cv2.GaussianBlur(divided, (0, 0), sigmaX=2)
-    sharpened = cv2.addWeighted(divided, 1.5, blurred, -0.5, 0)
+    # 1. Chuyển sang không gian màu LAB để tách kênh độ sáng (L) ra khỏi màu (A, B)
+    lab = cv2.cvtColor(warped, cv2.COLOR_BGR2LAB)
+    l, a, b = cv2.split(lab)
+    
+    # 2. Cân bằng tương phản tự động trên kênh L
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    cl = clahe.apply(l)
+    
+    # 3. Gộp lại và chuyển về BGR
+    limg = cv2.merge((cl, a, b))
+    enhanced = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
+    
+    # 4. Làm nét nhẹ để chữ sắc sảo (Unsharp Masking)
+    blurred = cv2.GaussianBlur(enhanced, (0, 0), sigmaX=3)
+    sharpened = cv2.addWeighted(enhanced, 1.5, blurred, -0.5, 0)
+    
     return sharpened
 
 def auto_crop_document(image_path):
@@ -131,9 +137,8 @@ def auto_crop_document(image_path):
         M = cv2.getPerspectiveTransform(rect, dst)
         warped = cv2.warpPerspective(orig, M, (max_w, max_h))
 
-        scanned = enhance_scan(warped)
-        scanned_bgr = cv2.cvtColor(scanned, cv2.COLOR_GRAY2BGR)
-
+        scanned_bgr = enhance_scan(warped)
+        
         cv2.imencode('.jpg', scanned_bgr, [cv2.IMWRITE_JPEG_QUALITY, 92])[1].tofile(image_path)
         return (True, f"Cropped {orig_w}x{orig_h} → {max_w}x{max_h}")
 
