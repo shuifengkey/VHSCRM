@@ -1,4 +1,4 @@
-﻿import cv2
+import cv2
 import numpy as np
 
 def order_points(pts):
@@ -72,7 +72,14 @@ def auto_crop_document(image_path):
                 doc_cnt = box.reshape(4, 1, 2)
                 
         if doc_cnt is None:
-            return False
+            # Fallback: Geometric crop failed. Just enhance the original image.
+            alpha = 1.2
+            beta = 10
+            enhanced = cv2.convertScaleAbs(orig, alpha=alpha, beta=beta)
+            kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
+            scanned = cv2.filter2D(enhanced, -1, kernel)
+            cv2.imencode('.jpg', scanned)[1].tofile(image_path)
+            return True
             
         doc_cnt = doc_cnt.reshape(4, 2) * ratio
         rect = order_points(doc_cnt)
@@ -96,7 +103,14 @@ def auto_crop_document(image_path):
         M = cv2.getPerspectiveTransform(rect, dst)
         warped = cv2.warpPerspective(orig, M, (maxWidth, maxHeight))
         
-        cv2.imencode('.jpg', warped)[1].tofile(image_path)
+        # --- ENHANCE TO LOOK LIKE SCANNED DOCUMENT ---
+        alpha = 1.2
+        beta = 10
+        enhanced = cv2.convertScaleAbs(warped, alpha=alpha, beta=beta)
+        kernel = np.array([[0, -1, 0], [-1, 5,-1], [0, -1, 0]])
+        scanned = cv2.filter2D(enhanced, -1, kernel)
+        
+        cv2.imencode('.jpg', scanned)[1].tofile(image_path)
         return True
         
     except Exception as e:
