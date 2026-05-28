@@ -48,22 +48,16 @@ class DocumentScanner:
     def detect_edges(self, blurred_img):
         """
         Phát hiện biên (Edge Detection): Sử dụng Canny Edge Detection
-        Kết hợp với Morphological Closing để nối liền các đường đứt nét.
         """
         edged = cv2.Canny(blurred_img, 75, 200)
-        
-        # Dùng phép toán hình thái học (Closing) để nối các nét đứt trên viền giấy
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-        edged = cv2.morphologyEx(edged, cv2.MORPH_CLOSE, kernel)
-        
         return edged
 
     def find_document_contour(self, edged, img_area):
         """
         Tìm contour và phát hiện trang tài liệu
         """
-        # 1. Tìm viền ngoài cùng (RETR_EXTERNAL) để lờ đi các text/nhiễu bên trong giấy
-        cnts, _ = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # 1. Tìm tất cả contours
+        cnts, _ = cv2.findContours(edged.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         
         # Sắp xếp theo diện tích giảm dần
         cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:5]
@@ -77,15 +71,10 @@ class DocumentScanner:
                 
             # 3. Xấp xỉ contour đó thành hình 4 cạnh (4 góc) bằng approxPolyDP
             peri = cv2.arcLength(c, True)
+            approx = cv2.approxPolyDP(c, 0.02 * peri, True)
             
-            # Thử nhiều hệ số epsilon để tăng tỷ lệ tìm thấy 4 góc
-            for eps in np.linspace(0.01, 0.08, 10):
-                approx = cv2.approxPolyDP(c, eps * peri, True)
-                if len(approx) == 4:
-                    doc_cnt = approx.reshape(4, 2)
-                    break
-                    
-            if doc_cnt is not None:
+            if len(approx) == 4:
+                doc_cnt = approx.reshape(4, 2)
                 break
                 
         # 4. Fallback: Nếu không tìm thấy contour 4 cạnh thì thử lấy bounding box của contour lớn nhất
@@ -106,33 +95,39 @@ class DocumentScanner:
         rect = self.order_points(pts)
         tl, tr, br, bl = rect
 
-        # Bước 1: Tính kích thước trang sau khi sửa góc nhìn
-        # width = max( khoảng cách giữa 2 góc trên, khoảng cách giữa 2 góc dưới )
+        # Tính toán chiều rộng của bức ảnh mới
         widthA = np.linalg.norm(br - bl)
         widthB = np.linalg.norm(tr - tl)
-        width = max(int(widthA), int(widthB))
+        max_w = max(int(widthA), int(widthB))
 
-        # height = max( khoảng cách giữa 2 góc trái, khoảng cách giữa 2 góc phải )
+        # Tính toán chiều cao của bức ảnh mới
         heightA = np.linalg.norm(tr - br)
         heightB = np.linalg.norm(tl - bl)
-        height = max(int(heightA), int(heightB))
+        max_h = max(int(heightA), int(heightB))
 
-        if width == 0 or height == 0:
+        if max_w == 0 or max_h == 0:
             return None
 
-        # Bước 2: Định nghĩa tọa độ đích (hình chữ nhật hoàn hảo)
-        dst_pts = np.array([
-            [0, 0],                    # top-left
-            [width-1, 0],              # top-right  
-            [width-1, height-1],       # bottom-right
-            [0, height-1]              # bottom-left
+        # Giữ tỷ lệ giấy A4 chuẩn (để tránh méo hình)
+        a4_ratio = 1.4142
+        if max_h >= max_w:
+            max_h = int(max_w * a4_ratio)
+        else:
+            max_h = int(max_w / a4_ratio)
+
+        # Toạ độ các góc mới
+        dst = np.array([
+            [0, 0],
+            [max_w - 1, 0],
+            [max_w - 1, max_h - 1],
+            [0, max_h - 1]
         ], dtype="float32")
 
-        # Bước 3: Tính ma trận biến đổi
-        M = cv2.getPerspectiveTransform(rect, dst_pts)
+        # Tính toán ma trận Perspective Transform (Homography)
+        M = cv2.getPerspectiveTransform(rect, dst)
         
-        # Bước 4: Warp ảnh → đồng thời crop luôn
-        warped = cv2.warpPerspective(image, M, (width, height))
+        # Crop ảnh theo vùng tài liệu đã được chỉnh thẳng
+        warped = cv2.warpPerspective(image, M, (max_w, max_h))
         
         return warped
 
@@ -140,23 +135,25 @@ class DocumentScanner:
         """
         Xử lý sau (Post-processing):
         - Chuyển thành ảnh đen trắng rõ nét (Binary + Adaptive Threshold)
-        - Đảm bảo không bị ám màu đỏ hay bất kỳ màu nào khác.
+        - Điều chỉnh contrast và brightness
+        - Tăng sharpness
         """
-        # 1. Chuyển sang ảnh xám
+        # Chuyển ảnh warped sang grayscale
         gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
         
-        # 2. Sử dụng Adaptive Gaussian Threshold để xử lý vùng sáng tối không đều (đúng như AI prompt yêu cầu)
-        # Block size 25, C=15 giúp lọc nền giấy thành trắng và giữ chữ đen rõ nét.
+        # 1. Tăng sharpness
+        blurred = cv2.GaussianBlur(gray, (0, 0), sigmaX=3)
+        sharpened = cv2.addWeighted(gray, 1.5, blurred, -0.5, 0)
+        
+        # 2. Chuyển thành ảnh đen trắng rõ nét (Adaptive Threshold)
+        # Sử dụng Adaptive Gaussian Threshold để xử lý vùng sáng tối không đều
         binary = cv2.adaptiveThreshold(
-            gray, 255, 
+            sharpened, 255, 
             cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-            cv2.THRESH_BINARY, 25, 15
+            cv2.THRESH_BINARY, 21, 10
         )
         
-        # 3. Tăng sharpness nhẹ (lọc bớt nhiễu rỗ nhỏ)
-        binary = cv2.medianBlur(binary, 3)
-        
-        # Chuyển lại hệ màu BGR để lưu đè lên ảnh gốc (luôn lưu dưới dạng 3 kênh RGB/BGR)
+        # Chuyển lại hệ màu BGR để lưu đè lên ảnh gốc (JPG/PNG mặc định là 3 kênh)
         final = cv2.cvtColor(binary, cv2.COLOR_GRAY2BGR)
         return final
 
