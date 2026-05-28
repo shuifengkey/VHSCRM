@@ -71,7 +71,9 @@ def render():
                                 st.divider()
                                 xac_nhan_xoa = st.checkbox("Xác nhận xóa KTV này", key=f"del_chk_{r['ma_ktv']}")
                                 if st.form_submit_button("🗑️ Xóa", use_container_width=True):
-                                    if xac_nhan_xoa:
+                                    if st.session_state.get('auth_role') != 'admin':
+                                        st.error("❌ Chỉ Admin mới có quyền xóa dữ liệu!")
+                                    elif xac_nhan_xoa:
                                         conn_del = get_connection()
                                         conn_del.execute("DELETE FROM technicians WHERE ma_ktv=?", (r['ma_ktv'],))
                                         conn_del.commit(); conn_del.close()

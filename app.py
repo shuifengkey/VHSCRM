@@ -139,6 +139,40 @@ def _verify_pin(pin: str) -> bool:
         return pin == "1234"
     return row["value"] == _hash_pin(pin)
 
+import time
+def _check_lockout():
+    conn = get_connection()
+    lock = conn.execute("SELECT value FROM app_settings WHERE key='locked_until'").fetchone()
+    conn.close()
+    if lock:
+        try:
+            lock_time = float(lock['value'])
+            if time.time() < lock_time:
+                return lock_time
+            else:
+                _reset_lockout()
+        except: pass
+    return 0
+
+def _record_failed_attempt():
+    conn = get_connection()
+    attempts = conn.execute("SELECT value FROM app_settings WHERE key='failed_attempts'").fetchone()
+    count = int(attempts['value']) if attempts else 0
+    count += 1
+    conn.execute("INSERT OR REPLACE INTO app_settings(key, value) VALUES ('failed_attempts', ?)", (str(count),))
+    if count >= 5:
+        lock_time = time.time() + 300 # 5 minutes lockout
+        conn.execute("INSERT OR REPLACE INTO app_settings(key, value) VALUES ('locked_until', ?)", (str(lock_time),))
+    conn.commit()
+    conn.close()
+
+def _reset_lockout():
+    conn = get_connection()
+    conn.execute("DELETE FROM app_settings WHERE key='failed_attempts'")
+    conn.execute("DELETE FROM app_settings WHERE key='locked_until'")
+    conn.commit()
+    conn.close()
+
 def _change_pin(new_pin: str):
     conn = get_connection()
     conn.execute("UPDATE app_settings SET value=? WHERE key='pin_hash'", (_hash_pin(new_pin),))
@@ -257,6 +291,11 @@ div[data-testid="InputInstructions"] {{ display: none !important; }}
 
         submitted = st.form_submit_button("🔓 XÁC NHẬN", type="primary", use_container_width=True)
 
+    lock_time = _check_lockout()
+    if lock_time > 0:
+        st.error(f"Quá nhiều lần thử! Vui lòng thử lại sau {int(lock_time - time.time())} giây.")
+        st.stop()
+        
     if submitted:
         is_valid = False
         role = ""
@@ -268,6 +307,7 @@ div[data-testid="InputInstructions"] {{ display: none !important; }}
             role = "admin"
             
         if is_valid:
+            _reset_lockout()
             st.markdown(f"""
             <style>
             .loader-overlay {{
@@ -295,6 +335,7 @@ div[data-testid="InputInstructions"] {{ display: none !important; }}
             st.session_state.pin_input = ""
             st.rerun()
         else:
+            _record_failed_attempt()
             st.session_state.pin_error = True
             st.rerun()
 
@@ -657,6 +698,108 @@ elif page == "⚙️ Cài đặt":
                 st.session_state.authenticated = False
                 st.session_state.auth_role = None
                 st.rerun()
+                
+            st.markdown("<br>**💾 Sao lưu CSDL**", unsafe_allow_html=True)
+            st.info("Trích xuất và tải toàn bộ CSDL (kể cả từ Turso) thành file SQLite.")
+            if st.button("📦 Tạo File Sao Lưu (.db)", use_container_width=True):
+                with st.spinner("Đang trích xuất dữ liệu, vui lòng chờ..."):
+                    import sqlite3, os, tempfile
+                    try:
+                        conn_src = get_connection()
+                        tables = conn_src.execute("SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").fetchall()
+                        
+                        fd, path = tempfile.mkstemp(suffix=".db")
+                        os.close(fd)
+                        if os.path.exists(path):
+                            os.remove(path)
+                            
+                        local_conn = sqlite3.connect(path)
+                        for t in tables:
+                            tname = t['name']
+                            sql = t['sql']
+                            if sql:
+                                local_conn.execute(sql)
+                                
+                            rows = conn_src.execute(f"SELECT * FROM {tname}").fetchall()
+                            if rows:
+                                cols = rows[0].keys() if hasattr(rows[0], 'keys') else rows[0]._mapping.keys()
+                                placeholders = ','.join(['?' for _ in cols])
+                                col_names = ','.join(cols)
+                                insert_sql = f"INSERT INTO {tname} ({col_names}) VALUES ({placeholders})"
+                                for row in rows:
+                                    local_conn.execute(insert_sql, tuple(row[c] for c in cols))
+                        local_conn.commit()
+                        local_conn.close()
+                        conn_src.close()
+                        
+                        with open(path, "rb") as f:
+                            db_bytes = f.read()
+                        
+                        st.session_state.backup_bytes = db_bytes
+                        st.success("✅ Tạo file sao lưu thành công!")
+                    except Exception as e:
+                        st.error(f"Lỗi: {e}")
+                        
+            if "backup_bytes" in st.session_state:
+                st.download_button(
+                    label="⬇️ Tải xuống VHSCRM_Backup.db",
+                    data=st.session_state.backup_bytes,
+                    file_name=f"vhscrm_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db",
+                    mime="application/octet-stream",
+                    type="primary",
+                    use_container_width=True
+                )
+                
+            st.markdown("<hr style='margin:16px 0; border:0; border-top:1px solid #e2e8f0;'>", unsafe_allow_html=True)
+            st.markdown("**🔄 Khôi phục CSDL**")
+            uploaded_db = st.file_uploader("Tải lên file VHSCRM_Backup.db", type=["db", "sqlite"])
+            if uploaded_db is not None:
+                st.warning("⚠️ **CẢNH BÁO:** Quá trình này sẽ XÓA TOÀN BỘ dữ liệu hiện tại và thay thế bằng dữ liệu từ file tải lên. Hãy chắc chắn bạn đã sao lưu trước khi thực hiện!")
+                if st.button("🚀 Thực hiện Khôi Phục", type="primary", use_container_width=True):
+                    with st.spinner("Đang khôi phục dữ liệu..."):
+                        import tempfile, sqlite3, os
+                        try:
+                            # 1. Lưu file upload ra ổ đĩa
+                            fd, path = tempfile.mkstemp(suffix=".db")
+                            os.close(fd)
+                            with open(path, "wb") as f:
+                                f.write(uploaded_db.getvalue())
+                                
+                            # 2. Đọc file SQLite
+                            conn_src = sqlite3.connect(path)
+                            conn_src.row_factory = sqlite3.Row
+                            tables = conn_src.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").fetchall()
+                            
+                            # 3. Ghi đè vào DB hiện tại (Turso hoặc local)
+                            conn_dest = get_connection()
+                            
+                            # Xóa dữ liệu cũ
+                            tables_to_clear = ['logbook', 'expenses', 'invoices', 'debts', 'schedules', 'contracts', 'customers', 'technicians', 'settings', 'app_settings']
+                            for t in tables_to_clear:
+                                try:
+                                    conn_dest.execute(f"DELETE FROM {t}")
+                                except Exception:
+                                    pass
+                            
+                            for t in tables:
+                                tname = t['name']
+                                rows = conn_src.execute(f"SELECT * FROM {tname}").fetchall()
+                                if rows:
+                                    cols = list(rows[0].keys())
+                                    placeholders = ','.join(['?' for _ in cols])
+                                    col_names = ','.join(cols)
+                                    insert_sql = f"INSERT INTO {tname} ({col_names}) VALUES ({placeholders})"
+                                    for row in rows:
+                                        conn_dest.execute(insert_sql, tuple(row[c] for c in cols))
+                            
+                            conn_dest.commit()
+                            conn_dest.close()
+                            conn_src.close()
+                            os.remove(path)
+                            st.success("✅ Đã khôi phục dữ liệu thành công!")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Lỗi khôi phục: {e}")
 
     with t2:
         from pages import p7_technicians; p7_technicians.render()
@@ -667,21 +810,32 @@ elif page == "⚙️ Cài đặt":
         st.info("Nhập các thông tin xác thực từ Google Cloud Console để đồng bộ lịch và vẽ bản đồ.")
         
         conn = get_connection()
-        settings_rows = conn.execute("SELECT key_name, value_data FROM settings WHERE key_name IN ('google_client_id', 'google_client_secret', 'google_maps_api_key')").fetchall()
+        settings_rows = conn.execute("SELECT key_name, value_data FROM settings WHERE key_name IN ('google_client_id', 'google_client_secret')").fetchall()
         settings_dict = {r['key_name']: r['value_data'] for r in settings_rows}
+        
+        import os
+        from dotenv import load_dotenv, set_key
+        env_path = os.path.join(os.path.dirname(__file__), ".env")
+        load_dotenv(dotenv_path=env_path)
+        env_maps_key = os.getenv("GOOGLE_MAPS_API_KEY", "")
         
         with st.form("form_google_settings"):
             client_id = st.text_input("Calendar Client ID", value=settings_dict.get('google_client_id', ''))
             client_secret = st.text_input("Calendar Client Secret", value=settings_dict.get('google_client_secret', ''), type="password")
-            maps_api_key = st.text_input("Maps API Key", value=settings_dict.get('google_maps_api_key', ''))
+            maps_api_key = st.text_input("Maps API Key (saved in .env)", value=env_maps_key)
             
             if st.form_submit_button("💾 Lưu Cấu Hình", type="primary"):
                 conn_save = get_connection()
                 conn_save.execute("INSERT OR REPLACE INTO settings (id, key_name, value_data) VALUES ((SELECT id FROM settings WHERE key_name='google_client_id'), 'google_client_id', ?)", (client_id,))
                 conn_save.execute("INSERT OR REPLACE INTO settings (id, key_name, value_data) VALUES ((SELECT id FROM settings WHERE key_name='google_client_secret'), 'google_client_secret', ?)", (client_secret,))
-                conn_save.execute("INSERT OR REPLACE INTO settings (id, key_name, value_data) VALUES ((SELECT id FROM settings WHERE key_name='google_maps_api_key'), 'google_maps_api_key', ?)", (maps_api_key,))
                 conn_save.commit()
                 conn_save.close()
+                
+                # Update .env
+                if not os.path.exists(env_path):
+                    with open(env_path, "w") as f: f.write("")
+                set_key(env_path, "GOOGLE_MAPS_API_KEY", maps_api_key)
+                
                 st.success("Đã lưu cấu hình Google API!")
                 st.rerun()
                 

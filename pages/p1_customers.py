@@ -81,7 +81,9 @@ def render():
                 msg_del = "Xác nhận xóa (bao gồm cả HĐ và Lịch)" if r["so_hd"] else "Xác nhận xóa Khách Hàng này"
                 xac_nhan = st.checkbox(msg_del, key=f"xac_nhan_{r['ma_kh']}_{suffix}")
                 if st.form_submit_button("🗑️ Xóa Khách Hàng", use_container_width=True):
-                    if xac_nhan:
+                    if st.session_state.get('auth_role') != 'admin':
+                        st.error("❌ Chỉ Admin mới có quyền xóa dữ liệu!")
+                    elif xac_nhan:
                         try:
                             conn2 = get_connection()
                             conn2.execute("DELETE FROM logbook WHERE ma_kh=?", (r["ma_kh"],))
@@ -120,8 +122,19 @@ def render():
             params.append(filter_pk)
         query += {"Mã KH":" ORDER BY ma_kh", "Tên A-Z":" ORDER BY ten_cty", "Mới nhất":" ORDER BY created_at DESC"}.get(sort_by, " ORDER BY ma_kh")
 
-        rows = conn.execute(query, params).fetchall()
+        raw_rows = conn.execute(query, params).fetchall()
         conn.close()
+        
+        import html
+        rows = []
+        for r in raw_rows:
+            d = dict(r)
+            d["ten_cty"] = html.escape(d["ten_cty"] or "")
+            d["dai_dien"] = html.escape(d["dai_dien"] or "")
+            d["sdt"] = html.escape(d["sdt"] or "")
+            d["dia_chi"] = html.escape(d["dia_chi"] or "")
+            d["ghi_chu"] = html.escape(d["ghi_chu"] or "")
+            rows.append(d)
 
         # Tổng số đếm
         st.markdown(f'<div style="font-size:13px;color:#64748b;margin-bottom:12px;">Tìm thấy <b style="color:#0f172a">{len(rows)}</b> khách hàng</div>', unsafe_allow_html=True)

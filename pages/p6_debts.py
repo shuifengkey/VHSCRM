@@ -18,6 +18,10 @@ def render():
     with tab_overview:
         conn = get_connection()
         
+        # Lấy dữ liệu hợp đồng (doanh thu kỳ vọng)
+        summary_contract = conn.execute("SELECT SUM(gia_tri_thang) expected FROM contracts WHERE trang_thai='active'").fetchone()
+        doanh_thu_du_kien = summary_contract["expected"] or 0
+        
         # Lấy dữ liệu công nợ
         summary_debt = conn.execute("SELECT SUM(can_thu) tong_ct, SUM(da_thu) tong_dt, SUM(can_thu-da_thu) tong_no FROM debts").fetchone()
         tong_ct = summary_debt["tong_ct"] or 0
@@ -30,11 +34,12 @@ def render():
         
         loi_nhuan = tong_dt - tong_chi
         
-        c1, c2, c3, c4 = st.columns(4)
+        c0, c1, c2, c3, c4 = st.columns(5)
+        with c0: st.metric("🌟 Kỳ Vọng/Tháng", f"{format_money(doanh_thu_du_kien)} đ", help="Tổng giá trị các hợp đồng đang active")
         with c1: st.metric("📬 Tổng Cần Thu", f"{format_money(tong_ct)} đ")
-        with c2: st.metric("✅ Thực Thu (Doanh thu)", f"{format_money(tong_dt)} đ")
-        with c3: st.metric("💸 Chi Phí Đầu Vào", f"{format_money(tong_chi)} đ")
-        with c4: st.metric("📈 Lợi Nhuận Gộp", f"{format_money(loi_nhuan)} đ")
+        with c2: st.metric("✅ Thực Thu", f"{format_money(tong_dt)} đ")
+        with c3: st.metric("💸 Chi Phí", f"{format_money(tong_chi)} đ")
+        with c4: st.metric("📈 Lợi Nhuận", f"{format_money(loi_nhuan)} đ")
         
         st.markdown('<hr style="margin:16px 0">', unsafe_allow_html=True)
         col_chart, col_top = st.columns([3,2])
@@ -89,14 +94,27 @@ def render():
         with c3: filter_no = st.selectbox("Lọc", ["Tất cả","Còn nợ","Đã thanh toán"], key="filter_no")
         
         conn = get_connection()
-        q = "SELECT d.*, c.ten_cty, c.sdt FROM debts d JOIN customers c ON d.ma_kh=c.ma_kh WHERE 1=1"
+        conn = get_connection()
+        q = """SELECT d.*, c.ten_cty, c.sdt, ct.gia_tri_thang, ct.don_vi_tinh 
+               FROM debts d 
+               JOIN customers c ON d.ma_kh=c.ma_kh 
+               LEFT JOIN contracts ct ON d.ma_hd=ct.ma_hd 
+               WHERE 1=1"""
         p = []
         if search_d: q += " AND (d.ma_kh LIKE ? OR c.ten_cty LIKE ? OR d.ma_hd LIKE ?)"; p.extend([f"%{search_d}%"]*3)
         if filter_ky: q += " AND d.ky_thanh_toan LIKE ?"; p.append(f"%{filter_ky}%")
         if filter_no == "Còn nợ": q += " AND d.can_thu > d.da_thu"
         if filter_no == "Đã thanh toán": q += " AND d.can_thu <= d.da_thu"
         q += " ORDER BY d.ky_thanh_toan DESC, d.ma_kh"
-        debts = conn.execute(q, p).fetchall()
+        raw_debts = conn.execute(q, p).fetchall()
+        
+        import html
+        debts = []
+        for r in raw_debts:
+            d = dict(r)
+            d["ten_cty"] = html.escape(d.get("ten_cty", "") or "")
+            d["sdt"] = html.escape(d.get("sdt", "") or "")
+            debts.append(d)
         
         st.markdown(f'<div style="font-size:13px;color:#64748b;margin-bottom:12px;"><b>{len(debts)}</b> bản ghi</div>', unsafe_allow_html=True)
         
@@ -107,6 +125,14 @@ def render():
                 row_bg = "#fff5f5" if no > 0 else "#f0fdf4"
                 no_color = "#dc2626" if no > 0 else "#16a34a"
                 tien_vat = d.get('tien_vat', 0) or 0
+                gia_tri_hd = d.get('gia_tri_thang', 0) or 0
+                dvt = d.get('don_vi_tinh', '') or ''
+                
+                # Check discrepancy
+                gt_vat = gia_tri_hd + (gia_tri_hd * 0.1 if tien_vat > 0 else 0) # Just rough check
+                is_mismatch = abs(d['can_thu'] - gia_tri_hd - tien_vat) > 1000 and dvt == '/tháng'
+                mismatch_badge = f'<span style="background:#fef08a;color:#854d0e;padding:2px 6px;border-radius:4px;font-size:11px;margin-left:8px;">⚠️ Lệch HĐ</span>' if is_mismatch else ""
+                
                 st.markdown(f"""
                 <div class="vhs-list-item" style="background:{row_bg};padding:14px;margin-bottom:12px;">
                     <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
@@ -114,10 +140,37 @@ def render():
                         <b style="color:{no_color};">{format_money(no)} đ</b>
                     </div>
                     <div style="font-size:12px;color:#64748b;">
-                        HĐ: {d['ma_hd']} &nbsp;·&nbsp; Kỳ: {d['ky_thanh_toan']} &nbsp;·&nbsp; VAT: {format_money(tien_vat)}đ<br>
-                        Thu: {format_money(d['da_thu'])} / {format_money(d['can_thu'])} &nbsp;·&nbsp; Ngày: {d['ngay_thu'][:10] if d['ngay_thu'] else '—'}
+                        HĐ: <b>{d['ma_hd']}</b> (Gốc: {format_money(gia_tri_hd)}{dvt}){mismatch_badge}<br>
+                        Kỳ: {d['ky_thanh_toan']} &nbsp;·&nbsp; Ngày ghi nhận: {d['ngay_thu'][:10] if d['ngay_thu'] else '—'}<br>
+                        Thu: {format_money(d['da_thu'])} / <span style="color:#000;">{format_money(d['can_thu'])}</span> (Gồm VAT: {format_money(tien_vat)})
                     </div>
                 </div>""", unsafe_allow_html=True)
+            
+            # --- SHOW UNBILLED ACTIVE CONTRACTS THIS MONTH ---
+            st.markdown('<hr style="margin:24px 0 16px 0;">', unsafe_allow_html=True)
+            st.markdown("**⚠️ Hợp Đồng Đang Chạy Nhưng Chưa Lên Nợ Tháng Này**")
+            current_ky = (datetime.now(timezone.utc) + timedelta(hours=7)).strftime("%Y-%m")
+            unbilled_q = """
+                SELECT ct.ma_hd, c.ten_cty, ct.gia_tri_thang, ct.don_vi_tinh
+                FROM contracts ct
+                JOIN customers c ON ct.ma_kh = c.ma_kh
+                WHERE ct.trang_thai = 'active'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM debts d 
+                      WHERE d.ma_hd = ct.ma_hd AND d.ky_thanh_toan = ?
+                  )
+            """
+            unbilled_contracts = conn.execute(unbilled_q, (current_ky,)).fetchall()
+            if not unbilled_contracts:
+                st.success("Tất cả hợp đồng đang chạy đều đã được sinh công nợ trong tháng này.")
+            else:
+                for uc in unbilled_contracts:
+                    st.markdown(f"""
+                    <div style="border-left:3px solid #f59e0b; padding-left:10px; margin-bottom:8px; font-size:13px; color:#475569;">
+                        <b>{uc['ten_cty']}</b> (HĐ: {uc['ma_hd']})<br>
+                        Giá trị: {format_money(uc['gia_tri_thang'])} {uc['don_vi_tinh']}
+                    </div>
+                    """, unsafe_allow_html=True)
                 
         with col_action:
             st.markdown('<div class="vhs-card" style="padding:16px;">', unsafe_allow_html=True)
@@ -188,10 +241,17 @@ def render():
             st.markdown('<div class="vhs-card" style="padding:16px;">', unsafe_allow_html=True)
             st.markdown("**🧾 Xuất Hóa Đơn Mới**")
             # Chọn khoản nợ để xuất hóa đơn
-            debts_for_inv = conn.execute("""
+            raw_debts_for_inv = conn.execute("""
                 SELECT d.*, c.ten_cty FROM debts d JOIN customers c ON d.ma_kh=c.ma_kh 
                 WHERE d.tien_vat > 0 AND NOT EXISTS (SELECT 1 FROM invoices i WHERE i.ma_hd=d.ma_hd AND i.ky_thang=d.ky_thanh_toan)
             """).fetchall()
+            
+            import html
+            debts_for_inv = []
+            for r in raw_debts_for_inv:
+                d = dict(r)
+                d["ten_cty"] = html.escape(d.get("ten_cty", "") or "")
+                debts_for_inv.append(d)
             
             if debts_for_inv:
                 inv_opts = {f"[{d['ky_thanh_toan']}] {d['ten_cty']} - {format_money(d['can_thu'])}": d for d in debts_for_inv}
@@ -220,7 +280,14 @@ def render():
             
         with c_inv_list:
             st.markdown("**Danh Sách Hóa Đơn Đã Xuất**")
-            invoices = conn.execute("SELECT i.*, c.ten_cty FROM invoices i JOIN customers c ON i.ma_kh=c.ma_kh ORDER BY i.ngay_xuat DESC").fetchall()
+            raw_invoices = conn.execute("SELECT i.*, c.ten_cty FROM invoices i JOIN customers c ON i.ma_kh=c.ma_kh ORDER BY i.ngay_xuat DESC").fetchall()
+            import html
+            invoices = []
+            for r in raw_invoices:
+                d = dict(r)
+                d["ten_cty"] = html.escape(d.get("ten_cty", "") or "")
+                d["so_hoa_don"] = html.escape(d.get("so_hoa_don", "") or "")
+                invoices.append(d)
             for inv in invoices:
                 st.markdown(f"""
                 <div class="vhs-list-item" style="padding:14px;margin-bottom:10px;">
@@ -262,7 +329,15 @@ def render():
             
         with c_exp_list:
             st.markdown("**Lịch Sử Chi Phí**")
-            expenses = conn.execute("SELECT * FROM expenses ORDER BY ngay_chi DESC LIMIT 50").fetchall()
+            raw_expenses = conn.execute("SELECT * FROM expenses ORDER BY ngay_chi DESC LIMIT 50").fetchall()
+            import html
+            expenses = []
+            for r in raw_expenses:
+                d = dict(r)
+                d["loai_chi_phi"] = html.escape(d.get("loai_chi_phi", "") or "")
+                d["nguoi_chi"] = html.escape(d.get("nguoi_chi", "") or "")
+                d["ghi_chu"] = html.escape(d.get("ghi_chu", "") or "")
+                expenses.append(d)
             for ex in expenses:
                 st.markdown(f"""
                 <div class="vhs-list-item" style="padding:14px;margin-bottom:10px;">

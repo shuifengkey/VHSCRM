@@ -36,7 +36,7 @@ def render():
         past3_str = ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date()-timedelta(days=3)).strftime("%Y-%m-%d")
 
         conn = get_connection()
-        pending = conn.execute("""
+        raw_pending = conn.execute("""
             SELECT s.id, s.ma_hd, s.ma_kh, s.ngay_du_kien, s.gio_bat_dau, s.gio_ket_thuc, s.trang_thai, s.ky_thuat_vien, s.loai_con_trung as s_loai_con_trung,
                    c.ten_cty, c.dia_chi, c.sdt, ct.khu_vuc_xu_ly, ct.loai_con_trung, ct.phuong_phap_xu_ly
             FROM schedules s 
@@ -46,6 +46,15 @@ def render():
             ORDER BY s.ngay_du_kien ASC, s.gio_bat_dau ASC
         """, (tomorrow_str,)).fetchall()
         conn.close()
+        
+        import html
+        pending = []
+        for r in raw_pending:
+            d = dict(r)
+            d["ten_cty"] = html.escape(d.get("ten_cty", "") or "")
+            d["dia_chi"] = html.escape(d.get("dia_chi", "") or "")
+            d["sdt"] = html.escape(d.get("sdt", "") or "")
+            pending.append(d)
 
         # Phân loại upcoming (24h) vs overdue (quá ca)
         upcoming_jobs = []
@@ -323,8 +332,15 @@ def render():
                 q += " AND l.ky_thuat_vien = ?"
                 p.append(filter_ktv)
             q += " ORDER BY l.checkin_time DESC LIMIT 50"
-            logs = conn.execute(q, p).fetchall()
+            raw_logs = conn.execute(q, p).fetchall()
             conn.close()
+            
+            import html
+            logs = []
+            for r in raw_logs:
+                d = dict(r)
+                d["ten_cty"] = html.escape(d.get("ten_cty", "") or "")
+                logs.append(d)
     
             if not logs:
                 st.info("Không có lịch sử trong khoảng thời gian này.")

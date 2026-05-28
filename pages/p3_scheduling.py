@@ -179,7 +179,7 @@ def render():
         """, unsafe_allow_html=True)
 
         conn = get_connection()
-        raw = conn.execute("""
+        raw_db = conn.execute("""
             SELECT s.*, c.ten_cty, c.dia_chi, c.sdt, ct.tan_suat, ct.kieu_lap, ct.lap_thu
             FROM schedules s
             JOIN customers c ON s.ma_kh=c.ma_kh
@@ -188,6 +188,16 @@ def render():
             ORDER BY s.ngay_du_kien, s.gio_bat_dau
         """, (past3_str, tom_str)).fetchall()
         conn.close()
+
+        import html
+        raw = []
+        for r in raw_db:
+            d = dict(r)
+            d["ten_cty"] = html.escape(d.get("ten_cty", "") or "")
+            d["dia_chi"] = html.escape(d.get("dia_chi", "") or "")
+            d["sdt"] = html.escape(d.get("sdt", "") or "")
+            d["ghi_chu"] = html.escape(d.get("ghi_chu", "") or "")
+            raw.append(d)
 
         # Phân loại: upcoming (trong 24h tới) vs overdue (quá ca chưa thi công)
         upcoming_jobs = []
@@ -313,10 +323,10 @@ def render():
                 else:
                     import urllib.parse
                     
-                    conn_map = get_connection()
-                    api_key_row = conn_map.execute("SELECT value_data FROM settings WHERE key_name='google_maps_api_key'").fetchone()
-                    api_key = api_key_row['value_data'] if api_key_row else None
-                    conn_map.close()
+                    import os
+                    from dotenv import load_dotenv
+                    load_dotenv()
+                    api_key = os.getenv("GOOGLE_MAPS_API_KEY")
                     
                     route_mode = st.radio("Điểm xuất phát:", ["🏠 Từ nhà (164 Huy Cận)", "📍 Từ ca thi công đầu tiên"], index=1, horizontal=True)
                     vehicle_mode = st.radio("Phương tiện:", ["🏍️ Xe máy", "🚗 Ô tô"], index=1, horizontal=True)

@@ -93,15 +93,24 @@ def render():
         with c2: f_status = st.selectbox("Trạng thái",["Tất cả","🟢 Hiệu lực","🟡 Sắp hết hạn","🔴 Hết hạn"])
         with c3: f_ts     = st.selectbox("Tần suất",["Tất cả"]+list(TAN_SUAT_OPTS.values()))
 
-        rows = [dict(r) for r in conn.execute("""
+        raw_rows = conn.execute("""
             SELECT ct.*, k.ten_cty, k.sdt, k.dai_dien,
               CAST(julianday(ct.ngay_het_han)-julianday('now') AS INT) as days_left,
               (SELECT COUNT(*) FROM schedules s WHERE s.ma_hd=ct.ma_hd AND s.trang_thai='completed') as so_xong,
               (SELECT COUNT(*) FROM schedules s WHERE s.ma_hd=ct.ma_hd) as tong_ca
             FROM contracts ct JOIN customers k ON ct.ma_kh=k.ma_kh
             ORDER BY ct.ngay_het_han
-        """).fetchall()]
+        """).fetchall()
         conn.close()
+        
+        import html
+        rows = []
+        for r in raw_rows:
+            d = dict(r)
+            d["ten_cty"] = html.escape(d.get("ten_cty", "") or "")
+            d["dai_dien"] = html.escape(d.get("dai_dien", "") or "")
+            d["sdt"] = html.escape(d.get("sdt", "") or "")
+            rows.append(d)
 
         def match(r):
             d = r["days_left"] if r["days_left"] is not None else 999
@@ -247,20 +256,23 @@ def render():
                     c_yes, c_no = st.columns([1, 4])
                     with c_yes:
                         if st.button("✅ Xác nhận xóa", key=f"yes_{r['ma_hd']}"):
-                            conn = get_connection()
-                            conn.execute("DELETE FROM logbook WHERE schedule_id IN (SELECT id FROM schedules WHERE ma_hd=?)", (r['ma_hd'],))
-                            
-                            to_delete = conn.execute("SELECT google_event_id FROM schedules WHERE ma_hd=?", (r['ma_hd'],)).fetchall()
-                            from utils.google_sync import auto_sync_schedule_to_google
-                            for row in to_delete:
-                                if row["google_event_id"]:
-                                    auto_sync_schedule_to_google(conn, row["google_event_id"], "delete")
-                                    
-                            conn.execute("DELETE FROM schedules WHERE ma_hd=?", (r['ma_hd'],))
-                            conn.execute("DELETE FROM contracts WHERE ma_hd=?", (r['ma_hd'],))
-                            conn.commit(); conn.close()
-                            st.session_state[f"confirm_del_{r['ma_hd']}"] = False
-                            st.success("Đã xóa thành công!"); st.rerun()
+                            if st.session_state.get('auth_role') != 'admin':
+                                st.error("❌ Chỉ Admin mới có quyền xóa dữ liệu!")
+                            else:
+                                conn = get_connection()
+                                conn.execute("DELETE FROM logbook WHERE schedule_id IN (SELECT id FROM schedules WHERE ma_hd=?)", (r['ma_hd'],))
+                                
+                                to_delete = conn.execute("SELECT google_event_id FROM schedules WHERE ma_hd=?", (r['ma_hd'],)).fetchall()
+                                from utils.google_sync import auto_sync_schedule_to_google
+                                for row in to_delete:
+                                    if row["google_event_id"]:
+                                        auto_sync_schedule_to_google(conn, row["google_event_id"], "delete")
+                                        
+                                conn.execute("DELETE FROM schedules WHERE ma_hd=?", (r['ma_hd'],))
+                                conn.execute("DELETE FROM contracts WHERE ma_hd=?", (r['ma_hd'],))
+                                conn.commit(); conn.close()
+                                st.session_state[f"confirm_del_{r['ma_hd']}"] = False
+                                st.success("Đã xóa thành công!"); st.rerun()
                     with c_no:
                         if st.button("❌ Hủy", key=f"no_{r['ma_hd']}"):
                             st.session_state[f"confirm_del_{r['ma_hd']}"] = False
