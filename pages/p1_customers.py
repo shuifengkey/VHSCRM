@@ -83,7 +83,11 @@ def render():
                         conn2.execute("UPDATE customers SET ten_cty=?,dai_dien=?,sdt=?,dia_chi=?,ghi_chu=?,nguoi_lien_he=?,ten_phap_ly=?,ma_so_thue=? WHERE ma_kh=?",
                                       (ten,dd,sp_clean,da,gc,lh,tpl,mst,r["ma_kh"]))
                         conn2.commit(); conn2.close()
-                        st.success("✅ Đã cập nhật!"); st.rerun()
+                        import time
+                        st.toast(f"✅ Đã lưu cập nhật cho {ten}!", icon="🎉")
+                        st.balloons()
+                        time.sleep(1.2)
+                        st.rerun()
                     except Exception as e: st.error(e)
                 
                 st.markdown("---")
