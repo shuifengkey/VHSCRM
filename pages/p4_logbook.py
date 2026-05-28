@@ -269,57 +269,35 @@ def render():
                                         st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
 
                                     with st.container(border=False):
-                                        import base64
-                                        import sys, os
-                                        # Add component path just in case
-                                        from components.custom_camera import custom_camera
-                                        cam_photo_b64 = custom_camera(key=f"cam_act_{job['id']}")
-                                        if cam_photo_b64 is not None:
-                                            with st.spinner("Đang Cắt viền & Khử bóng..."):
-                                                import os, uuid
-                                                upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
-                                                os.makedirs(upload_dir, exist_ok=True)
-                                                fname = f"{uuid.uuid4().hex[:8]}_camera.jpg"
-                                                fpath = os.path.join(upload_dir, fname)
-                                                
-                                                header, encoded = cam_photo_b64.split(",", 1)
-                                                data = base64.b64decode(encoded)
-                                                with open(fpath, "wb") as f_out:
-                                                    f_out.write(data)
-                                                
-                                                from utils.image_processing import auto_crop_document
-                                                auto_crop_document(fpath)
-                                                
+                                        import os, uuid
+                                        upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+                                        os.makedirs(upload_dir, exist_ok=True)
+                                        new_files = st.file_uploader(
+                                            "📷 Chụp ảnh / đính kèm file",
+                                            type=['pdf', 'png', 'jpg', 'jpeg'],
+                                            accept_multiple_files=True,
+                                            key=f"bosung_act_{job['id']}",
+                                        )
+                                        if new_files:
+                                            with st.spinner("Đang xử lý & lưu..."):
                                                 att_list = [x for x in log["attachments"].split(",") if x] if log.get("attachments") else []
-                                                att_list.append(fname)
-                                                conn_up = get_connection()
-                                                conn_up.execute("UPDATE logbook SET attachments=? WHERE id=?", (",".join(att_list), log["id"]))
-                                                conn_up.commit(); conn_up.close()
-                                                
-                                                del st.session_state[f"cam_act_{job['id']}"]
-                                                st.rerun()
-
-                                        extra_att = st.file_uploader("📂 Hoặc tải từ máy (PDF, JPG...)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"file_act_{job['id']}")
-                                        if extra_att:
-                                            if st.button("Lưu các file đã chọn", use_container_width=True, type="primary", key=f"btn_luu_act_{job['id']}"):
-                                                import os, uuid
-                                                upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
-                                                os.makedirs(upload_dir, exist_ok=True)
-                                                att_list = [x for x in log["attachments"].split(",") if x] if log.get("attachments") else []
-                                                for f in extra_att:
+                                                for f in new_files:
                                                     filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
                                                     filepath = os.path.join(upload_dir, filename)
                                                     with open(filepath, "wb") as out:
                                                         out.write(f.getbuffer())
                                                     if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
-                                                        from utils.image_processing import auto_crop_document
-                                                        auto_crop_document(filepath)
+                                                        try:
+                                                            from utils.image_processing import auto_crop_document
+                                                            auto_crop_document(filepath)
+                                                        except Exception:
+                                                            pass
                                                     att_list.append(filename)
                                                 conn_up = get_connection()
                                                 conn_up.execute("UPDATE logbook SET attachments=? WHERE id=?", (",".join(att_list), log["id"]))
                                                 conn_up.commit(); conn_up.close()
-                                                st.rerun()
-                    
+                                            del st.session_state[f"bosung_act_{job['id']}"]
+                                            st.rerun()
                         st.markdown("<div style='margin-bottom:24px;'></div>", unsafe_allow_html=True)
         
                     elif log and log.get("checkin_time"):
@@ -556,56 +534,35 @@ def render():
                                     st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
 
                                 with st.container(border=False):
-                                    import base64
-                                    import sys, os
-                                    from components.custom_camera import custom_camera
-                                    cam_photo_b64 = custom_camera(key=f"cam_hist_{log['id']}")
-                                    if cam_photo_b64 is not None:
-                                        with st.spinner("Đang Cắt viền & Khử bóng..."):
-                                            import os, uuid
-                                            upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
-                                            os.makedirs(upload_dir, exist_ok=True)
-                                            fname = f"{uuid.uuid4().hex[:8]}_camera.jpg"
-                                            fpath = os.path.join(upload_dir, fname)
-                                            
-                                            header, encoded = cam_photo_b64.split(",", 1)
-                                            data = base64.b64decode(encoded)
-                                            with open(fpath, "wb") as f_out:
-                                                f_out.write(data)
-                                            
-                                            from utils.image_processing import auto_crop_document
-                                            auto_crop_document(fpath)
-                                            
+                                    import os, uuid
+                                    upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+                                    os.makedirs(upload_dir, exist_ok=True)
+                                    new_files = st.file_uploader(
+                                        "📷 Chụp ảnh / đính kèm file",
+                                        type=['pdf', 'png', 'jpg', 'jpeg'],
+                                        accept_multiple_files=True,
+                                        key=f"bosung_hist_{log['id']}",
+                                    )
+                                    if new_files:
+                                        with st.spinner("Đang xử lý & lưu..."):
                                             att_list = [x for x in log["attachments"].split(",") if x] if log.get("attachments") else []
-                                            att_list.append(fname)
-                                            conn_up = get_connection()
-                                            conn_up.execute("UPDATE logbook SET attachments=? WHERE id=?", (",".join(att_list), log["id"]))
-                                            conn_up.commit(); conn_up.close()
-                                            
-                                            del st.session_state[f"cam_hist_{log['id']}"]
-                                            st.rerun()
-
-                                    extra_att = st.file_uploader("📂 Hoặc tải từ máy (PDF, JPG...)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"file_hist_{log['id']}")
-                                    if extra_att:
-                                        if st.button("Lưu các file đã chọn", use_container_width=True, type="primary", key=f"btn_luu_hist_{log['id']}"):
-                                            import os, uuid
-                                            upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
-                                            os.makedirs(upload_dir, exist_ok=True)
-                                            att_list = [x for x in log["attachments"].split(",") if x] if log.get("attachments") else []
-                                            for f in extra_att:
+                                            for f in new_files:
                                                 filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
                                                 filepath = os.path.join(upload_dir, filename)
                                                 with open(filepath, "wb") as out:
                                                     out.write(f.getbuffer())
                                                 if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
-                                                    from utils.image_processing import auto_crop_document
-                                                    auto_crop_document(filepath)
+                                                    try:
+                                                        from utils.image_processing import auto_crop_document
+                                                        auto_crop_document(filepath)
+                                                    except Exception:
+                                                        pass
                                                 att_list.append(filename)
                                             conn_up = get_connection()
                                             conn_up.execute("UPDATE logbook SET attachments=? WHERE id=?", (",".join(att_list), log["id"]))
                                             conn_up.commit(); conn_up.close()
-                                            st.rerun()
-    
+                                        del st.session_state[f"bosung_hist_{log['id']}"]
+                                        st.rerun()
     with tab_stats:
         conn = get_connection()
         ktv_stats = conn.execute("""
