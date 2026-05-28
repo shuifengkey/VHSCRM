@@ -20,7 +20,7 @@ def auto_crop_document(image_path):
         stream.close()
 
         if image is None:
-            return False
+            return (False, "OpenCV could not decode the image file (might be corrupted or unsupported format).")
 
         orig = image.copy()
         
@@ -97,7 +97,7 @@ def auto_crop_document(image_path):
             kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
             scanned = cv2.filter2D(enhanced, -1, kernel)
             cv2.imencode('.jpg', scanned)[1].tofile(image_path)
-            return True
+            return (True, "Document corners not found. Applied scanner enhancement to full image.")
             
         doc_cnt = doc_cnt.reshape(4, 2) * ratio
         rect = order_points(doc_cnt)
@@ -129,8 +129,8 @@ def auto_crop_document(image_path):
         scanned = cv2.filter2D(enhanced, -1, kernel)
         
         cv2.imencode('.jpg', scanned)[1].tofile(image_path)
-        return True
+        return (True, "Document successfully cropped and enhanced.")
         
     except Exception as e:
         print(f"Auto crop error: {e}")
-        return False
+        return (False, f"Python error during processing: {str(e)}")
