@@ -373,12 +373,40 @@ def generate_payment_request_pdf(debt_data, attachments=None):
                         content.append(Image(fpath, width=new_w, height=new_h))
                     except Exception as e:
                         content.append(P(f"(Lỗi đọc file ảnh: {e})", size=9, align=TA_CENTER, color=colors.red))
+                elif fpath.lower().endswith('.pdf'):
+                    pass # Will be appended after build
                 else:
-                    content.append(P("(File đính kèm không phải là định dạng ảnh, không thể hiển thị trực tiếp trong PDF)", size=9, align=TA_CENTER))
+                    content.append(P("(File đính kèm không hỗ trợ chèn trực tiếp)", size=9, align=TA_CENTER))
         except ImportError:
             content.append(PageBreak())
             content.append(P("Thiếu thư viện Pillow để hiển thị ảnh đính kèm.", size=10, align=TA_CENTER, color=colors.red))
 
     doc.build(content)
     output.seek(0)
-    return output.getvalue(), f"PYC_{ma_hd}_{ky}.pdf", "application/pdf"
+    
+    final_output = output
+    if attachments:
+        try:
+            from pypdf import PdfWriter
+            import io as _io
+            
+            has_pdf = any(fpath.lower().endswith('.pdf') for _, fpath in attachments)
+            if has_pdf:
+                merger = PdfWriter()
+                merger.append(output)
+                for fname, fpath in attachments:
+                    if fpath.lower().endswith('.pdf'):
+                        try:
+                            merger.append(fpath)
+                        except Exception:
+                            pass
+                
+                merged_output = _io.BytesIO()
+                merger.write(merged_output)
+                merger.close()
+                merged_output.seek(0)
+                final_output = merged_output
+        except ImportError:
+            pass
+
+    return final_output.getvalue(), f"PYC_{ma_hd}_{ky}.pdf", "application/pdf"

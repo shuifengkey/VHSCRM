@@ -159,12 +159,46 @@ def action_dialog(job, log):
         pest_found = st.text_area("Côn trùng phát hiện / Ghi chú", value=log.get("ket_qua", ""), height=80)
         chemical   = st.text_area("Hóa chất sử dụng", value=log.get("hoa_chat", ""), height=80)
         
+        attachments = st.file_uploader(
+            "📄 Chụp/Tải lên biên bản (PDF, JPG, PNG)",
+            type=['pdf', 'png', 'jpg', 'jpeg'],
+            accept_multiple_files=True,
+            key=f"checkout_files_{log['id']}"
+        )
+        st.caption("💡 Mẹo: Điện thoại có thể chọn mở Camera hoặc chọn File. Nếu chụp nhiều trang, hãy scan thành PDF trước rồi tải lên.")
+        
         if st.button("✅ HOÀN THÀNH & CHECK-OUT", type="primary", use_container_width=True):
+            file_names = []
+            if attachments:
+                import os, uuid
+                upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
+                os.makedirs(upload_dir, exist_ok=True)
+                for uploaded_file in attachments:
+                    fname = f"{uuid.uuid4().hex[:8]}_{uploaded_file.name}"
+                    fpath = os.path.join(upload_dir, fname)
+                    with open(fpath, "wb") as f:
+                        f.write(uploaded_file.getbuffer())
+                    file_names.append(fname)
+            
+            att_str = ",".join(file_names)
+            now_str = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat()
+            
             conn = get_connection()
-            conn.execute("""UPDATE logbook 
-                            SET checkout_time=?, ket_qua=?, hoa_chat=? 
-                            WHERE id=?""",
-                         ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), pest_found, chemical, log["id"]))
+            if att_str:
+                # Lấy attachments hiện tại nếu có
+                curr_att = conn.execute("SELECT attachments FROM logbook WHERE id=?", (log["id"],)).fetchone()
+                if curr_att and curr_att["attachments"]:
+                    att_str = curr_att["attachments"] + "," + att_str
+                    
+                conn.execute("""UPDATE logbook 
+                                SET checkout_time=?, ket_qua=?, hoa_chat=?, attachments=? 
+                                WHERE id=?""",
+                             (now_str, pest_found, chemical, att_str, log["id"]))
+            else:
+                conn.execute("""UPDATE logbook 
+                                SET checkout_time=?, ket_qua=?, hoa_chat=? 
+                                WHERE id=?""",
+                             (now_str, pest_found, chemical, log["id"]))
             conn.commit(); conn.close()
             
             # Dùng engine để hoàn thành ca, tự sinh ca kế tiếp và sinh công nợ
