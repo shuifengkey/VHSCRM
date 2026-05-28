@@ -611,17 +611,17 @@
         const gray = new cv.Mat();
         cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
 
-        // Sharpen
+        // Less aggressive sharpen to preserve thin lines
         const blurred = new cv.Mat();
         const ksize = new cv.Size(0, 0);
-        cv.GaussianBlur(gray, blurred, ksize, 3);
+        cv.GaussianBlur(gray, blurred, ksize, 2);
         const sharpened = new cv.Mat();
-        cv.addWeighted(gray, 1.5, blurred, -0.5, 0, sharpened);
+        cv.addWeighted(gray, 1.2, blurred, -0.2, 0, sharpened);
 
-        // Adaptive threshold
+        // Adaptive threshold (larger block size, smaller C to preserve details)
         const binary = new cv.Mat();
         cv.adaptiveThreshold(sharpened, binary, 255,
-          cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 21, 10);
+          cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 35, 6);
 
         // Convert to RGBA for imshow
         const rgba = new cv.Mat();
