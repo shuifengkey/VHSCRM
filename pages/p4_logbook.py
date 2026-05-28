@@ -269,52 +269,49 @@ def render():
                                         st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
 
                                     with st.container(border=False):
-                                        img_att = st.file_uploader("📷 Chụp hoặc tải ảnh (JPG, PNG)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"img_file_{job['id']}")
-                                        if img_att:
-                                            st.markdown("**🖼️ Đã chọn:**")
-                                            cols = st.columns(min(len(img_att), 3))
-                                            for i, f_img in enumerate(img_att):
-                                                cols[i % 3].image(f_img, width=80)
-                                                
-                                        pdf_att = st.file_uploader("📄 Đính kèm tệp (PDF)", type=['pdf'], accept_multiple_files=True, key=f"pdf_file_{job['id']}")
-                                        if pdf_att:
-                                            st.markdown(f"**📄 Đã chọn:** {', '.join([p.name for p in pdf_att])}")
-                                            
-                                        if st.button("Lưu bổ sung", use_container_width=True, type="primary", key=f"btn_luu_act_{job['id']}"):
-                                            all_attachments = (img_att or []) + (pdf_att or [])
-                                            if all_attachments:
+                                        cam_photo = st.file_uploader("📷 Chụp 1 ảnh (Camera gốc / Nét căng)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=False, key=f"cam_act_{job['id']}")
+                                        if cam_photo is not None:
+                                            with st.spinner("Đang Cắt viền & Khử bóng..."):
                                                 import os, uuid
-                                                uploaded_paths = []
                                                 upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
                                                 os.makedirs(upload_dir, exist_ok=True)
+                                                fname = f"{uuid.uuid4().hex[:8]}_camera.jpg"
+                                                fpath = os.path.join(upload_dir, fname)
+                                                with open(fpath, "wb") as f_out:
+                                                    f_out.write(cam_photo.getbuffer())
                                                 
-                                                if all_attachments:
-                                                    for f in all_attachments:
-                                                        filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
-                                                        filepath = os.path.join(upload_dir, filename)
-                                                        with open(filepath, "wb") as out:
-                                                            out.write(f.getbuffer())
-                                                        
-                                                        if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
-                                                            try:
-                                                                from utils.image_processing import auto_crop_document
-                                                                success, msg = auto_crop_document(filepath)
-                                                                if not success:
-                                                                    st.toast(f"Lỗi AI: {msg}", icon="❌")
-                                                            except Exception as e:
-                                                                pass
-                                                        uploaded_paths.append(filename)
-                                                new_att_str = ",".join(uploaded_paths)
-                                                old_att = log.get("attachments", "")
-                                                final_att = (old_att + "," + new_att_str).strip(",") if old_att else new_att_str
-                                                conn_u = get_connection()
-                                                conn_u.execute("UPDATE logbook SET attachments=? WHERE id=?", (final_att, log["id"]))
-                                                conn_u.commit()
-                                                conn_u.close()
-                                                st.success("✅ Đã bổ sung tài liệu!")
+                                                from utils.image_processing import auto_crop_document
+                                                auto_crop_document(fpath)
+                                                
+                                                att_list = [x for x in log["attachments"].split(",") if x] if log.get("attachments") else []
+                                                att_list.append(fname)
+                                                conn_up = get_connection()
+                                                conn_up.execute("UPDATE logbook SET attachments=? WHERE id=?", (",".join(att_list), log["id"]))
+                                                conn_up.commit(); conn_up.close()
+                                                
+                                                del st.session_state[f"cam_act_{job['id']}"]
                                                 st.rerun()
-                                            else:
-                                                st.warning("⚠️ Chưa chọn file nào!")
+
+                                        extra_att = st.file_uploader("📂 Hoặc chọn nhiều file (PDF, JPG...)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"file_act_{job['id']}")
+                                        if extra_att:
+                                            if st.button("Lưu các file đã chọn", use_container_width=True, type="primary", key=f"btn_luu_act_{job['id']}"):
+                                                import os, uuid
+                                                upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+                                                os.makedirs(upload_dir, exist_ok=True)
+                                                att_list = [x for x in log["attachments"].split(",") if x] if log.get("attachments") else []
+                                                for f in extra_att:
+                                                    filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
+                                                    filepath = os.path.join(upload_dir, filename)
+                                                    with open(filepath, "wb") as out:
+                                                        out.write(f.getbuffer())
+                                                    if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
+                                                        from utils.image_processing import auto_crop_document
+                                                        auto_crop_document(filepath)
+                                                    att_list.append(filename)
+                                                conn_up = get_connection()
+                                                conn_up.execute("UPDATE logbook SET attachments=? WHERE id=?", (",".join(att_list), log["id"]))
+                                                conn_up.commit(); conn_up.close()
+                                                st.rerun()
                     
                         st.markdown("<div style='margin-bottom:24px;'></div>", unsafe_allow_html=True)
         
@@ -552,52 +549,49 @@ def render():
                                     st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
 
                                 with st.container(border=False):
-                                    img_att = st.file_uploader("📷 Chụp hoặc tải ảnh (JPG, PNG)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"hist_img_file_{log['id']}")
-                                    if img_att:
-                                        st.markdown("**🖼️ Đã chọn:**")
-                                        cols = st.columns(min(len(img_att), 3))
-                                        for i, f_img in enumerate(img_att):
-                                            cols[i % 3].image(f_img, width=80)
-                                            
-                                    pdf_att = st.file_uploader("📄 Đính kèm tệp (PDF)", type=['pdf'], accept_multiple_files=True, key=f"hist_pdf_file_{log['id']}")
-                                    if pdf_att:
-                                        st.markdown(f"**📄 Đã chọn:** {', '.join([p.name for p in pdf_att])}")
-                                        
-                                    if st.button("Lưu bổ sung", use_container_width=True, type="primary", key=f"btn_luu_hist_{log['id']}"):
-                                        all_attachments = (img_att or []) + (pdf_att or [])
-                                        if all_attachments:
+                                    cam_photo = st.file_uploader("📷 Chụp 1 ảnh (Camera gốc / Nét căng)", type=['png', 'jpg', 'jpeg'], accept_multiple_files=False, key=f"cam_hist_{log['id']}")
+                                    if cam_photo is not None:
+                                        with st.spinner("Đang Cắt viền & Khử bóng..."):
                                             import os, uuid
-                                            uploaded_paths = []
                                             upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
                                             os.makedirs(upload_dir, exist_ok=True)
+                                            fname = f"{uuid.uuid4().hex[:8]}_camera.jpg"
+                                            fpath = os.path.join(upload_dir, fname)
+                                            with open(fpath, "wb") as f_out:
+                                                f_out.write(cam_photo.getbuffer())
                                             
-                                            if all_attachments:
-                                                for f in all_attachments:
-                                                    filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
-                                                    filepath = os.path.join(upload_dir, filename)
-                                                    with open(filepath, "wb") as out:
-                                                        out.write(f.getbuffer())
-                                                    
-                                                    if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
-                                                        try:
-                                                            from utils.image_processing import auto_crop_document
-                                                            success, msg = auto_crop_document(filepath)
-                                                            if not success:
-                                                                st.toast(f"Lỗi AI: {msg}", icon="❌")
-                                                        except Exception as e:
-                                                            pass
-                                                    uploaded_paths.append(filename)
-                                            new_att_str = ",".join(uploaded_paths)
-                                            old_att = log.get("attachments", "")
-                                            final_att = (old_att + "," + new_att_str).strip(",") if old_att else new_att_str
-                                            conn_u = get_connection()
-                                            conn_u.execute("UPDATE logbook SET attachments=? WHERE id=?", (final_att, log["id"]))
-                                            conn_u.commit()
-                                            conn_u.close()
-                                            st.success("✅ Đã bổ sung tài liệu!")
+                                            from utils.image_processing import auto_crop_document
+                                            auto_crop_document(fpath)
+                                            
+                                            att_list = [x for x in log["attachments"].split(",") if x] if log.get("attachments") else []
+                                            att_list.append(fname)
+                                            conn_up = get_connection()
+                                            conn_up.execute("UPDATE logbook SET attachments=? WHERE id=?", (",".join(att_list), log["id"]))
+                                            conn_up.commit(); conn_up.close()
+                                            
+                                            del st.session_state[f"cam_hist_{log['id']}"]
                                             st.rerun()
-                                        else:
-                                            st.warning("⚠️ Chưa chọn file nào!")
+
+                                    extra_att = st.file_uploader("📂 Hoặc chọn nhiều file (PDF, JPG...)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"file_hist_{log['id']}")
+                                    if extra_att:
+                                        if st.button("Lưu các file đã chọn", use_container_width=True, type="primary", key=f"btn_luu_hist_{log['id']}"):
+                                            import os, uuid
+                                            upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+                                            os.makedirs(upload_dir, exist_ok=True)
+                                            att_list = [x for x in log["attachments"].split(",") if x] if log.get("attachments") else []
+                                            for f in extra_att:
+                                                filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
+                                                filepath = os.path.join(upload_dir, filename)
+                                                with open(filepath, "wb") as out:
+                                                    out.write(f.getbuffer())
+                                                if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
+                                                    from utils.image_processing import auto_crop_document
+                                                    auto_crop_document(filepath)
+                                                att_list.append(filename)
+                                            conn_up = get_connection()
+                                            conn_up.execute("UPDATE logbook SET attachments=? WHERE id=?", (",".join(att_list), log["id"]))
+                                            conn_up.commit(); conn_up.close()
+                                            st.rerun()
     
     with tab_stats:
         conn = get_connection()
