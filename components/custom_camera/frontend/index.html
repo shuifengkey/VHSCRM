@@ -2,72 +2,188 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>High Res Camera</title>
-    <!-- Streamlit Component API -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>VHS Scan Camera</title>
     <script src="https://cdn.jsdelivr.net/npm/streamlit-component-lib@1.3.0/dist/streamlit.js"></script>
     <style>
-        body { margin: 0; padding: 0; background: #1e293b; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
-        #video-container { position: relative; width: 100%; max-width: 100%; border-radius: 12px; overflow: hidden; }
-        video { width: 100%; display: block; object-fit: cover; border-radius: 12px; }
-        #overlay { position: absolute; top: 15%; left: 10%; right: 10%; bottom: 15%; border: 2px dashed rgba(255,255,255,0.8); border-radius: 8px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.6); pointer-events: none; }
-        #overlay::after { content: "Căn chỉnh biên bản vào khung này"; position: absolute; bottom: -30px; left: 0; width: 100%; text-align: center; font-size: 14px; color: #fff; text-shadow: 1px 1px 2px #000; }
-        #capture-btn { margin-top: 15px; padding: 12px 24px; font-size: 16px; background: #3b82f6; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; width: 80%; max-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        #capture-btn:active { background: #2563eb; transform: scale(0.98); }
-        #capture-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #0f172a; color: #fff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 10px; min-height: 100%; }
+
+        /* === VIEWFINDER === */
+        #viewfinder { position: relative; width: 100%; border-radius: 12px; overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center; min-height: 200px; }
+        video, #preview-img { width: 100%; display: block; border-radius: 12px; }
+        #preview-img { object-fit: contain; max-height: 300px; display: none; }
+
+        /* Corner brackets as document guide */
+        .corner { position: absolute; width: 28px; height: 28px; border-color: #3b82f6; border-style: solid; opacity: 0.9; }
+        .tl { top: 14%; left: 8%;  border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+        .tr { top: 14%; right: 8%; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+        .bl { bottom: 14%; left: 8%;  border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+        .br { bottom: 14%; right: 8%; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+        #guide-text { position: absolute; bottom: 8%; width: 100%; text-align: center; font-size: 12px; color: rgba(255,255,255,0.85); text-shadow: 0 1px 4px #000; letter-spacing: 0.3px; }
+
+        /* === BUTTONS === */
+        #btn-row { display: flex; gap: 10px; margin-top: 10px; width: 100%; justify-content: center; }
+        .btn { flex: 1; max-width: 180px; padding: 12px 10px; font-size: 15px; font-weight: 600; border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.15s; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .btn:active { transform: scale(0.97); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        #capture-btn { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; }
+        #retake-btn  { background: #334155; color: #cbd5e1; display: none; }
+        #send-btn    { background: linear-gradient(135deg, #10b981, #059669); color: #fff; display: none; }
+
+        /* Status */
+        #status { margin-top: 8px; font-size: 13px; color: #94a3b8; text-align: center; min-height: 20px; }
+        #error-msg { margin-top: 8px; font-size: 13px; color: #f87171; text-align: center; display: none; }
     </style>
   </head>
   <body>
-    <div id="video-container">
-        <video id="video" autoplay playsinline></video>
-        <div id="overlay"></div>
+    <div id="viewfinder">
+      <video id="video" autoplay playsinline muted></video>
+      <img id="preview-img" alt="Ảnh xem trước">
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+      <div id="guide-text">Căn biên bản vào khung · Camera sau · 2K</div>
     </div>
-    <button id="capture-btn">📸 CHỤP BIÊN BẢN</button>
     <canvas id="canvas" style="display:none;"></canvas>
 
+    <div id="btn-row">
+      <button class="btn" id="capture-btn">📸 Chụp biên bản</button>
+      <button class="btn" id="retake-btn">🔄 Chụp lại</button>
+      <button class="btn" id="send-btn">✅ Dùng ảnh này</button>
+    </div>
+    <div id="status">Đang khởi động camera...</div>
+    <div id="error-msg"></div>
+
     <script>
-      let video = document.getElementById('video');
-      let canvas = document.getElementById('canvas');
-      let btn = document.getElementById('capture-btn');
+      const video      = document.getElementById('video');
+      const canvas     = document.getElementById('canvas');
+      const previewImg = document.getElementById('preview-img');
+      const captureBtn = document.getElementById('capture-btn');
+      const retakeBtn  = document.getElementById('retake-btn');
+      const sendBtn    = document.getElementById('send-btn');
+      const status     = document.getElementById('status');
+      const errorMsg   = document.getElementById('error-msg');
 
-      function onRender(event) {
-          Streamlit.setFrameHeight(document.body.scrollHeight + 50);
-      }
-      Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, onRender);
+      let stream = null;
+      let capturedDataURL = null;
+
+      // Streamlit bootstrap
+      Streamlit.events.addEventListener(Streamlit.RENDER_EVENT, () => {
+          Streamlit.setFrameHeight(document.body.scrollHeight + 20);
+      });
       Streamlit.setComponentReady();
-      Streamlit.setFrameHeight(450);
+      Streamlit.setFrameHeight(380);
 
-      // Request High-Res Back Camera (2K/4K)
-      navigator.mediaDevices.getUserMedia({
-          video: {
-              facingMode: "environment",
-              width: { ideal: 3840 },
-              height: { ideal: 2160 }
-          }
-      }).then(stream => {
-          video.srcObject = stream;
-          video.onloadedmetadata = () => { 
-              video.play(); 
-              Streamlit.setFrameHeight(document.body.scrollHeight + 50);
+      // === START CAMERA ===
+      function startCamera() {
+          const constraints = {
+              video: {
+                  facingMode: { ideal: "environment" },
+                  width:  { ideal: 3840, min: 1280 },
+                  height: { ideal: 2160, min: 720 }
+              }
           };
-      }).catch(err => {
-          console.error("Camera error:", err);
-          btn.innerText = "⚠️ Trình duyệt chặn Camera";
-          btn.style.background = "#ef4444";
+
+          navigator.mediaDevices.getUserMedia(constraints)
+              .then(s => {
+                  stream = s;
+                  video.srcObject = stream;
+                  video.style.display = 'block';
+                  previewImg.style.display = 'none';
+                  video.onloadedmetadata = () => {
+                      video.play();
+                      const settings = stream.getVideoTracks()[0].getSettings();
+                      status.textContent = `📷 ${settings.width}×${settings.height}px · Sẵn sàng`;
+                      document.getElementById('guide-text').textContent = `Camera sẵn sàng · ${settings.width}×${settings.height}`;
+                      Streamlit.setFrameHeight(document.body.scrollHeight + 20);
+                  };
+                  captureBtn.disabled = false;
+              })
+              .catch(err => {
+                  console.error('Camera error:', err);
+                  errorMsg.style.display = 'block';
+                  if (err.name === 'NotAllowedError') {
+                      errorMsg.textContent = '⚠️ Trình duyệt chặn quyền truy cập Camera. Vui lòng cho phép và tải lại trang.';
+                  } else if (err.name === 'NotFoundError') {
+                      errorMsg.textContent = '⚠️ Không tìm thấy Camera. Hãy dùng nút chọn file bên dưới.';
+                  } else {
+                      errorMsg.textContent = `⚠️ Lỗi Camera: ${err.message}`;
+                  }
+                  captureBtn.disabled = true;
+                  status.textContent = 'Camera không khả dụng';
+                  Streamlit.setFrameHeight(document.body.scrollHeight + 20);
+              });
+      }
+
+      startCamera();
+
+      // === CAPTURE ===
+      captureBtn.addEventListener('click', () => {
+          if (!video.videoWidth) {
+              status.textContent = 'Camera chưa sẵn sàng, vui lòng đợi...';
+              return;
+          }
+
+          // Freeze frame
+          canvas.width  = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          capturedDataURL = canvas.toDataURL('image/jpeg', 0.95);
+
+          // Switch to preview mode
+          previewImg.src = capturedDataURL;
+          previewImg.style.display = 'block';
+          video.style.display = 'none';
+
+          // Stop camera to free memory
+          if (stream) stream.getTracks().forEach(t => t.pause());
+
+          captureBtn.style.display = 'none';
+          retakeBtn.style.display  = 'flex';
+          sendBtn.style.display    = 'flex';
+          document.getElementById('guide-text').style.display = 'none';
+
+          status.textContent = `✅ ${canvas.width}×${canvas.height}px · Kiểm tra ảnh rồi bấm "Dùng ảnh này"`;
+          Streamlit.setFrameHeight(document.body.scrollHeight + 20);
       });
 
-      btn.addEventListener('click', () => {
-          if(!video.videoWidth) return;
-          // Capture at actual video resolution
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          let ctx = canvas.getContext('2d');
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          let dataURL = canvas.toDataURL('image/jpeg', 0.95);
-          
-          // Send to Streamlit
-          btn.innerText = "⏳ Đang xử lý AI...";
-          btn.disabled = true;
-          Streamlit.setComponentValue(dataURL);
+      // === RETAKE ===
+      retakeBtn.addEventListener('click', () => {
+          previewImg.style.display = 'none';
+          video.style.display = 'block';
+          document.getElementById('guide-text').style.display = 'block';
+
+          captureBtn.style.display = 'flex';
+          retakeBtn.style.display  = 'none';
+          sendBtn.style.display    = 'none';
+
+          capturedDataURL = null;
+          status.textContent = '📷 Sẵn sàng chụp lại';
+
+          // Resume camera
+          if (stream) {
+              stream.getTracks().forEach(t => t.enabled = true);
+          } else {
+              startCamera();
+          }
+          Streamlit.setFrameHeight(document.body.scrollHeight + 20);
+      });
+
+      // === SEND TO STREAMLIT ===
+      sendBtn.addEventListener('click', () => {
+          if (!capturedDataURL) return;
+          sendBtn.disabled    = true;
+          retakeBtn.disabled  = true;
+          sendBtn.textContent = '⏳ Đang xử lý AI...';
+          status.textContent  = '🔄 Đang gửi ảnh và xử lý AI... Vui lòng chờ.';
+
+          // Stop camera entirely to free all RAM
+          if (stream) stream.getTracks().forEach(t => t.stop());
+
+          Streamlit.setComponentValue(capturedDataURL);
       });
     </script>
   </body>
