@@ -137,7 +137,7 @@ def generate_payment_request_pdf(debt_data):
 
     # ── HEADER: Logo + thông tin công ty + Số phiếu ──────────
     if os.path.exists(_LOGO_PATH):
-        logo_img = Image(_LOGO_PATH, width=3.5*cm, height=3.5*cm,
+        logo_img = Image(_LOGO_PATH, width=2.6*cm, height=2.6*cm,
                          kind='proportional')
         logo_cell = logo_img
     else:
@@ -218,16 +218,20 @@ def generate_payment_request_pdf(debt_data):
                                    alignment=TA_RIGHT, textColor=VHS_BLUE,
                                    wordWrap='CJK')
 
-    col_w = [1*cm, 6.5*cm, 3*cm, 1.2*cm, 3.8*cm, 2.5*cm]
+    col_w = [1.4*cm, 6.1*cm, 2.9*cm, 1.4*cm, 3.7*cm, 2.5*cm]
+
+    TH_SM = ParagraphStyle("TH_SM", fontName=FB, fontSize=8,
+                            alignment=TA_CENTER, textColor=colors.white,
+                            leading=11, wordWrap='CJK')
 
     svc_data = [
         # Header
-        [Paragraph("STT\n(No.)",                                       TH),
-         Paragraph("Nội dung thanh toán\n(Description of Services)",   TH),
-         Paragraph("Kỳ thanh toán\n(Period)",                          TH),
-         Paragraph("SL\n(Qty)",                                        TH),
-         Paragraph("Đơn giá\n(Unit Price)",                             TH),
-         Paragraph("Thành tiền\n(Amount)",                              TH)],
+        [Paragraph("STT<br/>(No.)",                                    TH_SM),
+         Paragraph("Nội dung thanh toán<br/>(Description of Services)",TH),
+         Paragraph("Kỳ thanh toán<br/>(Period)",                       TH),
+         Paragraph("SL<br/>(Qty)",                                     TH_SM),
+         Paragraph("Đơn giá<br/>(Unit Price)",                          TH),
+         Paragraph("Thành tiền<br/>(Amount)",                           TH)],
         # Dòng dữ liệu
         [Paragraph("1",                                                 TD),
          Paragraph("Dịch vụ kiểm soát côn trùng định kỳ\n"
