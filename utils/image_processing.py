@@ -106,39 +106,33 @@ class DocumentScanner:
         rect = self.order_points(pts)
         tl, tr, br, bl = rect
 
-        # Tính toán chiều rộng của bức ảnh mới
+        # Bước 1: Tính kích thước trang sau khi sửa góc nhìn
+        # width = max( khoảng cách giữa 2 góc trên, khoảng cách giữa 2 góc dưới )
         widthA = np.linalg.norm(br - bl)
         widthB = np.linalg.norm(tr - tl)
-        max_w = max(int(widthA), int(widthB))
+        width = max(int(widthA), int(widthB))
 
-        # Tính toán chiều cao của bức ảnh mới
+        # height = max( khoảng cách giữa 2 góc trái, khoảng cách giữa 2 góc phải )
         heightA = np.linalg.norm(tr - br)
         heightB = np.linalg.norm(tl - bl)
-        max_h = max(int(heightA), int(heightB))
+        height = max(int(heightA), int(heightB))
 
-        if max_w == 0 or max_h == 0:
+        if width == 0 or height == 0:
             return None
 
-        # Giữ tỷ lệ giấy A4 chuẩn (để tránh méo hình)
-        a4_ratio = 1.4142
-        if max_h >= max_w:
-            max_h = int(max_w * a4_ratio)
-        else:
-            max_h = int(max_w / a4_ratio)
-
-        # Toạ độ các góc mới
-        dst = np.array([
-            [0, 0],
-            [max_w - 1, 0],
-            [max_w - 1, max_h - 1],
-            [0, max_h - 1]
+        # Bước 2: Định nghĩa tọa độ đích (hình chữ nhật hoàn hảo)
+        dst_pts = np.array([
+            [0, 0],                    # top-left
+            [width-1, 0],              # top-right  
+            [width-1, height-1],       # bottom-right
+            [0, height-1]              # bottom-left
         ], dtype="float32")
 
-        # Tính toán ma trận Perspective Transform (Homography)
-        M = cv2.getPerspectiveTransform(rect, dst)
+        # Bước 3: Tính ma trận biến đổi
+        M = cv2.getPerspectiveTransform(rect, dst_pts)
         
-        # Crop ảnh theo vùng tài liệu đã được chỉnh thẳng
-        warped = cv2.warpPerspective(image, M, (max_w, max_h))
+        # Bước 4: Warp ảnh → đồng thời crop luôn
+        warped = cv2.warpPerspective(image, M, (width, height))
         
         return warped
 
