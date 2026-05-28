@@ -194,6 +194,14 @@ def render():
                 opts = {f"[{u['ky_thanh_toan']}] {u['ten_cty'][:15]} - còn {format_money(u['can_thu']-u['da_thu'])}": u for u in unpaid}
                 sel = st.selectbox("Chọn Khoản Nợ", list(opts.keys()), key="pay_sel")
                 u = opts[sel]
+                
+                try:
+                    from utils.excel_export import generate_payment_request_excel
+                    excel_data, excel_filename = generate_payment_request_excel(u)
+                    st.download_button("📄 Tải Phiếu Yêu Cầu Thanh Toán", data=excel_data, file_name=excel_filename, mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", use_container_width=True)
+                except Exception as e:
+                    st.error(f"Lỗi xuất Excel: {e}")
+
                 con_no = u["can_thu"] - u["da_thu"]
                 so_tien = st.number_input("Số tiền khách trả (gồm VAT nếu có)", min_value=0, value=int(con_no), step=100000, key="pay_amount")
                 if st.button("Xác nhận thu", type="primary"):
