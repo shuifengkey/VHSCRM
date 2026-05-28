@@ -123,8 +123,9 @@ def render():
             return True
 
         filtered = [r for r in rows if match(r)]
-        exp  = sum(1 for r in rows if (r["days_left"] or 999) <= 0)
-        warn = sum(1 for r in rows if 0 < (r["days_left"] or 999) <= 30)
+        def get_d(r): return r["days_left"] if r["days_left"] is not None else 999
+        exp  = sum(1 for r in rows if get_d(r) <= 0)
+        warn = sum(1 for r in rows if 0 < get_d(r) <= 30)
         ok   = len(rows) - exp - warn
 
         st.markdown(f"""
