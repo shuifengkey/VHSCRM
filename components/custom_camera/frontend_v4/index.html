@@ -286,8 +286,7 @@
           previewImg.style.display = 'none';
           video.onloadedmetadata = () => {
             video.play();
-            const settings = stream.getVideoTracks()[0].getSettings();
-            statusEl.textContent = `📷 ${settings.width}×${settings.height}px · Sẵn sàng`;
+            statusEl.textContent = `📷 Sẵn sàng`;
             captureBtn.disabled = false;
             startDetectionLoop();
             Streamlit.setFrameHeight(document.body.scrollHeight + 20);
