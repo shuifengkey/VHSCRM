@@ -24,20 +24,7 @@ def generate_next_occurrence(contract: dict, completed_schedule: dict) -> list:
     
     # Hỗ trợ chu kỳ Khách lẻ
     if contract.get("loai_khach") == "Khách lẻ":
-        chu_ky_lap = contract.get("chu_ky_lap", "1_lan")
-        if chu_ky_lap == "1_lan": return []
-        
-        if chu_ky_lap.endswith("_thang") or chu_ky_lap.endswith("_nam"):
-            parts = chu_ky_lap.split('_')
-            x = int(parts[0])
-            if parts[1] == "nam": x *= 12
-            next_month_start = (last_date.replace(day=1) + relativedelta(months=x))
-            ky_next = next_month_start.strftime("%Y-%m")
-        elif chu_ky_lap.endswith("_tuan"):
-            parts = chu_ky_lap.split('_')
-            x = int(parts[0])
-            next_date = last_date + timedelta(days=x * 7)
-            ky_next = next_date.strftime("%Y-%m")
+        return []
 
     n = auto_generate_schedules(contract["ma_hd"], ky_next)
     return [ky_next] if n > 0 else []
@@ -85,7 +72,7 @@ def complete_schedule(schedule_id: int, contract: dict) -> dict:
                     conn.execute("INSERT INTO debts (ma_hd, ma_kh, ky_thanh_toan, can_thu, da_thu, ghi_chu, tien_vat) VALUES (?, ?, ?, ?, ?, ?, ?)",
                                  (ma_hd, ma_kh, ky_thang, new_can_thu, 0.0, "Tự động sinh (đủ tháng)", tien_vat))
 
-    if contract.get("loai_khach") == "Khách lẻ" and contract.get("chu_ky_lap", "1_lan") == "1_lan":
+    if contract.get("loai_khach") == "Khách lẻ":
         conn.execute("UPDATE contracts SET trang_thai='completed' WHERE ma_hd=?", (ma_hd,))
 
     conn.commit()
