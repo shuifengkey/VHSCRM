@@ -12,7 +12,7 @@ def run_month_end_sweep():
     now_dt = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)
     ky_thang = now_dt.strftime("%Y-%m")
     
-    # Lấy các hợp đồng đang active có don_vi_tinh = '/tháng' và đã bắt đầu
+          AND don_vi_tinh='/tháng'
     contracts = conn.execute("""
         SELECT ma_hd, ma_kh, gia_tri_thang, tan_suat, vat_pct 
         FROM contracts 
