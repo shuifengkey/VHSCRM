@@ -107,7 +107,7 @@ def generate_payment_request_pdf(debt_data, attachments=None):
     tien_vat = float(debt_data.get("tien_vat", 0) or 0)
     can_thu  = float(debt_data.get("can_thu",  0) or 0)
     goc      = can_thu - tien_vat
-    ten_cty  = debt_data.get("ten_cty", "") or ""
+    ten_cty  = debt_data.get("ten_phap_ly") or debt_data.get("ten_cty", "") or ""
     ma_hd    = debt_data.get("ma_hd",   "") or ""
     debt_id  = debt_data.get("id",       "")
     so_phieu = f"PYC-{year}-{debt_id}"
@@ -185,12 +185,21 @@ def generate_payment_request_pdf(debt_data, attachments=None):
     content.append(Spacer(1, 0.4*cm))
 
     # ── KÍNH GỬI ─────────────────────────────────────────────
-    kg = Table([
+    mst = debt_data.get("ma_so_thue", "") or ""
+    dia_chi = debt_data.get("dia_chi", "") or ""
+    
+    table_data = [
         [P("<b>Kính gửi (To):</b>",        size=10, bold=True),
-         P(f"<b>{ten_cty}</b>",             size=10, bold=True)],
-        [P("<b>Người liên hệ (Attn):</b>",  size=9,  bold=True),
-         P(nguoi_lh,                         size=9)],
-    ], colWidths=[5*cm, W - 5*cm])
+         P(f"<b>{ten_cty}</b>",             size=10, bold=True)]
+    ]
+    if mst:
+        table_data.append([P("<b>Mã số thuế (Tax Code):</b>", size=9, bold=True), P(mst, size=9)])
+    if dia_chi:
+        table_data.append([P("<b>Địa chỉ (Address):</b>", size=9, bold=True), P(dia_chi, size=9)])
+        
+    table_data.append([P("<b>Người liên hệ (Attn):</b>",  size=9,  bold=True), P(nguoi_lh, size=9)])
+
+    kg = Table(table_data, colWidths=[5.5*cm, W - 5.5*cm])
     kg.setStyle(TableStyle([
         ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
