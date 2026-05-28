@@ -48,46 +48,47 @@ def auto_crop_document(image_path):
             process_img = orig.copy()
             ratio = 1.0
 
-        # --- TRỞ VỀ CÁCH TIẾP CẬN CŨ: Gaussian Blur + Otsu Canny ---
+        # --- SIÊU BẮT GÓC: Lọc chữ bằng Median Blur + Otsu Threshold + Convex Hull ---
+        # Phương pháp này KHÔNG dùng Canny để tránh nhiễu do text trên giấy
         gray = cv2.cvtColor(process_img, cv2.COLOR_BGR2GRAY)
-        gray = cv2.GaussianBlur(gray, (5, 5), 0)
         
-        high_thresh, _ = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        low_thresh = 0.5 * high_thresh
-        edged = cv2.Canny(gray, low_thresh, high_thresh)
+        # 1. Median Blur (11x11) xoá sạch chữ và nhiễu, nhưng giữ lại CỰC KỲ SẮC NÉT viền giấy
+        blurred = cv2.medianBlur(gray, 11)
         
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-        edged = cv2.dilate(edged, kernel, iterations=2)
-        edged = cv2.erode(edged, kernel, iterations=1)
-
-        cnts, _ = cv2.findContours(edged.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-        cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:5]
+        # 2. Otsu threshold để tách hẳn mảng giấy trắng và nền tối
+        _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        
+        # 3. Morphological close để lấp đầy các lỗ thủng trên mảng giấy (nếu có)
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (11, 11))
+        mask = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+        
+        # 4. Tìm viền ngoài cùng (RETR_EXTERNAL) để bỏ qua các chi tiết bên trong tờ giấy
+        cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:3]
         
         doc_cnt = None
         img_area = process_img.shape[0] * process_img.shape[1]
         
-        for c in cnts:
-            area = cv2.contourArea(c)
-            if area < img_area * 0.05:
-                continue
-                
-            peri = cv2.arcLength(c, True)
-            for eps in np.linspace(0.01, 0.1, 10):
-                approx = cv2.approxPolyDP(c, eps * peri, True)
-                if len(approx) == 4:
-                    doc_cnt = approx.reshape(4, 2)
-                    break
-            if doc_cnt is not None:
-                break
-                
-        # --- CÁI CŨ CỰC KỲ QUAN TRỌNG: Fallback minAreaRect ---
-        # Nếu tờ giấy bị cắt mất 1 góc (ra 5 cạnh), nó sẽ lấy hình chữ nhật bao quanh
-        if doc_cnt is None and len(cnts) > 0:
-            c = cnts[0]
+        if len(cnts) > 0:
+            c = cnts[0] # Lấy mảng lớn nhất (chắc chắn là tờ giấy)
             if cv2.contourArea(c) > img_area * 0.05:
-                rect = cv2.minAreaRect(c)
-                box = cv2.boxPoints(rect)
-                doc_cnt = np.int32(box)
+                # 5. Dùng Convex Hull để bọc mảng giấy như kéo một sợi dây thun xung quanh, 
+                # loại bỏ các phần lõm do bị rách hay nhiễu
+                hull = cv2.convexHull(c)
+                peri = cv2.arcLength(hull, True)
+                
+                # 6. Ép về đa giác 4 cạnh
+                for eps in np.linspace(0.01, 0.1, 10):
+                    approx = cv2.approxPolyDP(hull, eps * peri, True)
+                    if len(approx) == 4:
+                        doc_cnt = approx.reshape(4, 2)
+                        break
+                        
+                # 7. Fallback CỰC KỲ QUAN TRỌNG: minAreaRect
+                if doc_cnt is None:
+                    rect = cv2.minAreaRect(c)
+                    box = cv2.boxPoints(rect)
+                    doc_cnt = np.int32(box)
 
         # Nếu hoàn toàn không thấy gì, lấy nguyên cái ảnh
         if doc_cnt is None:
