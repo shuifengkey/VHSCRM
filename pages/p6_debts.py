@@ -105,7 +105,7 @@ def render():
         
         conn = get_connection()
         conn = get_connection()
-        q = """SELECT d.*, c.ten_cty, c.ten_phap_ly, c.ma_so_thue, c.dia_chi, c.dai_dien, c.sdt, ct.gia_tri_thang, ct.don_vi_tinh 
+        q = """SELECT d.*, c.ten_cty, c.ten_phap_ly, c.ma_so_thue, c.dia_chi_phap_ly, c.dia_chi, c.dai_dien, c.sdt, ct.gia_tri_thang, ct.don_vi_tinh 
                FROM debts d 
                JOIN customers c ON d.ma_kh=c.ma_kh 
                LEFT JOIN contracts ct ON d.ma_hd=ct.ma_hd 

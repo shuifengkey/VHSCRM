@@ -87,7 +87,7 @@ def generate_bao_gia(customer: dict, contract: dict) -> bytes:
     kh_data = [
         ["Tên công ty:", customer.get("ten_phap_ly") or customer.get("ten_cty", "")],
         ["Mã số thuế:", customer.get("ma_so_thue", "")],
-        ["Địa chỉ:", customer.get("dia_chi", "")],
+        ["Địa chỉ:", customer.get("dia_chi_phap_ly") or customer.get("dia_chi", "")],
         ["Người đại diện:", customer.get("dai_dien", "")],
         ["Điện thoại:", customer.get("sdt", "")],
     ]

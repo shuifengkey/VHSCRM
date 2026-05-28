@@ -196,7 +196,7 @@ def generate_payment_request_pdf(debt_data, attachments=None):
 
     # ── KÍNH GỬI ─────────────────────────────────────────────
     mst = debt_data.get("ma_so_thue", "") or ""
-    dia_chi = debt_data.get("dia_chi", "") or ""
+    dia_chi = debt_data.get("dia_chi_phap_ly") or debt_data.get("dia_chi", "") or ""
     
     table_data = [
         [P("<b>Kính gửi (To):</b>",        size=10, bold=True),
