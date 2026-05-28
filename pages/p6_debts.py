@@ -22,10 +22,10 @@ def render():
         current_ky_overview = (datetime.now(timezone.utc) + timedelta(hours=7)).strftime("%Y-%m")
         summary_contract = conn.execute("""
             SELECT SUM(
-                CASE 
+                (CASE 
                     WHEN don_vi_tinh = '/tháng' THEN gia_tri_thang 
                     ELSE gia_tri_thang * COALESCE(tan_suat, 1) 
-                END
+                END) * (1 + COALESCE(vat_pct, 0) / 100.0)
             ) as expected 
             FROM contracts 
             WHERE trang_thai='active' AND strftime('%Y-%m', ngay_thi_cong_dau) <= ?

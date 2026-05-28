@@ -85,7 +85,7 @@ def complete_schedule(schedule_id: int, contract: dict) -> dict:
                     conn.execute("INSERT INTO debts (ma_hd, ma_kh, ky_thanh_toan, can_thu, da_thu, ghi_chu, tien_vat) VALUES (?, ?, ?, ?, ?, ?, ?)",
                                  (ma_hd, ma_kh, ky_thang, new_can_thu, 0.0, "Tự động sinh (đủ tháng)", tien_vat))
 
-    if contract.get("loai_khach") == "Khách lẻ":
+    if contract.get("loai_khach") == "Khách lẻ" and contract.get("chu_ky_lap", "1_lan") == "1_lan":
         conn.execute("UPDATE contracts SET trang_thai='completed' WHERE ma_hd=?", (ma_hd,))
 
     conn.commit()

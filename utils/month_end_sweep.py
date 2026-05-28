@@ -40,10 +40,11 @@ def run_month_end_sweep():
         if not debt:
             # Kiểm tra số ca đã hoàn thành trong tháng
             completed_count = conn.execute("SELECT COUNT(id) FROM schedules WHERE ma_hd=? AND ky_thang=? AND trang_thai='completed'", (ma_hd, ky_thang)).fetchone()[0]
+            expected_schedules = conn.execute("SELECT COUNT(id) FROM schedules WHERE ma_hd=? AND ky_thang=? AND trang_thai!='skipped'", (ma_hd, ky_thang)).fetchone()[0]
             
             ghi_chu = "Tự động sinh (chốt sổ)"
-            if completed_count < total_required:
-                ghi_chu = f"⚠️ Tự động sinh (chốt sổ). Thiếu ca: Làm {completed_count}/{total_required} ca."
+            if expected_schedules > 0 and completed_count < expected_schedules:
+                ghi_chu = f"⚠️ Tự động sinh (chốt sổ). Thiếu ca: Làm {completed_count}/{expected_schedules} ca."
                 count_warnings += 1
                 
             tien_vat = gia_tri * (vat_pct / 100.0)
