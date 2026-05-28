@@ -36,11 +36,8 @@ def auto_crop_document(image_path):
         gray = cv2.cvtColor(process_img, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (5, 5), 0)
         
-        # Dynamic Canny threshold based on image median for better edge detection
-        v = np.median(gray)
-        lower = int(max(0, (1.0 - 0.33) * v))
-        upper = int(min(255, (1.0 + 0.33) * v))
-        edged = cv2.Canny(gray, lower, upper)
+        # 1. Use static threshold 75, 200 which works perfectly for subtle paper edges
+        edged = cv2.Canny(gray, 75, 200)
 
         cnts, _ = cv2.findContours(edged.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:5]
@@ -68,7 +65,7 @@ def auto_crop_document(image_path):
                         doc_cnt = approx
                         break
 
-        # Fallback 2: minAreaRect
+        # Fallback 2: minAreaRect of largest contour
         if doc_cnt is None and len(cnts) > 0:
             c = cnts[0]
             if cv2.contourArea(c) > img_area * 0.15:
@@ -76,6 +73,21 @@ def auto_crop_document(image_path):
                 box = cv2.boxPoints(rect)
                 box = np.int32(box)
                 doc_cnt = box.reshape(4, 1, 2)
+                
+        # Fallback 3: Global Convex Hull of all significant text boxes
+        if doc_cnt is None:
+            all_pts = []
+            for c in cnts:
+                if cv2.contourArea(c) > img_area * 0.005: # At least 0.5% of image (a block of text)
+                    all_pts.extend(c)
+            if len(all_pts) > 0:
+                all_pts = np.array(all_pts)
+                hull = cv2.convexHull(all_pts)
+                if cv2.contourArea(hull) > img_area * 0.2:
+                    rect = cv2.minAreaRect(hull)
+                    box = cv2.boxPoints(rect)
+                    box = np.int32(box)
+                    doc_cnt = box.reshape(4, 1, 2)
                 
         if doc_cnt is None:
             # Fallback: Geometric crop failed. Just enhance the original image.
