@@ -230,6 +230,12 @@ def _do_init_db():
     )""")
 
     # --- Auto Migration for existing databases ---
+    try: c.execute("ALTER TABLE customers ADD COLUMN nguoi_lien_he TEXT")
+    except Exception: pass
+    try: c.execute("ALTER TABLE customers ADD COLUMN ten_phap_ly TEXT")
+    except Exception: pass
+    try: c.execute("ALTER TABLE customers ADD COLUMN ma_so_thue TEXT")
+    except Exception: pass
     try: c.execute("ALTER TABLE contracts ADD COLUMN vat_pct REAL DEFAULT 0")
     except Exception: pass
     try: c.execute("ALTER TABLE debts ADD COLUMN tien_vat REAL DEFAULT 0")

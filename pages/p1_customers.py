@@ -61,18 +61,27 @@ def render():
     def render_edit_popover(r, suffix):
         with st.popover("✏️", use_container_width=False):
             with st.form(f"edit_{r['ma_kh']}_{suffix}"):
-                ten = st.text_input("Tên công ty", value=r["ten_cty"], key=f"ten_{r['ma_kh']}_{suffix}")
-                dd  = st.text_input("Đại diện", value=r["dai_dien"] or "", key=f"dd_{r['ma_kh']}_{suffix}")
-                sp  = st.text_input("SĐT", value=r["sdt"] or "", key=f"sp_{r['ma_kh']}_{suffix}")
-                da  = st.text_input("Địa chỉ", value=r["dia_chi"] or "", key=f"da_{r['ma_kh']}_{suffix}")
-                gc  = st.text_area("Ghi chú", value=r["ghi_chu"] or "", key=f"gc_{r['ma_kh']}_{suffix}", height=60)
+                st.markdown("##### 👤 Thông Tin Chung")
+                ten = st.text_input("Tên Khách Hàng", value=r["ten_cty"], key=f"ten_{r['ma_kh']}_{suffix}")
                 
+                st.markdown("##### 📞 Liên Hệ")
+                lh  = st.text_input("Người liên hệ", value=r.get("nguoi_lien_he", "") or "", key=f"lh_{r['ma_kh']}_{suffix}")
+                sp  = st.text_input("SĐT", value=r["sdt"] or "", key=f"sp_{r['ma_kh']}_{suffix}")
+                
+                st.markdown("##### ⚖️ Pháp Lý")
+                tpl = st.text_input("Tên công ty (Pháp lý)", value=r.get("ten_phap_ly", "") or "", key=f"tpl_{r['ma_kh']}_{suffix}")
+                mst = st.text_input("Mã số thuế", value=r.get("ma_so_thue", "") or "", key=f"mst_{r['ma_kh']}_{suffix}")
+                dd  = st.text_input("Người đại diện", value=r["dai_dien"] or "", key=f"dd_{r['ma_kh']}_{suffix}")
+                da  = st.text_input("Địa chỉ", value=r["dia_chi"] or "", key=f"da_{r['ma_kh']}_{suffix}")
+                
+                gc  = st.text_area("Ghi chú", value=r["ghi_chu"] or "", key=f"gc_{r['ma_kh']}_{suffix}", height=60)
+
                 if st.form_submit_button("💾 Lưu Cập Nhật", type="primary", use_container_width=True):
                     sp_clean = ''.join(filter(str.isdigit, sp)) if sp else ""
                     try:
                         conn2 = get_connection()
-                        conn2.execute("UPDATE customers SET ten_cty=?,dai_dien=?,sdt=?,dia_chi=?,ghi_chu=? WHERE ma_kh=?",
-                                      (ten,dd,sp_clean,da,gc,r["ma_kh"]))
+                        conn2.execute("UPDATE customers SET ten_cty=?,dai_dien=?,sdt=?,dia_chi=?,ghi_chu=?,nguoi_lien_he=?,ten_phap_ly=?,ma_so_thue=? WHERE ma_kh=?",
+                                      (ten,dd,sp_clean,da,gc,lh,tpl,mst,r["ma_kh"]))
                         conn2.commit(); conn2.close()
                         st.success("✅ Đã cập nhật!"); st.rerun()
                     except Exception as e: st.error(e)
@@ -166,13 +175,17 @@ def render():
     <div style="flex-shrink:0;">{badge(r["phan_khuc"], pk_color)}</div>
 </div>
 <div style="background:#f8fafc; border-radius:8px; padding:10px; margin-bottom:12px; border:1px solid #e2e8f0;">
-    <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; margin-bottom:6px;">
+    <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; margin-bottom:6px;" title="Liên hệ">
         <span style="background:#e0e7ff; color:#4338ca; border-radius:4px; padding:2px 5px; font-size:11px;">👤</span>
-        <b style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{r["dai_dien"] or "Chưa có NDĐ"}</b>
+        <b style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{r.get("nguoi_lien_he") or "Chưa có NLH"}</b>
     </div>
-    <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569;">
+    <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; margin-bottom:6px;" title="SĐT">
         <span style="background:#dcfce7; color:#15803d; border-radius:4px; padding:2px 5px; font-size:11px;">📞</span>
         <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{r["sdt"] or "Chưa có SĐT"}</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; padding-top:6px; border-top:1px dashed #cbd5e1;" title="Pháp lý">
+        <span style="background:#fef08a; color:#a16207; border-radius:4px; padding:2px 5px; font-size:11px;">⚖️</span>
+        <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:11px;">{r.get("ten_phap_ly") or r["ten_cty"]} | {r.get("ma_so_thue") or "Chưa có MST"}</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -235,28 +248,43 @@ def render():
                 st.session_state.add_kh_success = None
                 
             with st.form("form_add_kh", clear_on_submit=True):
+                st.markdown("##### 👤 Thông Tin Khách Hàng (Tên gọi/Thương hiệu)")
                 c1, c2 = st.columns(2)
                 with c1:
                     ma_kh  = st.text_input("Mã KH *", placeholder="VD: KH007")
-                    ten    = st.text_input("Tên Công Ty *", placeholder="Công ty TNHH ABC")
-                    dai_dien = st.text_input("Người Đại Diện", placeholder="Nguyễn Văn A")
+                    ten    = st.text_input("Tên Khách Hàng *", placeholder="VD: Lão Trư BBQ")
                 with c2:
+                    pk     = st.selectbox("Phân Khúc", ["Nhà hàng", "Khách sạn", "Căn hộ/Biệt thự", "KCC", "Nhà Kho/Xưởng", "Văn phòng", "Khác"])
+                
+                st.markdown("##### 📞 Mục Người Liên Hệ")
+                c3, c4 = st.columns(2)
+                with c3:
+                    nguoi_lh = st.text_input("Người Liên Hệ", placeholder="Nguyễn Văn A")
+                with c4:
                     sdt    = st.text_input("Số Điện Thoại", placeholder="090xxxxxxx")
-                    pk     = st.selectbox("Phân Khúc", ["Nhà hàng", "Khách sạn", "Căn hộ/Biệt thự", "KCC", "Nhà Kho/Xưởng"])
-                    email  = st.text_input("Email (tuỳ chọn)", placeholder="contact@company.vn")
+                    
+                st.markdown("##### ⚖️ Thông Tin Pháp Lý")
+                ten_pl = st.text_input("Tên Công Ty (Pháp lý)", placeholder="Công ty TNHH ABC")
+                c5, c6 = st.columns(2)
+                with c5:
+                    mst = st.text_input("Mã Số Thuế", placeholder="0312345678")
+                with c6:
+                    dai_dien = st.text_input("Người Đại Diện", placeholder="Trần Văn B")
                 dia_chi = st.text_input("Địa Chỉ Đầy Đủ", placeholder="Số nhà, đường, phường, quận, TP")
+                
+                st.markdown("##### 📝 Khác")
                 ghi_chu = st.text_area("Ghi Chú Nội Bộ", placeholder="Thông tin thêm về khách hàng...", height=80)
 
                 submitted = st.form_submit_button("➕ Tạo Khách Hàng Mới", use_container_width=True)
                 if submitted:
                     if not ma_kh or not ten:
-                        st.error("⚠️ Mã KH và Tên công ty là bắt buộc!")
+                        st.error("⚠️ Mã KH và Tên Khách Hàng là bắt buộc!")
                     else:
                         sdt_clean = ''.join(filter(str.isdigit, sdt)) if sdt else ""
                         try:
                             conn = get_connection()
-                            conn.execute("INSERT INTO customers (ma_kh,ten_cty,dai_dien,sdt,dia_chi,phan_khuc,ghi_chu) VALUES (?,?,?,?,?,?,?)",
-                                         (ma_kh.strip(), ten.strip(), dai_dien, sdt_clean, dia_chi, pk, ghi_chu))
+                            conn.execute("INSERT INTO customers (ma_kh,ten_cty,dai_dien,sdt,dia_chi,phan_khuc,ghi_chu,nguoi_lien_he,ten_phap_ly,ma_so_thue) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                                         (ma_kh.strip(), ten.strip(), dai_dien, sdt_clean, dia_chi, pk, ghi_chu, nguoi_lh, ten_pl, mst))
                             conn.commit(); conn.close()
                             st.session_state.add_kh_success = f"✅ Đã thêm **{ten}** ({ma_kh})"
                             st.rerun()
