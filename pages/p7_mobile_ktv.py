@@ -140,15 +140,27 @@ def action_dialog(job, log):
     if not log:
         # CHECK IN
         st.info(f"Khung giờ: {job['gio_bat_dau']} - {job['gio_ket_thuc']}")
-        if st.button("📍 CHECK-IN NGAY", type="primary", use_container_width=True):
-            conn = get_connection()
-            tc = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), job["ngay_du_kien"])
-            conn.execute("""INSERT INTO logbook (schedule_id,ma_kh,ky_thuat_vien,checkin_time,canh_bao_gio)
-                            VALUES(?,?,?,?,?)""",
-                         (job["id"], job["ma_kh"], st.session_state.mobile_ktv, (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), 1 if tc["violation"] else 0))
-            conn.execute("UPDATE schedules SET ky_thuat_vien=? WHERE id=?", (st.session_state.mobile_ktv, job["id"]))
-            conn.commit(); conn.close()
-            st.rerun()
+        ci_key = f"confirm_ci_{job['id']}"
+        if not st.session_state.get(ci_key, False):
+            if st.button("📍 CHECK-IN NGAY", type="primary", use_container_width=True):
+                st.session_state[ci_key] = True
+                st.rerun()
+        else:
+            st.warning("⚠️ Vui lòng xác nhận bạn đã đến đúng địa điểm và sẵn sàng làm việc?")
+            col1, col2 = st.columns(2)
+            if col1.button("❌ Hủy", key=f"cancel_ci_{job['id']}", use_container_width=True):
+                st.session_state[ci_key] = False
+                st.rerun()
+            if col2.button("✅ Xác nhận", key=f"do_ci_{job['id']}", type="primary", use_container_width=True):
+                conn = get_connection()
+                tc = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), job["ngay_du_kien"])
+                conn.execute("""INSERT INTO logbook (schedule_id,ma_kh,ky_thuat_vien,checkin_time,canh_bao_gio)
+                                VALUES(?,?,?,?,?)""",
+                             (job["id"], job["ma_kh"], st.session_state.mobile_ktv, (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), 1 if tc["violation"] else 0))
+                conn.execute("UPDATE schedules SET ky_thuat_vien=? WHERE id=?", (st.session_state.mobile_ktv, job["id"]))
+                conn.commit(); conn.close()
+                st.session_state[ci_key] = False
+                st.rerun()
     else:
         # ĐANG THI CÔNG -> CHECK OUT
         ci_dt = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
@@ -198,53 +210,65 @@ def action_dialog(job, log):
         if extra_files:
             st.markdown(f"**📎 Đã chọn:** {', '.join([p.name for p in extra_files])}")
         
-        if st.button("✅ HOÀN THÀNH & CHECK-OUT", type="primary", use_container_width=True):
-            import os, uuid
-            upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
-            os.makedirs(upload_dir, exist_ok=True)
-            
-            file_names = list(st.session_state.get(scan_key, []))
-            
-            # Lưu các file đính kèm thêm (PDF/Ảnh từ file_uploader)
-            if extra_files:
-                for uploaded_file in extra_files:
-                    fname = f"{uuid.uuid4().hex[:8]}_{uploaded_file.name}"
-                    fpath = os.path.join(upload_dir, fname)
-                    with open(fpath, "wb") as f:
-                        f.write(uploaded_file.getbuffer())
-                    file_names.append(fname)
-            
-            att_str = ",".join(file_names)
-            now_str = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat()
-            
-            conn = get_connection()
-            if att_str:
-                # Lấy attachments hiện tại nếu có
-                curr_att = conn.execute("SELECT attachments FROM logbook WHERE id=?", (log["id"],)).fetchone()
-                if curr_att and curr_att["attachments"]:
-                    att_str = curr_att["attachments"] + "," + att_str
-                    
-                conn.execute("""UPDATE logbook 
-                                SET checkout_time=?, ket_qua=?, hoa_chat=?, attachments=? 
-                                WHERE id=?""",
-                             (now_str, pest_found, chemical, att_str, log["id"]))
-            else:
-                conn.execute("""UPDATE logbook 
-                                SET checkout_time=?, ket_qua=?, hoa_chat=? 
-                                WHERE id=?""",
-                             (now_str, pest_found, chemical, log["id"]))
-            conn.commit(); conn.close()
-            
-            # Dùng engine để hoàn thành ca, tự sinh ca kế tiếp và sinh công nợ
-            from utils.schedule_engine import complete_schedule as cs_fn
-            conn_ct = get_connection()
-            ct_row = conn_ct.execute('SELECT * FROM contracts WHERE ma_hd=?', (job['ma_hd'],)).fetchone()
-            conn_ct.close()
-            
-            if ct_row:
-                cs_fn(job['id'], dict(ct_row))
+        co_key = f"confirm_co_{log['id']}"
+        if not st.session_state.get(co_key, False):
+            if st.button("✅ HOÀN THÀNH & CHECK-OUT", type="primary", use_container_width=True):
+                st.session_state[co_key] = True
+                st.rerun()
+        else:
+            st.error("⚠️ Bạn có chắc chắn muốn kết thúc ca làm việc và nộp biên bản?")
+            col1, col2 = st.columns(2)
+            if col1.button("❌ Quay lại", key=f"cancel_co_{log['id']}", use_container_width=True):
+                st.session_state[co_key] = False
+                st.rerun()
+            if col2.button("✅ Nộp & Check-out", key=f"do_co_{log['id']}", type="primary", use_container_width=True):
+                import os, uuid
+                upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
+                os.makedirs(upload_dir, exist_ok=True)
                 
-            st.rerun()
+                file_names = list(st.session_state.get(scan_key, []))
+                
+                # Lưu các file đính kèm thêm (PDF/Ảnh từ file_uploader)
+                if extra_files:
+                    for uploaded_file in extra_files:
+                        fname = f"{uuid.uuid4().hex[:8]}_{uploaded_file.name}"
+                        fpath = os.path.join(upload_dir, fname)
+                        with open(fpath, "wb") as f:
+                            f.write(uploaded_file.getbuffer())
+                        file_names.append(fname)
+                
+                att_str = ",".join(file_names)
+                now_str = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat()
+                
+                conn = get_connection()
+                if att_str:
+                    # Lấy attachments hiện tại nếu có
+                    curr_att = conn.execute("SELECT attachments FROM logbook WHERE id=?", (log["id"],)).fetchone()
+                    if curr_att and curr_att["attachments"]:
+                        att_str = curr_att["attachments"] + "," + att_str
+                        
+                    conn.execute("""UPDATE logbook 
+                                    SET checkout_time=?, ket_qua=?, hoa_chat=?, attachments=? 
+                                    WHERE id=?""",
+                                 (now_str, pest_found, chemical, att_str, log["id"]))
+                else:
+                    conn.execute("""UPDATE logbook 
+                                    SET checkout_time=?, ket_qua=?, hoa_chat=? 
+                                    WHERE id=?""",
+                                 (now_str, pest_found, chemical, log["id"]))
+                conn.commit(); conn.close()
+                
+                # Dùng engine để hoàn thành ca, tự sinh ca kế tiếp và sinh công nợ
+                from utils.schedule_engine import complete_schedule as cs_fn
+                conn_ct = get_connection()
+                ct_row = conn_ct.execute('SELECT * FROM contracts WHERE ma_hd=?', (job['ma_hd'],)).fetchone()
+                conn_ct.close()
+                
+                if ct_row:
+                    cs_fn(job['id'], dict(ct_row))
+                
+                st.session_state[co_key] = False
+                st.rerun()
 
 @st.dialog("Bổ sung file (PDF/Ảnh)")
 def bosung_dialog(job, log):
