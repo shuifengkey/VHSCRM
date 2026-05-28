@@ -478,6 +478,12 @@ def render():
                                             
                                             att_html += f'<a href="data:image/jpeg;base64,{fb64}" target="_blank" title="Xem ảnh lớn"><img src="data:image/jpeg;base64,{tb64}" style="width:36px;height:36px;border-radius:4px;object-fit:cover;border:1px solid #cbd5e1;cursor:pointer;margin-left:4px;box-shadow:0 1px 2px rgba(0,0,0,0.05);"></a>'
                                     except: pass
+                                elif ext == 'pdf':
+                                    try:
+                                        with open(filepath, "rb") as pdf_file:
+                                            pdf64 = base64.b64encode(pdf_file.read()).decode()
+                                        att_html += f'<a href="data:application/pdf;base64,{pdf64}" target="_blank" title="Xem PDF" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;background:#fef2f2;color:#dc2626;border-radius:4px;border:1px solid #fecaca;margin-left:4px;text-decoration:none;font-weight:bold;font-size:12px;box-shadow:0 1px 2px rgba(0,0,0,0.05);">PDF</a>'
+                                    except: pass
                                 else:
                                     try:
                                         with open(filepath, "rb") as f:
