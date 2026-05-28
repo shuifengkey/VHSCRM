@@ -1,5 +1,89 @@
 # pages/p4_logbook.py - Logbook KTV v2 — Mobile-first + Timeline
 import streamlit as st
+
+@st.dialog("Xác nhận Check-in")
+def do_checkin_dialog_p4(job, ktv):
+    st.write(f"Bạn có chắc chắn muốn Check-in cho KTV **{ktv}** không?")
+    col1, col2 = st.columns(2)
+    if col1.button("Có", type="primary", use_container_width=True):
+        from utils.database import get_connection
+        from utils.scheduling import check_time_violation
+        from datetime import datetime, timezone, timedelta
+        conn = get_connection()
+        active_other = conn.execute("SELECT c.ten_cty, l.checkin_time FROM logbook l JOIN schedules s ON l.schedule_id=s.id JOIN customers c ON l.ma_kh=c.ma_kh WHERE l.ky_thuat_vien=? AND l.checkout_time IS NULL AND l.schedule_id!=?", (ktv, job["id"])).fetchone()
+        
+        if active_other:
+            conn.close()
+            st.error(f"🛑 KTV **{ktv}** đang thi công tại **{active_other['ten_cty']}** (từ {active_other['checkin_time'][11:16]}). Phải Check-out ca đó trước khi Check-in ca mới!")
+        else:
+            try:
+                tc = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), job["ngay_du_kien"])
+                conn.execute("""INSERT INTO logbook (schedule_id,ma_kh,ky_thuat_vien,checkin_time,canh_bao_gio)
+                                VALUES(?,?,?,?,?)""",
+                             (job["id"],job["ma_kh"],ktv,(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), 1 if tc["violation"] else 0))
+                conn.execute("UPDATE schedules SET ky_thuat_vien=? WHERE id=?", (ktv, job["id"]))
+                conn.commit(); conn.close()
+                st.session_state[f"ci_success_{job['id']}"] = True
+                st.rerun()
+            except Exception as e: 
+                conn.close()
+                st.error(f"❌ {e}")
+    if col2.button("Không", use_container_width=True):
+        st.rerun()
+
+@st.dialog("Xác nhận Check-out")
+def do_checkout_dialog_p4(job, log, hoa_chat, ket_qua, attachments):
+    st.write("Bạn có chắc chắn muốn kết thúc ca và Check-out không?")
+    col1, col2 = st.columns(2)
+    if col1.button("Có", type="primary", use_container_width=True):
+        from utils.database import get_connection
+        from datetime import datetime, timezone, timedelta
+        checkin_time = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
+        if ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)) - checkin_time).total_seconds() < 300:
+            st.error("⚠️ Phải thi công ít nhất 5 phút mới được Check-out!")
+        else:
+            try:
+                import os, uuid
+                uploaded_paths = []
+                if attachments:
+                    upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+                    os.makedirs(upload_dir, exist_ok=True)
+                    for f in attachments:
+                        filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
+                        filepath = os.path.join(upload_dir, filename)
+                        with open(filepath, "wb") as out:
+                            out.write(f.getbuffer())
+                        uploaded_paths.append(filename)
+                attachments_str = ",".join(uploaded_paths) if uploaded_paths else ""
+
+                conn = get_connection()
+                conn.execute("UPDATE logbook SET checkout_time=?,hoa_chat=?,ket_qua=?,attachments=? WHERE id=?",
+                             ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), hoa_chat, ket_qua, attachments_str, log["id"]))
+                conn.commit()
+                conn.close()
+            
+                from utils.schedule_engine import complete_schedule as cs_fn
+                conn_ct = __import__('utils.database', fromlist=['get_connection']).get_connection()
+                ct_row = conn_ct.execute('SELECT * FROM contracts WHERE ma_hd=?',(job['ma_hd'],)).fetchone()
+                conn_ct.close()
+            
+                if ct_row:
+                    result = cs_fn(job['id'], dict(ct_row))
+                    if result.get('next_ids'):
+                        st.session_state[f"co_msg_{job['id']}"] = f"✅ Đã tự động tạo {len(result['next_ids'])} ca kế tiếp theo cho {job['ten_cty']}!"
+                else:
+                    conn_fallback = __import__('utils.database', fromlist=['get_connection']).get_connection()
+                    conn_fallback.execute("UPDATE schedules SET trang_thai='completed' WHERE id=?", (job['id'],))
+                    from utils.google_sync import auto_sync_schedule_to_google
+                    auto_sync_schedule_to_google(conn_fallback, job['id'], "upsert")
+                    conn_fallback.commit()
+                    conn_fallback.close()
+                st.session_state[f"co_success_{job['id']}"] = True
+                st.rerun()
+            except Exception as e: st.error(f"❌ {e}")
+    if col2.button("Không", use_container_width=True):
+        st.rerun()
+
 import sys, os
 
 from utils.database import get_connection

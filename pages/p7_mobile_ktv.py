@@ -1,4 +1,51 @@
 import streamlit as st
+
+@st.dialog("Xác nhận Check-in")
+def do_checkin_dialog(job, ktv):
+    st.write(f"Bạn có chắc chắn muốn Check-in cho KTV **{ktv}** không?")
+    col1, col2 = st.columns(2)
+    if col1.button("Có", type="primary", use_container_width=True):
+        from utils.database import get_connection
+        from utils.scheduling import check_time_violation
+        from datetime import datetime, timezone, timedelta
+        conn = get_connection()
+        tc = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), job["ngay_du_kien"])
+        conn.execute("""INSERT INTO logbook (schedule_id,ma_kh,ky_thuat_vien,checkin_time,canh_bao_gio)
+                        VALUES(?,?,?,?,?)""",
+                     (job["id"], job["ma_kh"], ktv, (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), 1 if tc["violation"] else 0))
+        conn.execute("UPDATE schedules SET ky_thuat_vien=? WHERE id=?", (ktv, job["id"]))
+        conn.commit(); conn.close()
+        st.rerun()
+    if col2.button("Không", use_container_width=True):
+        st.rerun()
+
+@st.dialog("Xác nhận Check-out")
+def do_checkout_dialog(job, log, pest_found, chemical):
+    st.write("Bạn có chắc chắn muốn kết thúc ca và Check-out không?")
+    col1, col2 = st.columns(2)
+    if col1.button("Có", type="primary", use_container_width=True):
+        from utils.database import get_connection
+        from datetime import datetime, timezone, timedelta
+        conn = get_connection()
+        conn.execute("""UPDATE logbook 
+                        SET checkout_time=?, ket_qua=?, hoa_chat=? 
+                        WHERE id=?""",
+                     ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), pest_found, chemical, log["id"]))
+        conn.commit(); conn.close()
+        
+        # Dùng engine để hoàn thành ca, tự sinh ca kế tiếp và sinh công nợ
+        from utils.schedule_engine import complete_schedule as cs_fn
+        conn_ct = get_connection()
+        ct_row = conn_ct.execute('SELECT * FROM contracts WHERE ma_hd=?', (job['ma_hd'],)).fetchone()
+        conn_ct.close()
+        
+        if ct_row:
+            cs_fn(job['id'], dict(ct_row))
+            
+        st.rerun()
+    if col2.button("Không", use_container_width=True):
+        st.rerun()
+
 import sys, os
 from datetime import timezone, date, datetime, timedelta
 
