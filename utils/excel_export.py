@@ -121,9 +121,19 @@ def generate_payment_request_pdf(debt_data, attachments=None):
         vat_label = "Thuế GTGT / VAT:"
         vat_value = "—"
 
-    # Nội dung CK
-    noidung_ck = (f"{ten_cty} thanh toan phi dich vu kiem soat con trung "
-                  f"thang {month_num} cho VHS")
+    # Nội dung CK (Ngắn gọn và không dấu)
+    import unicodedata
+    def remove_accents(input_str):
+        if not input_str: return ""
+        s = input_str.replace('Đ', 'D').replace('đ', 'd')
+        return unicodedata.normalize('NFKD', s).encode('ASCII', 'ignore').decode('utf-8')
+    
+    ten_ngan = debt_data.get("ten_cty", "") or "" # Dùng tên thương hiệu thay vì tên pháp lý dài dòng
+    ten_khong_dau = remove_accents(ten_ngan)
+    # Giới hạn tên 25 ký tự để QR code không bị quá tải/nội dung quá dài
+    ten_khong_dau = ten_khong_dau[:25].strip()
+    
+    noidung_ck = f"{ten_khong_dau} TT PKSCT T{month_num}"
 
     # ── Build doc ─────────────────────────────────────────────
     output = io.BytesIO()
