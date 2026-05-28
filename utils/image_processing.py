@@ -13,25 +13,31 @@ def order_points(pts):
 
 def enhance_scan(warped):
     """
-    CamScanner 'Magic Color' effect (Giữ nguyên phần làm nét xuất sắc của phiên bản mới)
+    Nền giấy trắng sáng (White Paper), chữ đậm (Dark Text), GIỮ NGUYÊN MÀU SẮC (Color).
+    Sử dụng kỹ thuật Stretch Contrast dựa trên phân vị (Percentile) để làm trắng nền.
     """
+    # Lấy ảnh xám để phân tích độ sáng
     gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
-    bg = cv2.GaussianBlur(gray, (0, 0), sigmaX=50)
-    gray_f = gray.astype(np.float32)
-    bg_f   = bg.astype(np.float32)
     
-    # Tăng hệ số nhân lên 240.0 (thay vì 200.0) để nền cực sáng
-    divided = np.clip((gray_f / (bg_f + 1e-6)) * 240.0, 0, 255).astype(np.uint8)
+    # Tìm điểm tối nhất (chữ) và sáng nhất (nền giấy)
+    # Loại bỏ 3% nhiễu ở hai đầu để không bị nhiễu do điểm đen/trắng bất thường
+    black_point = np.percentile(gray, 3)
+    white_point = np.percentile(gray, 95)
     
-    p2  = int(np.percentile(divided, 2))
-    # Hạ điểm trắng xuống 90 để ép toàn bộ nền giấy thành trắng tinh 100%
-    p90 = int(np.percentile(divided, 90))
-    
-    if p90 > p2:
-        divided = np.clip((divided.astype(np.int32) - p2) * 255 // (p90 - p2), 0, 255).astype(np.uint8)
+    # Kéo giãn dải màu (Stretch Contrast) trên từng kênh BGR
+    # Điểm sáng nhất thành 255 (trắng tinh), điểm tối nhất thành 0 (đen thui)
+    warped_f = warped.astype(np.float32)
+    diff = white_point - black_point
+    if diff < 10:
+        diff = 10  # Tránh lỗi chia cho 0 nếu ảnh quá mờ
         
-    blurred = cv2.GaussianBlur(divided, (0, 0), sigmaX=2)
-    sharpened = cv2.addWeighted(divided, 1.5, blurred, -0.5, 0)
+    # Công thức: Pixel_mới = (Pixel_cũ - Black) * (255 / Diff)
+    adjusted = np.clip((warped_f - black_point) * (255.0 / diff), 0, 255).astype(np.uint8)
+    
+    # Làm nét nhẹ (Unsharp Masking) để chữ sắc sảo hơn
+    blurred = cv2.GaussianBlur(adjusted, (0, 0), sigmaX=3)
+    sharpened = cv2.addWeighted(adjusted, 1.5, blurred, -0.5, 0)
+    
     return sharpened
 
 def auto_crop_document(image_path):
