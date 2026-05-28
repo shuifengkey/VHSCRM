@@ -242,7 +242,7 @@ def render():
 
     # ===== THÊM MỚI =====
     with tab_add:
-        col_form, col_preview = st.columns([2, 1])
+        col_form, _ = st.columns([2, 1])
         with col_form:
             st.markdown('<div class="vhs-card">', unsafe_allow_html=True)
             st.markdown("**📝 Thông Tin Khách Hàng Mới**")
@@ -297,19 +297,7 @@ def render():
                         except Exception as e: st.error(f"❌ {e}")
             st.markdown('</div>', unsafe_allow_html=True)
 
-        with col_preview:
-            st.markdown(card("""
-            <div style="text-align:center;padding:16px 0;">
-                <div style="font-size:48px;margin-bottom:12px;">💡</div>
-                <div style="font-size:14px;font-weight:600;color:#0f172a;margin-bottom:8px;">Hướng dẫn</div>
-                <div style="font-size:12px;color:#64748b;line-height:1.7;text-align:left;">
-                    • <b>Mã KH</b>: Định danh duy nhất (VD: KH001)<br>
-                    • <b>Phân khúc</b>:<br>
-                    &nbsp;&nbsp;— Nhà hàng, Khách sạn, Căn hộ/Biệt thự, KCC, Nhà Kho/Xưởng<br>
-                    • Sau khi tạo KH, vào <b>Hợp Đồng</b> để thiết lập hợp đồng dịch vụ
-                </div>
-            </div>
-            """), unsafe_allow_html=True)
+
 
     # ===== PHÂN TÍCH =====
     with tab_detail:
