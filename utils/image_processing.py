@@ -36,12 +36,11 @@ def auto_crop_document(image_path):
         gray = cv2.cvtColor(process_img, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (5, 5), 0)
         
-        # Try different edge detection thresholds
-        edged = cv2.Canny(gray, 75, 200)
-        # Dilate to close gaps
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-        edged = cv2.dilate(edged, kernel, iterations=1)
-        edged = cv2.erode(edged, kernel, iterations=1)
+        # Dynamic Canny threshold based on image median for better edge detection
+        v = np.median(gray)
+        lower = int(max(0, (1.0 - 0.33) * v))
+        upper = int(min(255, (1.0 + 0.33) * v))
+        edged = cv2.Canny(gray, lower, upper)
 
         cnts, _ = cv2.findContours(edged.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:5]
@@ -50,19 +49,26 @@ def auto_crop_document(image_path):
         img_area = process_img.shape[0] * process_img.shape[1]
         
         for c in cnts:
-            # Vary epsilon to be more aggressive in finding a quad
-            for eps in np.linspace(0.01, 0.1, 10):
+            peri = cv2.arcLength(c, True)
+            approx = cv2.approxPolyDP(c, 0.02 * peri, True)
+            if len(approx) == 4:
+                area = cv2.contourArea(c)
+                if area > img_area * 0.15:
+                    doc_cnt = approx
+                    break
+                    
+        # Fallback 1: Try slightly larger epsilon if strict one failed
+        if doc_cnt is None:
+            for c in cnts:
                 peri = cv2.arcLength(c, True)
-                approx = cv2.approxPolyDP(c, eps * peri, True)
+                approx = cv2.approxPolyDP(c, 0.05 * peri, True)
                 if len(approx) == 4:
-                    area = cv2.contourArea(approx)
-                    if area > img_area * 0.1: # Relaxed to 10%
+                    area = cv2.contourArea(c)
+                    if area > img_area * 0.15:
                         doc_cnt = approx
                         break
-            if doc_cnt is not None:
-                break
-                
-        # Fallback: if no 4 points found, get the minAreaRect of the largest contour
+
+        # Fallback 2: minAreaRect
         if doc_cnt is None and len(cnts) > 0:
             c = cnts[0]
             if cv2.contourArea(c) > img_area * 0.15:
