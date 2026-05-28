@@ -1,95 +1,75 @@
-import cv2
+﻿import cv2
 import numpy as np
+import traceback
 
-def order_points(pts):
+class DocumentScanner:
     """
-    Sắp xếp 4 góc theo thứ tự: top-left, top-right, bottom-right, bottom-left
+    Class xử lý ảnh scan tài liệu (Document Scanner) sử dụng OpenCV.
     """
-    rect = np.zeros((4, 2), dtype="float32")
-    s = pts.sum(axis=1)
-    rect[0] = pts[np.argmin(s)]   # top-left
-    rect[2] = pts[np.argmax(s)]   # bottom-right
-    
-    diff = np.diff(pts, axis=1)
-    rect[1] = pts[np.argmin(diff)]  # top-right
-    rect[3] = pts[np.argmax(diff)]  # bottom-left
-    
-    return rect
+    def __init__(self, debug=False):
+        self.debug = debug
 
-def enhance_scan(warped):
-    """
-    Xử lý sau (Post-processing):
-    Nền giấy trắng sáng, chữ đậm, GIỮ NGUYÊN MÀU SẮC (Color).
-    """
-    gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
-    
-    black_point = np.percentile(gray, 3)
-    white_point = np.percentile(gray, 95)
-    
-    warped_f = warped.astype(np.float32)
-    diff = white_point - black_point
-    if diff < 10:
-        diff = 10 
+    def order_points(self, pts):
+        """
+        Sắp xếp 4 góc theo thứ tự: top-left, top-right, bottom-right, bottom-left
+        """
+        rect = np.zeros((4, 2), dtype="float32")
+        # Tính tổng x + y
+        s = pts.sum(axis=1)
+        rect[0] = pts[np.argmin(s)]   # top-left có tổng nhỏ nhất
+        rect[2] = pts[np.argmax(s)]   # bottom-right có tổng lớn nhất
         
-    # Điều chỉnh contrast và brightness
-    adjusted = np.clip((warped_f - black_point) * (255.0 / diff), 0, 255).astype(np.uint8)
-    
-    # Tăng sharpness (Unsharp Masking)
-    blurred = cv2.GaussianBlur(adjusted, (0, 0), sigmaX=3)
-    sharpened = cv2.addWeighted(adjusted, 1.5, blurred, -0.5, 0)
-    
-    return sharpened
-
-def auto_crop_document(image_path):
-    """
-    Chương trình Document Scanner
-    """
-    try:
-        # 1. Đọc ảnh đầu vào
-        raw = np.frombuffer(open(image_path, "rb").read(), dtype=np.uint8)
-        orig = cv2.imdecode(raw, cv2.IMREAD_COLOR)
-
-        if orig is None:
-            return (False, "Cannot decode image.")
-
-        orig_h, orig_w = orig.shape[:2]
-        ratio = orig_h / 800.0
+        # Tính hiệu y - x
+        diff = np.diff(pts, axis=1)
+        rect[1] = pts[np.argmin(diff)]  # top-right có hiệu nhỏ nhất
+        rect[3] = pts[np.argmax(diff)]  # bottom-left có hiệu lớn nhất
         
-        # Resize để xử lý nhanh hơn
-        if ratio > 1:
-            process_img = cv2.resize(orig, (int(orig_w / ratio), 800), interpolation=cv2.INTER_AREA)
-        else:
-            process_img = orig.copy()
-            ratio = 1.0
+        return rect
 
-        # 2. Tiền xử lý (Preprocessing)
-        # Chuyển ảnh sang grayscale
-        gray = cv2.cvtColor(process_img, cv2.COLOR_BGR2GRAY)
+    def preprocess(self, image):
+        """
+        Tiền xử lý (Preprocessing):
+        - Chuyển ảnh sang grayscale
+        - Tăng độ tương phản (Contrast Enhancement)
+        - Áp dụng Gaussian Blur để giảm nhiễu
+        """
+        # 1. Chuyển ảnh sang grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         
-        # Tăng độ tương phản trước khi tìm viền (Contrast Enhancement - CLAHE)
+        # 2. Tăng độ tương phản (sử dụng CLAHE)
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
         gray = clahe.apply(gray)
         
-        # Áp dụng Gaussian Blur để giảm nhiễu
+        # 3. Áp dụng Gaussian Blur để giảm nhiễu
         blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        
+        return blurred
 
-        # 3. Phát hiện biên (Edge Detection) bằng Canny Edge Detection
-        edged = cv2.Canny(blurred, 75, 200)
+    def detect_edges(self, blurred_img):
+        """
+        Phát hiện biên (Edge Detection): Sử dụng Canny Edge Detection
+        """
+        edged = cv2.Canny(blurred_img, 75, 200)
+        return edged
 
-        # 4. Tìm contour và phát hiện trang tài liệu
-        # Tìm tất cả contours
+    def find_document_contour(self, edged, img_area):
+        """
+        Tìm contour và phát hiện trang tài liệu
+        """
+        # 1. Tìm tất cả contours
         cnts, _ = cv2.findContours(edged.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-        # Lấy các contour có diện tích lớn nhất
+        
+        # Sắp xếp theo diện tích giảm dần
         cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:5]
-
+        
         doc_cnt = None
-        img_area = process_img.shape[0] * process_img.shape[1]
-
+        
         for c in cnts:
-            if cv2.contourArea(c) < img_area * 0.05: # Lọc contour quá nhỏ
+            # 2. Bỏ qua các contour quá nhỏ
+            if cv2.contourArea(c) < img_area * 0.05:
                 continue
-            
-            # Xấp xỉ contour đó thành hình 4 cạnh (4 góc) bằng approxPolyDP
+                
+            # 3. Xấp xỉ contour đó thành hình 4 cạnh (4 góc) bằng approxPolyDP
             peri = cv2.arcLength(c, True)
             approx = cv2.approxPolyDP(c, 0.02 * peri, True)
             
@@ -97,7 +77,7 @@ def auto_crop_document(image_path):
                 doc_cnt = approx.reshape(4, 2)
                 break
                 
-        # Nếu không tìm thấy contour 4 cạnh thì thử các cách khác (Fallback)
+        # 4. Fallback: Nếu không tìm thấy contour 4 cạnh thì thử lấy bounding box của contour lớn nhất
         if doc_cnt is None and len(cnts) > 0:
             c = cnts[0]
             if cv2.contourArea(c) > img_area * 0.05:
@@ -105,42 +85,37 @@ def auto_crop_document(image_path):
                 box = cv2.boxPoints(rect)
                 doc_cnt = np.int32(box)
 
-        if doc_cnt is None:
-            # Fallback cuối cùng: lấy nguyên ảnh
-            doc_cnt = np.array([
-                [0, 0],
-                [process_img.shape[1] - 1, 0],
-                [process_img.shape[1] - 1, process_img.shape[0] - 1],
-                [0, process_img.shape[0] - 1]
-            ])
+        return doc_cnt
 
-        # Đưa toạ độ về lại ảnh gốc
-        doc_cnt = doc_cnt.astype(np.float32) * ratio
-
-        # 5. Căn chỉnh góc nhìn (Perspective Correction)
-        # Sắp xếp 4 góc
-        rect = order_points(doc_cnt)
+    def perspective_transform(self, image, pts):
+        """
+        Căn chỉnh góc nhìn (Perspective Correction):
+        Áp dụng warpPerspective để biến ảnh về góc nhìn trực diện (top-down view)
+        """
+        rect = self.order_points(pts)
         tl, tr, br, bl = rect
 
-        # Tính toán ma trận Perspective Transform (Homography)
-        width_top = np.linalg.norm(tr - tl)
-        width_bottom = np.linalg.norm(br - bl)
-        height_left = np.linalg.norm(bl - tl)
-        height_right = np.linalg.norm(br - tr)
+        # Tính toán chiều rộng của bức ảnh mới
+        widthA = np.linalg.norm(br - bl)
+        widthB = np.linalg.norm(tr - tl)
+        max_w = max(int(widthA), int(widthB))
 
-        max_w = int(max(width_top, width_bottom))
-        max_h = int(max(height_left, height_right))
+        # Tính toán chiều cao của bức ảnh mới
+        heightA = np.linalg.norm(tr - br)
+        heightB = np.linalg.norm(tl - bl)
+        max_h = max(int(heightA), int(heightB))
 
         if max_w == 0 or max_h == 0:
-            return (False, "Degenerate contour.")
+            return None
 
-        # Căn chỉnh trang A4
+        # Giữ tỷ lệ giấy A4 chuẩn (để tránh méo hình)
         a4_ratio = 1.4142
         if max_h >= max_w:
             max_h = int(max_w * a4_ratio)
         else:
             max_h = int(max_w / a4_ratio)
 
+        # Toạ độ các góc mới
         dst = np.array([
             [0, 0],
             [max_w - 1, 0],
@@ -148,20 +123,105 @@ def auto_crop_document(image_path):
             [0, max_h - 1]
         ], dtype="float32")
 
-        # Áp dụng warpPerspective để biến ảnh về góc nhìn trực diện
+        # Tính toán ma trận Perspective Transform (Homography)
         M = cv2.getPerspectiveTransform(rect, dst)
         
-        # 6. Crop trang tài liệu theo vùng tài liệu đã được chỉnh thẳng
-        warped = cv2.warpPerspective(orig, M, (max_w, max_h))
+        # Crop ảnh theo vùng tài liệu đã được chỉnh thẳng
+        warped = cv2.warpPerspective(image, M, (max_w, max_h))
+        
+        return warped
 
-        # 7. Xử lý sau (Post-processing)
-        scanned = enhance_scan(warped)
+    def post_process(self, warped):
+        """
+        Xử lý sau (Post-processing):
+        - Chuyển thành ảnh đen trắng rõ nét (Binary + Adaptive Threshold)
+        - Điều chỉnh contrast và brightness
+        - Tăng sharpness
+        """
+        # Chuyển ảnh warped sang grayscale
+        gray = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
+        
+        # 1. Tăng sharpness
+        blurred = cv2.GaussianBlur(gray, (0, 0), sigmaX=3)
+        sharpened = cv2.addWeighted(gray, 1.5, blurred, -0.5, 0)
+        
+        # 2. Chuyển thành ảnh đen trắng rõ nét (Adaptive Threshold)
+        # Sử dụng Adaptive Gaussian Threshold để xử lý vùng sáng tối không đều
+        binary = cv2.adaptiveThreshold(
+            sharpened, 255, 
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+            cv2.THRESH_BINARY, 21, 10
+        )
+        
+        # Chuyển lại hệ màu BGR để lưu đè lên ảnh gốc (JPG/PNG mặc định là 3 kênh)
+        final = cv2.cvtColor(binary, cv2.COLOR_GRAY2BGR)
+        return final
 
-        # Lưu ảnh
-        cv2.imencode('.jpg', scanned, [cv2.IMWRITE_JPEG_QUALITY, 92])[1].tofile(image_path)
-        return (True, f"Cropped {orig_w}x{orig_h} -> {max_w}x{max_h}")
+    def scan(self, image_path):
+        """
+        Hàm chính chạy luồng scan tài liệu. Input là đường dẫn file ảnh.
+        Output là ảnh đã scan sạch sẽ (căn chỉnh + crop) lưu đè vào file gốc.
+        """
+        try:
+            # 1. Đọc ảnh đầu vào
+            raw = np.frombuffer(open(image_path, "rb").read(), dtype=np.uint8)
+            orig = cv2.imdecode(raw, cv2.IMREAD_COLOR)
 
-    except Exception as e:
-        import traceback
-        print(f"[auto_crop_document] Error: {e}")
-        return (False, f"Error: {str(e)}")
+            if orig is None:
+                return (False, "Không thể đọc file ảnh.")
+
+            orig_h, orig_w = orig.shape[:2]
+            img_area = orig_h * orig_w
+            
+            # Resize để xử lý logic tìm khung cho nhanh và ổn định
+            ratio = orig_h / 800.0
+            if ratio > 1:
+                process_img = cv2.resize(orig, (int(orig_w / ratio), 800), interpolation=cv2.INTER_AREA)
+            else:
+                process_img = orig.copy()
+                ratio = 1.0
+
+            # 2. Tiền xử lý
+            blurred = self.preprocess(process_img)
+            
+            # 3. Phát hiện biên
+            edged = self.detect_edges(blurred)
+            
+            # 4. Tìm contour tài liệu
+            proc_area = process_img.shape[0] * process_img.shape[1]
+            doc_cnt = self.find_document_contour(edged, proc_area)
+            
+            if doc_cnt is None:
+                # Xử lý trường hợp không tìm thấy tài liệu
+                print("⚠️ Cảnh báo: Không tìm thấy tài liệu, lấy toàn bộ ảnh.")
+                doc_cnt = np.array([
+                    [0, 0],
+                    [process_img.shape[1] - 1, 0],
+                    [process_img.shape[1] - 1, process_img.shape[0] - 1],
+                    [0, process_img.shape[0] - 1]
+                ])
+
+            # Đưa toạ độ về scale của ảnh gốc ban đầu
+            doc_cnt = doc_cnt.astype(np.float32) * ratio
+            
+            # 5 & 6. Căn chỉnh góc nhìn và Crop
+            warped = self.perspective_transform(orig, doc_cnt)
+            
+            if warped is None:
+                return (False, "Lỗi tính toán kích thước ảnh crop.")
+
+            # 7. Xử lý sau (Đen trắng + Nét chữ)
+            final_img = self.post_process(warped)
+
+            # Lưu ảnh đè lên file cũ
+            cv2.imencode('.jpg', final_img, [cv2.IMWRITE_JPEG_QUALITY, 92])[1].tofile(image_path)
+            
+            return (True, "Scan thành công.")
+            
+        except Exception as e:
+            return (False, f"Lỗi xử lý ảnh: {str(e)}\n{traceback.format_exc()}")
+
+# Interface function tương thích với code app hiện tại
+def auto_crop_document(image_path):
+    scanner = DocumentScanner()
+    return scanner.scan(image_path)
