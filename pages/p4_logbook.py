@@ -391,7 +391,7 @@ def render():
                                     saved.append(_fn)
                                 st.session_state[f"dk_saved_{job['id']}"] = saved
                                 st.toast("✅ Đã lưu tạm ảnh đính kèm!", icon="📎")
-                                                        co_key = f"confirm_co_{job['id']}"
+                            co_key = f"confirm_co_{job['id']}"
                             if not st.session_state.get(co_key, False):
                                 if st.button("🚪 CHECK-OUT — KẾT THÚC CA", type="primary", use_container_width=True, key=f"btn_co_{job['id']}"):
                                     st.session_state[co_key] = True
