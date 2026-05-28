@@ -8,7 +8,7 @@ _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _root not in sys.path:
     sys.path.insert(0, _root)
 
-_COMPONENT_NAME = "custom_camera"
+_COMPONENT_NAME = "vhs_doc_scanner"
 _FRONTEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "frontend")
 
 _component_func = components.declare_component(
