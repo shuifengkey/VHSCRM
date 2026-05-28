@@ -293,12 +293,7 @@ def render():
                                                     uploaded_paths.append(fname)
                                                     
                                                 if all_attachments:
-                                                import os, uuid
-                                                uploaded_paths = []
-                                                upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
-                                                os.makedirs(upload_dir, exist_ok=True)
-                                                
-                                                for f in all_attachments:
+                                                    for f in all_attachments:
                                                         filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
                                                         filepath = os.path.join(upload_dir, filename)
                                                         with open(filepath, "wb") as out:
@@ -309,7 +304,7 @@ def render():
                                                                 from utils.image_processing import auto_crop_document
                                                                 auto_crop_document(filepath)
                                                             except Exception as e:
-                                                                print(f"Crop warning: {e}")
+                                                                pass
                                                         uploaded_paths.append(filename)
                                                 new_att_str = ",".join(uploaded_paths)
                                                 old_att = log.get("attachments", "")
@@ -583,12 +578,7 @@ def render():
                                                 uploaded_paths.append(fname)
                                                 
                                             if all_attachments:
-                                            import os, uuid
-                                            uploaded_paths = []
-                                            upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
-                                            os.makedirs(upload_dir, exist_ok=True)
-                                            
-                                            for f in all_attachments:
+                                                for f in all_attachments:
                                                     filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
                                                     filepath = os.path.join(upload_dir, filename)
                                                     with open(filepath, "wb") as out:
@@ -599,7 +589,7 @@ def render():
                                                             from utils.image_processing import auto_crop_document
                                                             auto_crop_document(filepath)
                                                         except Exception as e:
-                                                            print(f"Crop warning: {e}")
+                                                            pass
                                                     uploaded_paths.append(filename)
                                             new_att_str = ",".join(uploaded_paths)
                                             old_att = log.get("attachments", "")
