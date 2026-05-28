@@ -254,6 +254,20 @@ def render():
                             with c2:
                                 st.markdown('<div class="color-bosung"></div>', unsafe_allow_html=True)
                                 with st.popover("➕ Bổ sung"):
+                                    if log.get("attachments"):
+                                        st.markdown("<div style='font-size:13px;font-weight:bold;margin-bottom:8px;color:#1e293b;'>📁 File đã đính kèm:</div>", unsafe_allow_html=True)
+                                        att_list = [x for x in log["attachments"].split(",") if x]
+                                        for idx, att in enumerate(att_list):
+                                            c_n, c_b = st.columns([5,1], vertical_alignment="center")
+                                            c_n.markdown(f"<div style='font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#64748b;'>📄 {att.split('_', 1)[-1] if '_' in att else att}</div>", unsafe_allow_html=True)
+                                            if c_b.button("❌", key=f"del_act_{job['id']}_{idx}", help="Xóa file này"):
+                                                att_list.remove(att)
+                                                conn_del = get_connection()
+                                                conn_del.execute("UPDATE logbook SET attachments=? WHERE id=?", (",".join(att_list), log["id"]))
+                                                conn_del.commit(); conn_del.close()
+                                                st.rerun()
+                                        st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
+
                                     with st.form(f"form_attach_{job['id']}"):
                                         cam_photo = st.camera_input("📷 Chụp ảnh biên bản trực tiếp", key=f"cam_{job['id']}")
                                         extra_att = st.file_uploader("📂 Hoặc chọn file từ máy (PDF, JPG, PNG)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"extra_file_{job['id']}")
@@ -523,6 +537,20 @@ def render():
                         with c2:
                             st.markdown('<div class="color-bosung"></div>', unsafe_allow_html=True)
                             with st.popover("➕ Bổ sung", use_container_width=True):
+                                if log.get("attachments"):
+                                    st.markdown("<div style='font-size:13px;font-weight:bold;margin-bottom:8px;color:#1e293b;'>📁 File đã đính kèm:</div>", unsafe_allow_html=True)
+                                    att_list = [x for x in log["attachments"].split(",") if x]
+                                    for idx, att in enumerate(att_list):
+                                        c_n, c_b = st.columns([5,1], vertical_alignment="center")
+                                        c_n.markdown(f"<div style='font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#64748b;'>📄 {att.split('_', 1)[-1] if '_' in att else att}</div>", unsafe_allow_html=True)
+                                        if c_b.button("❌", key=f"del_hist_{log['id']}_{idx}", help="Xóa file này"):
+                                            att_list.remove(att)
+                                            conn_del = get_connection()
+                                            conn_del.execute("UPDATE logbook SET attachments=? WHERE id=?", (",".join(att_list), log["id"]))
+                                            conn_del.commit(); conn_del.close()
+                                            st.rerun()
+                                    st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
+
                                 with st.form(f"hist_form_attach_{log['id']}"):
                                     cam_photo = st.camera_input("📷 Chụp ảnh biên bản trực tiếp", key=f"hist_cam_{log['id']}")
                                     extra_att = st.file_uploader("📂 Hoặc chọn file từ máy (PDF, JPG, PNG)", type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"hist_extra_file_{log['id']}")
