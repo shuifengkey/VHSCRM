@@ -320,8 +320,23 @@ def render():
                     import folium
                     from streamlit_folium import st_folium
                     
-                    google_api_key = st.secrets.get("GOOGLE_MAPS_API_KEY", "")
-                    here_api_key = st.secrets.get("HERE_API_KEY", "")
+                    import os
+                    from dotenv import load_dotenv
+                    load_dotenv(override=True)
+                    
+                    google_api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
+                    if not google_api_key:
+                        try:
+                            google_api_key = st.secrets.get("GOOGLE_MAPS_API_KEY", "")
+                        except:
+                            pass
+                            
+                    here_api_key = os.environ.get("HERE_API_KEY")
+                    if not here_api_key:
+                        try:
+                            here_api_key = st.secrets.get("HERE_API_KEY", "")
+                        except:
+                            pass
                     
                     route_mode = st.radio("Điểm xuất phát:", ["🏠 Từ nhà (164 Huy Cận)", "📍 Từ ca thi công đầu tiên"], index=1, horizontal=True)
                     
