@@ -14,7 +14,7 @@ def edit_contract_dialog(ma_hd):
     hd = dict(hd)
     
     all_kh = conn.execute("SELECT ma_kh, ten_cty FROM customers ORDER BY ma_kh").fetchall()
-    ktv_list = [r["username"] for r in conn.execute("SELECT username FROM users WHERE role='Kỹ thuật viên'").fetchall()]
+    ktv_list = [r["ten"] for r in conn.execute("SELECT ten FROM technicians WHERE active=1 ORDER BY ten").fetchall()]
     conn.close()
     
     kh_opts = {f"{r['ma_kh']} – {r['ten_cty']}": r['ma_kh'] for r in all_kh}
