@@ -356,16 +356,35 @@ def generate_payment_request_pdf(debt_data, attachments=None):
     content.append(Spacer(1, 0.4*cm))
 
     # ── KÝ TÊN ───────────────────────────────────────────────
+    _SIGN_PATH = os.path.normpath(os.path.join(_HERE, "..", "Thuyansign.png"))
+    _SEAL_PATH = os.path.normpath(os.path.join(_HERE, "..", "VHS SEAL.png"))
+    
+    sign_cell = ""
+    if os.path.exists(_SIGN_PATH) and os.path.exists(_SEAL_PATH):
+        from reportlab.platypus import Image
+        img_sign = Image(_SIGN_PATH, width=3*cm, height=3*cm * (639/1132))
+        img_seal = Image(_SEAL_PATH, width=2.5*cm, height=2.5*cm * (424/431))
+        
+        sign_cell = Table([[img_sign, img_seal]], colWidths=[3.2*cm, 2.7*cm])
+        sign_cell.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+            ("TOPPADDING", (0, 0), (-1, -1), 0),
+        ]))
+    else:
+        sign_cell = Spacer(1, 1.5*cm)
+
     sign = Table([
-        [P("<b>NGƯỜI LẬP PHIẾU</b><br/>(Prepared by)",
+        [P("<b>GIÁM ĐỐC</b><br/>(Director)",
            size=9, align=TA_CENTER, bold=True),
          "",
          P("<b>ĐẠI DIỆN KHÁCH HÀNG</b><br/>(Approved by)",
            size=9, align=TA_CENTER, bold=True)],
-        [P("<i>(Ký, ghi rõ họ tên)</i>",
+        [P("<i>(Ký, đóng dấu, ghi rõ họ tên)</i>",
            size=8, align=TA_CENTER, color=colors.grey),
          "", ""],
-        *[["", "", ""] for _ in range(4)],
+        [sign_cell, "", ""],
         [P("<b>TRẦN THỊ THÚY AN</b>",
            size=9, align=TA_CENTER, bold=True),
          "", ""],
