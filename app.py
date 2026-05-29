@@ -464,7 +464,7 @@ st.markdown(f"""
     <img src="{_LOGO_URI}" style="width:38px;height:38px;border-radius:8px;" />
     <div>
       <div class="vhs-nav-brand-text">VHS PEST CONTROL</div>
-      <div class="vhs-nav-brand-sub">Pest Control v4</div>
+      <div class="vhs-nav-brand-sub">AN TOÀN - HIỆU QUẢ - CHUYÊN NGHIỆP</div>
     </div>
   </div>
   <!-- nav items rendered by st.radio below -->
