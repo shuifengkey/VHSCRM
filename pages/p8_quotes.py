@@ -137,21 +137,28 @@ def render():
                 
                 i_data = []
                 for idx, row in edited_df.iterrows():
-                    name = str(row.get("name", "")).strip()
-                    if not name or name == "nan": 
-                        continue
+                    name = str(row.get("name", "")).replace('nan', '').strip()
+                    targets = str(row.get("targets", "")).replace('nan', '').strip()
+                    chemicals = str(row.get("chemicals", "")).replace('nan', '').strip()
+                    freq = str(row.get("frequency", "")).replace('nan', '').strip()
+                    note = str(row.get("note", "")).replace('nan', '').strip()
                     
                     p = float(safe_price[idx])
                     q = int(safe_qty[idx])
+                    
+                    # Chỉ bỏ qua nếu dòng thực sự trống trơn hoàn toàn
+                    if not name and not targets and not chemicals and not note and p == 0:
+                        continue
+                        
                     i_data.append({
                         "name": name,
-                        "targets": str(row.get("targets", "")).replace('nan', ''),
-                        "chemicals": str(row.get("chemicals", "")).replace('nan', ''),
-                        "frequency": str(row.get("frequency", "")).replace('nan', ''),
+                        "targets": targets,
+                        "chemicals": chemicals,
+                        "frequency": freq,
                         "price": p,
                         "quantity": q,
                         "total": p * q,
-                        "note": str(row.get("note", "")).replace('nan', '')
+                        "note": note
                     })
                     
                 pdf_bytes = generate_quote_pdf(q_data, i_data)
