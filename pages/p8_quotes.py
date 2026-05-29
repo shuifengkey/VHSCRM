@@ -1,11 +1,11 @@
 import streamlit as st
-import pandas as pd
 from datetime import date
 from utils.database import get_connection
 from utils.styles import card, section_header
 from utils.quote_export import generate_quote_pdf
 
 def render():
+    import pandas as pd
     st.markdown(section_header("Tạo Báo Giá Dịch Vụ", "Báo giá dịch vụ kiểm soát côn trùng (Form theo mẫu BG PC)"), unsafe_allow_html=True)
     
     # 1. Load customers for selection

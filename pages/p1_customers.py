@@ -5,9 +5,9 @@ import sys, os
 from utils.database import get_connection
 from utils.styles import card, badge, section_header, COLORS
 from datetime import date
-import plotly.graph_objects as go
 
 def render():
+    import plotly.graph_objects as go
     st.markdown(section_header("Quản Lý Khách Hàng", "Master Data — CRUD toàn bộ thông tin khách hàng", "👥"), unsafe_allow_html=True)
 
     tab_list, tab_add, tab_detail = st.tabs(["📋  Danh Sách", "➕  Thêm Mới", "📊  Phân Tích"])

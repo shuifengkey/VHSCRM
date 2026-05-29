@@ -3,11 +3,11 @@ import streamlit as st
 import sys, os
 
 from utils.database import get_connection
-from utils.pdf_generator import generate_bao_gia, generate_hop_dong, generate_phieu_xac_nhan
 from datetime import timezone, date, datetime, timedelta
 from utils.styles import section_header
 
 def render():
+    from utils.pdf_generator import generate_bao_gia, generate_hop_dong, generate_phieu_xac_nhan
     st.markdown(section_header("Xuất Chứng Từ PDF Tự Động", "Chọn khách hàng và loại chứng từ để sinh PDF", "<i class=\"ph-printer\" style=\"font-size:15px;color:#475569;vertical-align:middle;line-height:1;margin-right:3px;\"></i>"), unsafe_allow_html=True)
     
     conn = get_connection()

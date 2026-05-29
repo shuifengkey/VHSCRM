@@ -9,7 +9,6 @@ from utils.scheduling import (auto_generate_schedules, calc_dates_for_month,
 from datetime import timezone, date, datetime, timedelta, time
 import calendar
 from pages.p2_contracts_edit import edit_contract_dialog
-import plotly.graph_objects as go
 
 TAN_SUAT_OPTS = {1:"1 lần/tháng", 2:"2 lần/tháng",
                  3:"3 lần/tháng", 4:"4 lần/tháng",
@@ -73,6 +72,7 @@ def _preview_schedule(hd_dict: dict, ky_thang: str):
 
 
 def render():
+    import plotly.graph_objects as go
     st.markdown(section_header("Hợp Đồng",
         "Tạo hợp đồng · Setup lịch thi công · Tự sinh lịch kỳ", "📄"),
         unsafe_allow_html=True)

@@ -277,6 +277,18 @@ def _do_init_db():
     try: c.execute("ALTER TABLE technicians ADD COLUMN pin TEXT")
     except Exception: pass
     
+    # --- Database Indexes for Performance Optimization ---
+    try: c.execute("CREATE INDEX IF NOT EXISTS idx_schedules_ngay ON schedules(ngay_du_kien)")
+    except Exception: pass
+    try: c.execute("CREATE INDEX IF NOT EXISTS idx_schedules_ktv ON schedules(ky_thuat_vien)")
+    except Exception: pass
+    try: c.execute("CREATE INDEX IF NOT EXISTS idx_schedules_makh ON schedules(ma_kh)")
+    except Exception: pass
+    try: c.execute("CREATE INDEX IF NOT EXISTS idx_contracts_makh ON contracts(ma_kh)")
+    except Exception: pass
+    try: c.execute("CREATE INDEX IF NOT EXISTS idx_logbook_schedule ON logbook(schedule_id)")
+    except Exception: pass
+    
     conn.commit()
     conn.close()
 
