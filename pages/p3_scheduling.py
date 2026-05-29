@@ -77,46 +77,14 @@ def google_sync_dialog(thang, nam):
                 st.balloons()
         return
 
-    # Chưa có token → bước đăng nhập
-    # Bước 1: Lấy flow (không dùng session_state để tránh mất khi rerun)
-    if "gg_flow_data" not in st.session_state:
-        st.session_state.gg_flow_data = None
-
-    st.markdown("### 🔑 Đăng nhập Google")
-
-    if st.session_state.gg_flow_data is None:
-        if st.button("🔌 Lấy mã đăng nhập Google", type="primary", use_container_width=True):
-            with st.spinner("Đang kết nối với Google..."):
-                flow, err_msg = initiate_device_flow(client_id.strip())
-                if flow and "verification_url" in flow:
-                    st.session_state.gg_flow_data = flow
-                else:
-                    st.error(f"× Không thể kết nối với Google. Lỗi: {err_msg}")
+    # Chưa có token → thông báo chuyển hướng
+    st.markdown("### 🔑 Yêu cầu Đăng nhập Google")
+    st.warning("Bạn chưa đăng nhập Google, hoặc phiên đăng nhập đã hết hạn do thay đổi phân quyền.")
+    st.info("Vui lòng vào tab **⚙️ Cài đặt -> Đồng bộ Google Calendar** để thực hiện đăng nhập lại.")
     
-    if st.session_state.gg_flow_data:
-        flow = st.session_state.gg_flow_data
-        st.divider()
-        st.markdown("**📋 Hướng dẫn đăng nhập:**")
-        st.markdown(f"**Bước 1:** Mở link sau trên điện thoại hoặc máy tính:")
-        st.code(flow['verification_url'], language=None)
-        st.markdown(f"**Bước 2:** Nhập mã code:")
-        st.code(flow['user_code'], language=None)
-        st.markdown("**Bước 3:** Chọn tài khoản Google → Bấm Allow → Quay lại đây bấm nút bên dưới.")
-        st.divider()
-        
-        if st.button("🔒 Tôi đã đăng nhập xong", type="primary", use_container_width=True):
-            with st.spinner("Đang xác nhận..."):
-                token_data, err_msg = complete_device_flow(client_id.strip(), client_secret.strip(), flow['device_code'])
-                if token_data and 'access_token' in token_data:
-                    new_cache = json.dumps(token_data)
-                    conn = get_connection()
-                    conn.execute("INSERT OR REPLACE INTO settings (id, key_name, value_data) VALUES ((SELECT id FROM settings WHERE key_name='google_token_cache'), 'google_token_cache', ?)", (new_cache,))
-                    conn.commit(); conn.close()
-                    st.session_state.gg_flow_data = None
-                    st.success("🎉 Đăng nhập thành công! Vui lòng ĐÓNG và mở lại hộp thoại để đồng bộ.")
-                    st.balloons()
-                else:
-                    st.error(f"× Chưa xác nhận được. Lỗi: {err_msg}")
+    if st.button("👉 Đi tới Cài Đặt", type="primary", use_container_width=True):
+        st.session_state.topnav = "⚙️ Cài đặt"
+        st.rerun()
 
 def render():
     conn_t = get_connection()

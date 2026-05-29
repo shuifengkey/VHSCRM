@@ -366,6 +366,74 @@ if "auto_scheduled_month" not in st.session_state or st.session_state.auto_sched
     auto_generate_all_future_schedules(months=2)
     st.session_state.auto_scheduled_month = date.today().strftime("%Y-%m")
 
+# Tự động backup Google Drive cuối tháng
+if "auto_backup_checked" not in st.session_state:
+    st.session_state.auto_backup_checked = True
+    try:
+        conn = get_connection()
+        last_backup = conn.execute("SELECT value_data FROM settings WHERE key_name='last_drive_backup_month'").fetchone()
+        last_backup_month = last_backup['value_data'] if last_backup else ""
+        
+        current_date = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date()
+        current_month_str = current_date.strftime("%Y-%m")
+        
+        import calendar
+        is_last_day = current_date.day == calendar.monthrange(current_date.year, current_date.month)[1]
+        
+        should_backup = False
+        if is_last_day and last_backup_month != current_month_str:
+            should_backup = True
+        elif last_backup_month and current_month_str > last_backup_month:
+            should_backup = True
+            
+        if not last_backup_month and not is_last_day:
+            conn.execute("INSERT OR REPLACE INTO settings (id, key_name, value_data) VALUES ((SELECT id FROM settings WHERE key_name='last_drive_backup_month'), 'last_drive_backup_month', ?)", (current_month_str,))
+            conn.commit()
+            
+        if should_backup:
+            import sqlite3, os, tempfile
+            tables = conn.execute("SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").fetchall()
+            fd, path = tempfile.mkstemp(suffix=".db")
+            os.close(fd)
+            if os.path.exists(path): os.remove(path)
+            
+            local_conn = sqlite3.connect(path)
+            for t in tables:
+                tname = t['name']
+                sql = t['sql']
+                if sql: local_conn.execute(sql)
+                rows = conn.execute(f"SELECT * FROM {tname}").fetchall()
+                if rows:
+                    cols = rows[0].keys() if hasattr(rows[0], 'keys') else rows[0]._mapping.keys()
+                    placeholders = ','.join(['?' for _ in cols])
+                    col_names = ','.join(cols)
+                    insert_sql = f"INSERT INTO {tname} ({col_names}) VALUES ({placeholders})"
+                    for row in rows:
+                        local_conn.execute(insert_sql, tuple(row[c] for c in cols))
+            local_conn.commit(); local_conn.close()
+            
+            with open(path, "rb") as f:
+                db_bytes = f.read()
+            os.remove(path)
+            
+            from utils.google_sync import get_cached_credentials, upload_to_google_drive
+            settings = dict(conn.execute("SELECT key_name, value_data FROM settings").fetchall())
+            client_id = settings.get("google_client_id")
+            client_secret = settings.get("google_client_secret")
+            cache_str = settings.get("google_token_cache")
+            if client_id and client_secret and cache_str:
+                creds, _ = get_cached_credentials(client_id, client_secret, cache_str)
+                if creds and creds.valid:
+                    filename = f"vhscrm_backup_{current_month_str}_{current_date.day}.db" if is_last_day else f"vhscrm_backup_missed_{last_backup_month}.db"
+                    ok, _ = upload_to_google_drive(creds, db_bytes, filename)
+                    if ok:
+                        conn.execute("INSERT OR REPLACE INTO settings (id, key_name, value_data) VALUES ((SELECT id FROM settings WHERE key_name='last_drive_backup_month'), 'last_drive_backup_month', ?)", (current_month_str,))
+                        conn.commit()
+                        # Only show toast if it was a background task during a session
+        conn.close()
+    except Exception as e:
+        print("Auto Backup error:", e)
+
 
 
 
@@ -839,5 +907,62 @@ elif page == "⚙️ Cài đặt":
                 st.success("Đã lưu cấu hình Google API!")
                 st.rerun()
                 
+        # --- Google Auth Flow ---
+        st.markdown("<hr style='margin:16px 0; border:0; border-top:1px solid #e2e8f0;'>", unsafe_allow_html=True)
+        st.markdown("### 🔑 Đăng nhập Google (Calendar & Drive)")
+        
+        from utils.google_sync import get_cached_credentials, initiate_device_flow, complete_device_flow
+        import json
+        
+        client_id_val = settings_dict.get('google_client_id')
+        client_secret_val = settings_dict.get('google_client_secret')
+        cache_str = settings_dict.get("google_token_cache")
+        
+        if not client_id_val or not client_secret_val:
+            st.warning("Vui lòng lưu Client ID và Client Secret ở trên trước khi đăng nhập.")
+        else:
+            creds, new_cache = get_cached_credentials(client_id_val, client_secret_val, cache_str)
+            if new_cache and new_cache != cache_str:
+                conn.execute("INSERT OR REPLACE INTO settings (id, key_name, value_data) VALUES ((SELECT id FROM settings WHERE key_name='google_token_cache'), 'google_token_cache', ?)", (new_cache,))
+                conn.commit()
+                
+            if creds and creds.valid:
+                st.success("✓ Đã kết nối với tài khoản Google thành công!")
+                if st.button("🔌 Đăng xuất (Xóa token)"):
+                    conn.execute("DELETE FROM settings WHERE key_name='google_token_cache'")
+                    conn.commit()
+                    st.rerun()
+            else:
+                if "gg_flow_data" not in st.session_state:
+                    st.session_state.gg_flow_data = None
+                
+                if st.session_state.gg_flow_data is None:
+                    if st.button("🔌 Lấy mã đăng nhập Google", type="primary"):
+                        with st.spinner("Đang kết nối..."):
+                            flow, err_msg = initiate_device_flow(client_id_val.strip())
+                            if flow and "verification_url" in flow:
+                                st.session_state.gg_flow_data = flow
+                                st.rerun()
+                            else:
+                                st.error(f"Lỗi: {err_msg}")
+                
+                if st.session_state.gg_flow_data:
+                    flow = st.session_state.gg_flow_data
+                    st.info("Thực hiện theo các bước sau để đăng nhập:")
+                    st.markdown(f"**Bước 1:** Mở link này: {flow['verification_url']}")
+                    st.markdown(f"**Bước 2:** Nhập mã code: **{flow['user_code']}**")
+                    st.markdown("**Bước 3:** Cho phép truy cập Calendar và Drive.")
+                    if st.button("🔒 Đã hoàn tất đăng nhập trên web", type="primary"):
+                        with st.spinner("Đang xác nhận..."):
+                            token_data, err_msg = complete_device_flow(client_id_val.strip(), client_secret_val.strip(), flow['device_code'])
+                            if token_data and 'access_token' in token_data:
+                                conn.execute("INSERT OR REPLACE INTO settings (id, key_name, value_data) VALUES ((SELECT id FROM settings WHERE key_name='google_token_cache'), 'google_token_cache', ?)", (json.dumps(token_data),))
+                                conn.commit()
+                                st.session_state.gg_flow_data = None
+                                st.success("🎉 Đăng nhập thành công!")
+                                st.rerun()
+                            else:
+                                st.error(f"Lỗi: {err_msg}")
+                    
         conn.close()
         st.markdown("</div>", unsafe_allow_html=True)

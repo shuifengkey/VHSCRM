@@ -4,7 +4,10 @@ from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
-SCOPES = ['https://www.googleapis.com/auth/calendar']
+SCOPES = [
+    'https://www.googleapis.com/auth/calendar',
+    'https://www.googleapis.com/auth/drive.file'
+]
 
 def initiate_device_flow(client_id):
     url = "https://oauth2.googleapis.com/device/code"
@@ -175,3 +178,16 @@ def auto_sync_schedule_to_google(conn, schedule_id, action="upsert"):
         conn.commit()
         
     return ok, eid
+
+from googleapiclient.http import MediaIoBaseUpload
+import io
+
+def upload_to_google_drive(creds, file_bytes, filename):
+    try:
+        service = build('drive', 'v3', credentials=creds)
+        file_metadata = {'name': filename}
+        media = MediaIoBaseUpload(io.BytesIO(file_bytes), mimetype='application/octet-stream', resumable=True)
+        file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+        return True, file.get('id')
+    except Exception as e:
+        return False, str(e)
