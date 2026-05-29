@@ -362,12 +362,34 @@ def generate_payment_request_pdf(debt_data, attachments=None):
     sign_cell = ""
     if os.path.exists(_SIGN_PATH) and os.path.exists(_SEAL_PATH):
         from reportlab.graphics import shapes
-        sign_drawing = shapes.Drawing(4.5*cm, 2.8*cm)
-        # Chữ ký
-        sign_drawing.add(shapes.Image(0, 0.4*cm, 3.2*cm, 3.2*cm * (639/1132), _SIGN_PATH))
-        # Con dấu đè lên 3/4 chữ ký (bắt đầu từ 1/4 chiều rộng chữ ký)
-        sign_drawing.add(shapes.Image(0.8*cm, 0, 2.7*cm, 2.7*cm * (424/431), _SEAL_PATH))
-        sign_cell = sign_drawing
+        from PIL import Image as PILImage
+        
+        # Đọc kích thước gốc của 2 file để giữ nguyên tỷ lệ tương quan
+        try:
+            with PILImage.open(_SIGN_PATH) as img_sign_pil:
+                w_sign, h_sign = img_sign_pil.size
+            with PILImage.open(_SEAL_PATH) as img_seal_pil:
+                w_seal, h_seal = img_seal_pil.size
+                
+            # Scale chung để vừa vào ô chữ ký (ví dụ 0.12 points / pixel)
+            scale = 0.12
+            w_sign_pt, h_sign_pt = w_sign * scale, h_sign * scale
+            w_seal_pt, h_seal_pt = w_seal * scale, h_seal * scale
+            
+            # Khung vẽ vừa đủ chứa cả chữ ký và con dấu
+            drawing_width = w_sign_pt + w_seal_pt
+            drawing_height = max(h_sign_pt, h_seal_pt)
+            sign_drawing = shapes.Drawing(drawing_width, drawing_height)
+            
+            # Chữ ký (nâng lên 1 chút)
+            sign_drawing.add(shapes.Image(0, 0.4*cm, w_sign_pt, h_sign_pt, _SIGN_PATH))
+            # Con dấu đè lên chữ ký ở khoảng 3/4 chiều rộng chữ ký
+            seal_x = w_sign_pt * 0.65
+            sign_drawing.add(shapes.Image(seal_x, 0, w_seal_pt, h_seal_pt, _SEAL_PATH))
+            
+            sign_cell = sign_drawing
+        except Exception:
+            sign_cell = Spacer(1, 1.5*cm)
     else:
         sign_cell = Spacer(1, 1.5*cm)
 
