@@ -339,25 +339,26 @@ def auto_generate_schedules(ma_hd: str, ky_thang: str, overwrite=False, future_o
             except:
                 pass
             
-        # Tìm dịch hại, thời gian, KTV của lần thi công tương ứng (lan_thu) ở tháng gần nhất trước đó
+        # Tìm dịch hại, thời gian, KTV, phương pháp của lần thi công tương ứng (lan_thu) ở tháng gần nhất trước đó
         prev_sch = conn.execute(
-            "SELECT loai_con_trung, gio_bat_dau, gio_ket_thuc, ky_thuat_vien FROM schedules WHERE ma_hd=? AND lan_thu=? AND ky_thang < ? ORDER BY ky_thang DESC LIMIT 1",
+            "SELECT loai_con_trung, gio_bat_dau, gio_ket_thuc, ky_thuat_vien, phuong_phap_xu_ly FROM schedules WHERE ma_hd=? AND lan_thu=? AND ky_thang < ? ORDER BY ky_thang DESC LIMIT 1",
             (ma_hd, lan_thu, ky_thang)
         ).fetchone()
         
-        pest_val = prev_sch["loai_con_trung"] if (prev_sch and prev_sch["loai_con_trung"]) else hd.get("loai_con_trung")
-        ktv_val = prev_sch["ky_thuat_vien"] if (prev_sch and prev_sch["ky_thuat_vien"]) else hd.get("ky_thuat_vien")
-        gbd_val = prev_sch["gio_bat_dau"] if (prev_sch and prev_sch["gio_bat_dau"]) else hd["gio_bat_dau"]
-        gkt_val = prev_sch["gio_ket_thuc"] if (prev_sch and prev_sch["gio_ket_thuc"]) else hd["gio_ket_thuc"]
+        pest_val = prev_sch["loai_con_trung"] if (prev_sch and prev_sch.get("loai_con_trung")) else hd.get("loai_con_trung")
+        method_val = prev_sch["phuong_phap_xu_ly"] if (prev_sch and prev_sch.get("phuong_phap_xu_ly")) else hd.get("phuong_phap_xu_ly")
+        ktv_val = prev_sch["ky_thuat_vien"] if (prev_sch and prev_sch.get("ky_thuat_vien")) else hd.get("ky_thuat_vien")
+        gbd_val = prev_sch["gio_bat_dau"] if (prev_sch and prev_sch.get("gio_bat_dau")) else hd["gio_bat_dau"]
+        gkt_val = prev_sch["gio_ket_thuc"] if (prev_sch and prev_sch.get("gio_ket_thuc")) else hd["gio_ket_thuc"]
 
         rs = conn.execute("""
             INSERT INTO schedules
               (ma_hd, ma_kh, ky_thang, lan_thu, ngay_du_kien,
-               gio_bat_dau, gio_ket_thuc, nguon, loai_con_trung, ky_thuat_vien)
-            VALUES(?,?,?,?,?,?,?,?,?,?)
+               gio_bat_dau, gio_ket_thuc, nguon, loai_con_trung, phuong_phap_xu_ly, ky_thuat_vien)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?)
             RETURNING id
         """, (ma_hd, hd["ma_kh"], ky_thang, lan_thu,
-              d.isoformat(), gbd_val, gkt_val, "auto", pest_val, ktv_val)).fetchone()
+              d.isoformat(), gbd_val, gkt_val, "auto", pest_val, method_val, ktv_val)).fetchone()
         
         if rs:
             from utils.google_sync import auto_sync_schedule_to_google

@@ -518,12 +518,14 @@ def render():
                                     new_ktv = st.selectbox("Kỹ thuật viên", [""] + KTV_LIST, index=ktv_idx, key=f"ktv_{r['id']}")
                                     
                                     new_pest = st.text_input("Dịch hại", value=r.get("loai_con_trung") or hd.get("loai_con_trung") or "", key=f"pest_{r['id']}")
+                                    new_method = st.text_input("Phương pháp xử lý", value=r.get("phuong_phap_xu_ly") or hd.get("phuong_phap_xu_ly") or "", key=f"method_{r['id']}")
                                     
                                     st.markdown("<div style='font-size:13px;font-weight:600;margin-bottom:8px;color:#0f172a;'>🔄 Áp dụng cho các kỳ sau:</div>", unsafe_allow_html=True)
-                                    cc1, cc2, cc3 = st.columns(3)
+                                    cc1, cc2, cc3, cc4 = st.columns(4)
                                     with cc1: apply_time = st.checkbox("Giờ thi công", value=False, key=f"app_time_{r['id']}")
                                     with cc2: apply_ktv = st.checkbox("KTV", value=False, key=f"app_ktv_{r['id']}")
                                     with cc3: apply_pest = st.checkbox("Dịch hại", value=False, key=f"app_pest_{r['id']}")
+                                    with cc4: apply_method = st.checkbox("Phương pháp", value=False, key=f"app_method_{r['id']}")
     
                                     cs,ck = st.columns(2)
                                     with cs: save_btn = st.form_submit_button("💾 Lưu",use_container_width=True)
@@ -536,7 +538,7 @@ def render():
                                             # Thu thập các ngày sẽ cập nhật (ca hiện tại + ca tương lai)
                                             dates_to_check = [new_ngay]
                                             future_ids = []
-                                            if apply_time or apply_ktv or apply_pest:
+                                            if apply_time or apply_ktv or apply_pest or apply_method:
                                                 future_schedules = conn.execute("SELECT id, ngay_du_kien FROM schedules WHERE ma_hd=? AND lan_thu=? AND ky_thang > ? AND trang_thai!='skipped' AND trang_thai!='completed'", (r["ma_hd"], r["lan_thu"], r["ky_thang"])).fetchall()
                                                 for fs in future_schedules:
                                                     if apply_ktv:
@@ -556,12 +558,12 @@ def render():
                                                     continue
                                             
                                             conn.execute("""UPDATE schedules
-                                                SET ngay_du_kien=?,gio_bat_dau=?,gio_ket_thuc=?,ghi_chu=?,nguon='manual',ky_thuat_vien=?,loai_con_trung=?
+                                                SET ngay_du_kien=?,gio_bat_dau=?,gio_ket_thuc=?,ghi_chu=?,nguon='manual',ky_thuat_vien=?,loai_con_trung=?,phuong_phap_xu_ly=?
                                                 WHERE id=?""",
                                                 (new_ngay.isoformat(), new_gbd.strftime("%H:%M"),
-                                                 new_gkt.strftime("%H:%M"), new_gc, new_ktv, new_pest, r["id"]))
+                                                 new_gkt.strftime("%H:%M"), new_gc, new_ktv, new_pest, new_method, r["id"]))
                                             
-                                            if apply_time or apply_ktv or apply_pest:
+                                            if apply_time or apply_ktv or apply_pest or apply_method:
                                                 set_clauses = ["nguon='manual'"]
                                                 params = []
                                                 if apply_time:
@@ -573,6 +575,9 @@ def render():
                                                 if apply_pest:
                                                     set_clauses.append("loai_con_trung=?")
                                                     params.append(new_pest)
+                                                if apply_method:
+                                                    set_clauses.append("phuong_phap_xu_ly=?")
+                                                    params.append(new_method)
                                                 
                                                 params.extend([r["ma_hd"], r["lan_thu"], r["ky_thang"]])
                                                 query = f"UPDATE schedules SET {', '.join(set_clauses)} WHERE ma_hd=? AND lan_thu=? AND ky_thang > ? AND trang_thai!='skipped' AND trang_thai!='completed'"
@@ -580,7 +585,7 @@ def render():
                                             
                                             from utils.google_sync import auto_sync_schedule_to_google
                                             auto_sync_schedule_to_google(conn, r["id"], "upsert")
-                                            if apply_time or apply_ktv or apply_pest:
+                                            if apply_time or apply_ktv or apply_pest or apply_method:
                                                 for fid in future_ids:
                                                     auto_sync_schedule_to_google(conn, fid, "upsert")
                                                     

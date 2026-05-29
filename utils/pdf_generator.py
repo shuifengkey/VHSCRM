@@ -268,7 +268,7 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, schedule_entry: dict
             loai_khach = (contract.get("loai_khach") or "").lower()
             khu_vuc = (contract.get("khu_vuc_xu_ly") or "").lower()
             phan_khuc = (customer.get("phan_khuc") or "").lower()
-            phuong_phap = (contract.get("phuong_phap_xu_ly") or "").lower()
+            phuong_phap = (schedule_entry.get("phuong_phap_xu_ly") or contract.get("phuong_phap_xu_ly") or "").lower()
             con_trung = (schedule_entry.get("loai_con_trung") or contract.get("loai_con_trung") or "").lower()
             ghi_chu = (schedule_entry.get("ghi_chu") or "").lower()
             
@@ -345,7 +345,7 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, schedule_entry: dict
         ParagraphStyle("SH2", parent=styles["Normal"], fontSize=10, textColor=VHS_GREEN,
                        fontName="Helvetica-Bold", spaceAfter=4)))
     
-    phuong_phap_str = contract.get("phuong_phap_xu_ly") or "Theo hợp đồng"
+    phuong_phap_str = schedule_entry.get("phuong_phap_xu_ly") or contract.get("phuong_phap_xu_ly") or "Theo hợp đồng"
     elements.append(Paragraph(
         phuong_phap_str,
         ParagraphStyle("Content", parent=styles["Normal"], fontSize=9,
