@@ -247,8 +247,8 @@ def render():
             st.markdown('<div class="vhs-card">', unsafe_allow_html=True)
             st.markdown("**📝 Thông Tin Khách Hàng Mới**")
             st.markdown('<hr style="margin:12px 0">', unsafe_allow_html=True)
-            if st.session_state.get("add_kh_success"):
-                st.toast(st.session_state.add_kh_success, icon="✓")
+            if "add_kh_success" in st.session_state and st.session_state.add_kh_success:
+                st.toast(st.session_state.add_kh_success, icon="✅")
                 st.balloons()
                 st.session_state.add_kh_success = None
                 

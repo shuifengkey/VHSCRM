@@ -381,7 +381,7 @@ def render():
                         conn.execute("INSERT INTO expenses (ngay_chi, loai_chi_phi, so_tien, nguoi_chi, ghi_chu) VALUES (?, ?, ?, ?, ?)",
                                      (ngay_chi.isoformat(), loai_cp, so_tien, nguoi_chi, ghi_chu))
                         conn.commit()
-                        st.toast("Thêm chi phí thành công!", icon="✓")
+                        st.toast("Thêm chi phí thành công!", icon="✅")
                         st.rerun()
                     else:
                         st.warning("Vui lòng nhập số tiền hợp lệ")

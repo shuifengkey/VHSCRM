@@ -300,7 +300,7 @@ def render():
                 st.markdown('<hr style="margin:8px 0 16px">', unsafe_allow_html=True)
 
                 if st.session_state.get("add_hd_success"):
-                    st.toast(st.session_state.add_hd_success, icon="✓")
+                    st.toast(st.session_state.add_hd_success, icon="✅")
                     st.balloons()
                     st.session_state.add_hd_success = None
 
