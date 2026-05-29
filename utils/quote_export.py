@@ -55,10 +55,10 @@ def generate_quote_pdf(quote_data, items_data):
     content = []
 
     # --- TOP HEADER ---
-    logo_path = os.path.normpath(os.path.join(_HERE, "..", "logo.png"))
+    logo_path = os.path.normpath(os.path.join(_HERE, "..", "LOGO TEN.png"))
     if os.path.exists(logo_path):
-        img_w = 2.0*cm
-        img_h = img_w * (1024/905)
+        img_w = 1.5*cm
+        img_h = img_w * (324/220)
         logo_img = Image(logo_path, width=img_w, height=img_h)
     else:
         logo_img = ""
