@@ -201,10 +201,10 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, schedule_entry: dict
         schedule_entry = {}
 
     try:
-        from pypdf import PdfReader, PdfWriter
         from reportlab.pdfgen import canvas
         from reportlab.pdfbase import pdfmetrics
         from reportlab.pdfbase.ttfonts import TTFont
+        from pdfrw import PdfReader as PdfrwReader, PdfWriter as PdfrwWriter, PageMerge
         import io
         
         font_path = os.path.join(os.path.dirname(__file__), "Roboto-Regular.ttf")
@@ -217,7 +217,10 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, schedule_entry: dict
         template_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "VHS PCC.pdf"))
         
         if os.path.exists(template_path):
-            existing_pdf = PdfReader(open(template_path, "rb"))
+            # Đọc template bằng pdfrw (giữ nguyên font gốc)
+            template_pdf = PdfrwReader(template_path)
+            
+            # Tạo lớp overlay chỉ chứa data
             packet = io.BytesIO()
             c = canvas.Canvas(packet, pagesize=A4)
             c.setFont(fnt, 11)
@@ -282,15 +285,16 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, schedule_entry: dict
             c.save()
             packet.seek(0)
 
-            new_pdf = PdfReader(packet)
-            output = PdfWriter()
+            # Dùng pdfrw PageMerge — giữ nguyên 100% font gốc của template
+            overlay_pdf = PdfrwReader(packet)
+            template_page = template_pdf.pages[0]
+            merger = PageMerge(template_page)
+            merger.add(overlay_pdf.pages[0]).render()
 
-            page = existing_pdf.pages[0]
-            page.merge_page(new_pdf.pages[0])
-            output.add_page(page)
-
+            writer = PdfrwWriter()
+            writer.addpage(template_page)
             out_buffer = io.BytesIO()
-            output.write(out_buffer)
+            writer.write(out_buffer)
             return out_buffer.getvalue()
     except Exception as e:
         print(f"Error using PCC template: {e}")
