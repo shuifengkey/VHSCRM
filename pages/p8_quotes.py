@@ -63,6 +63,57 @@ def render():
         {"name": "Kiểm soát Gặm nhấm\n(Rodent Control)", "targets": "Chuột cống, chuột nhắt\n(Rats, mice)", "chemicals": "Bả Storm, bẫy dính\n(Rat Bait Station, Glue Boards)", "frequency": "1 lần / tháng\n(1 times/month)", "price": 320000, "quantity": 4, "note": "Đồng Nai"}
     ]
     
+    PRESETS = {
+        "Côn trùng bay (Ruồi, Muỗi)": {
+            "name": "Kiểm soát Côn trùng bay (Flying Insect Control)",
+            "targets": "Muỗi, ruồi... (Mosquitoes, flies...)",
+            "chemicals": "Spectra 10SC",
+            "frequency": "1 lần / tháng (1 time/month)"
+        },
+        "Gián Đức & Kiến": {
+            "name": "Kiểm soát Gián Đức & Kiến (Cockroach & Ant Control)",
+            "targets": "Gián Đức, kiến (German cockroaches, ants)",
+            "chemicals": "Zentek, Posedon Bả Gel sinh học",
+            "frequency": "1 lần / tháng (1 times/month)"
+        },
+        "Gặm nhấm (Chuột)": {
+            "name": "Kiểm soát Gặm nhấm (Rodent Control)",
+            "targets": "Chuột cống, chuột nhắt (Rats, mice)",
+            "chemicals": "Bả Storm, bẫy dính (Rat Bait Station, Glue Boards)",
+            "frequency": "1 lần / tháng (1 times/month)"
+        },
+        "Khử trùng diệt khuẩn": {
+            "name": "Khử trùng diệt khuẩn (Disinfection Service)",
+            "targets": "Vi khuẩn, virus (Bacteria, viruses)",
+            "chemicals": "Chlorine / Cloramin B",
+            "frequency": "1 lần / tháng (1 times/month)"
+        },
+        "Kiểm soát Mối": {
+            "name": "Kiểm soát Mối (Termite Control)",
+            "targets": "Mối gỗ ẩm, mối đất (Subterranean termites)",
+            "chemicals": "Mythic 240SC / Termize 200SC",
+            "frequency": "Bảo hành 1 năm"
+        }
+    }
+    
+    with st.expander("📚 Chèn dịch vụ mẫu (Có thể chỉnh sửa sau khi chèn)", expanded=False):
+        st.markdown("<span style='font-size:13px; color:#64748b;'>Chọn một dịch vụ có sẵn để thêm nhanh vào bảng bên dưới. Sau khi thêm, anh có thể sửa chữ trực tiếp trong bảng.</span>", unsafe_allow_html=True)
+        pc1, pc2 = st.columns([3, 1])
+        with pc1:
+            preset_choice = st.selectbox("Chọn dịch vụ mẫu:", list(PRESETS.keys()), label_visibility="collapsed")
+        with pc2:
+            if st.button("➕ Thêm vào bảng", use_container_width=True):
+                st.session_state.quote_items.append({
+                    "name": PRESETS[preset_choice]["name"],
+                    "targets": PRESETS[preset_choice]["targets"],
+                    "chemicals": PRESETS[preset_choice]["chemicals"],
+                    "frequency": PRESETS[preset_choice]["frequency"],
+                    "price": 0,
+                    "quantity": 1,
+                    "note": ""
+                })
+                st.rerun()
+
     if "quote_items" not in st.session_state:
         st.session_state.quote_items = default_items
         
