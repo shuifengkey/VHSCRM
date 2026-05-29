@@ -301,12 +301,18 @@ div[data-testid="InputInstructions"] {{ display: none !important; }}
     if submitted:
         is_valid = False
         role = ""
-        if pin_val == "1710":
-            is_valid = True
-            role = "ktv"
-        elif _verify_pin(pin_val):
+        
+        if _verify_pin(pin_val):
             is_valid = True
             role = "admin"
+        else:
+            conn_auth = get_connection()
+            ktv_row = conn_auth.execute("SELECT ten FROM technicians WHERE active=1 AND pin=? AND pin != '' AND pin IS NOT NULL", (pin_val,)).fetchone()
+            conn_auth.close()
+            if ktv_row:
+                is_valid = True
+                role = "ktv"
+                st.session_state.mobile_ktv = ktv_row["ten"]
             
         if is_valid:
             _reset_lockout()
