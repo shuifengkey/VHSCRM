@@ -361,17 +361,13 @@ def generate_payment_request_pdf(debt_data, attachments=None):
     
     sign_cell = ""
     if os.path.exists(_SIGN_PATH) and os.path.exists(_SEAL_PATH):
-        from reportlab.platypus import Image
-        img_sign = Image(_SIGN_PATH, width=3*cm, height=3*cm * (639/1132))
-        img_seal = Image(_SEAL_PATH, width=2.5*cm, height=2.5*cm * (424/431))
-        
-        sign_cell = Table([[img_sign, img_seal]], colWidths=[3.2*cm, 2.7*cm])
-        sign_cell.setStyle(TableStyle([
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
-            ("TOPPADDING", (0, 0), (-1, -1), 0),
-        ]))
+        from reportlab.graphics import shapes
+        sign_drawing = shapes.Drawing(4.5*cm, 2.8*cm)
+        # Chữ ký
+        sign_drawing.add(shapes.Image(0, 0.4*cm, 3.2*cm, 3.2*cm * (639/1132), _SIGN_PATH))
+        # Con dấu đè lên 3/4 chữ ký (bắt đầu từ 1/4 chiều rộng chữ ký)
+        sign_drawing.add(shapes.Image(0.8*cm, 0, 2.7*cm, 2.7*cm * (424/431), _SEAL_PATH))
+        sign_cell = sign_drawing
     else:
         sign_cell = Spacer(1, 1.5*cm)
 
