@@ -19,6 +19,15 @@ try:
     _conn.close()
 except Exception:
     pass
+try:
+    from utils.database import get_connection
+    _conn = get_connection()
+    _conn.execute("ALTER TABLE customers ADD COLUMN lat REAL")
+    _conn.execute("ALTER TABLE customers ADD COLUMN lng REAL")
+    _conn.commit()
+    _conn.close()
+except Exception:
+    pass
 
 import plotly.graph_objects as go
 
@@ -307,68 +316,93 @@ def render():
                 if not map_jobs:
                     st.info("Các ca thi công hôm nay không có thông tin địa chỉ để vẽ bản đồ.")
                 else:
-                    import urllib.parse
+                    from utils.maps_integration import get_coordinates_from_address, get_optimized_motorcycle_route
+                    import folium
+                    from streamlit_folium import st_folium
                     
-                    import os
-                    from dotenv import load_dotenv
-                    load_dotenv()
-                    api_key = os.getenv("GOOGLE_MAPS_API_KEY")
+                    google_api_key = st.secrets.get("GOOGLE_MAPS_API_KEY", "")
+                    here_api_key = st.secrets.get("HERE_API_KEY", "")
                     
                     route_mode = st.radio("Điểm xuất phát:", ["🏠 Từ nhà (164 Huy Cận)", "📍 Từ ca thi công đầu tiên"], index=1, horizontal=True)
-                    vehicle_mode = st.radio("Phương tiện:", ["🏍️ Xe máy", "🚗 Ô tô"], index=1, horizontal=True)
-                        
-                    if vehicle_mode.startswith("🏍️"):
-                        embed_mode = "bicycling" # Embed API might not support two_wheeler everywhere, bicycling is a safe visual fallback for two wheels, though driving is often used.
-                        dir_mode = "two-wheeler"
-                    else:
-                        embed_mode = "driving"
-                        dir_mode = "driving"
                     
-                    if route_mode.startswith("🏠"):
-                        origin = "164 Huy Cận, Phước Long"
-                        wp_list = [j['dia_chi'] for j in map_jobs[:-1]]
-                        is_single_place = False
-                    else:
-                        origin = map_jobs[0]['dia_chi']
-                        wp_list = [j['dia_chi'] for j in map_jobs[1:-1]]
-                        is_single_place = (len(map_jobs) == 1)
-                        
-                    dest = map_jobs[-1]['dia_chi']
-                    
-                    if api_key and api_key.strip():
-                        if is_single_place:
-                            map_url = f"https://www.google.com/maps/embed/v1/place?key={api_key}&q={urllib.parse.quote(origin)}"
-                            dir_url = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(origin)}"
+                    if st.button("🚀 Tối ưu & Vẽ Lộ Trình Xe Máy (HERE Maps)", type="primary"):
+                        if not here_api_key:
+                            st.error("Chưa cấu hình HERE_API_KEY trong hệ thống.")
                         else:
-                            if wp_list:
-                                waypoints = "|".join(urllib.parse.quote(wp) for wp in wp_list)
-                                wp_param = f"&waypoints={waypoints}"
-                            else:
-                                wp_param = ""
-                            map_url = f"https://www.google.com/maps/embed/v1/directions?key={api_key}&origin={urllib.parse.quote(origin)}&destination={urllib.parse.quote(dest)}&mode={embed_mode}{wp_param}"
-                            dir_url = f"https://www.google.com/maps/dir/?api=1&origin={urllib.parse.quote(origin)}&destination={urllib.parse.quote(dest)}&travelmode={dir_mode}{wp_param}"
-                    else:
-                        if is_single_place:
-                            map_url = f"https://maps.google.com/maps?q={urllib.parse.quote(origin)}&output=embed"
-                            dir_url = f"https://www.google.com/maps/search/?api=1&query={urllib.parse.quote(origin)}"
-                        else:
-                            if wp_list:
-                                waypoints = " to:".join(wp for wp in wp_list)
-                                daddr = f"{waypoints} to:{dest}"
-                                wp_param = "&waypoints=" + "|".join(urllib.parse.quote(wp) for wp in wp_list)
-                            else:
-                                daddr = dest
-                                wp_param = ""
-                            map_url = f"https://maps.google.com/maps?saddr={urllib.parse.quote(origin)}&daddr={urllib.parse.quote(daddr)}&output=embed"
-                            dir_url = f"https://www.google.com/maps/dir/?api=1&origin={urllib.parse.quote(origin)}&destination={urllib.parse.quote(dest)}&travelmode={dir_mode}{wp_param}"
-                    
-                    st.markdown(f'''
-                    <div style="border-radius:12px; overflow:hidden; border:1px solid #e2e8f0; box-shadow:0 1px 4px rgba(0,0,0,.04); margin-bottom:10px;">
-                        <iframe src="{map_url}" width="100%" height="500" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
-                    </div>
-                    ''', unsafe_allow_html=True)
-                    btn_text = "📍 Bắt đầu đi từ nhà (Google Maps)" if route_mode.startswith("🏠") else "📍 Mở lộ trình trên Google Maps"
-                    st.markdown(f'<a href="{dir_url}" target="_blank" style="display:inline-block;margin-top:10px;background:#3b82f6;color:white;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">{btn_text}</a>', unsafe_allow_html=True)
+                            with st.spinner("Đang định vị và tối ưu hóa lộ trình xe máy..."):
+                                try:
+                                    conn = get_connection()
+                                    waypoints = []
+                                    if route_mode.startswith("🏠"):
+                                        home_lat, home_lng = 10.826880, 106.762880 # Tọa độ 164 Huy Cận
+                                        waypoints.append({"id": "home", "lat": home_lat, "lng": home_lng, "name": "Nhà", "time": "00:00"})
+                                        
+                                    for j in map_jobs:
+                                        # Khách hàng có lat, lng chưa? Nếu chưa thì lấy từ bảng customers
+                                        kh = conn.execute("SELECT lat, lng FROM customers WHERE ma_kh=?", (j['ma_kh'],)).fetchone()
+                                        lat, lng = (kh['lat'], kh['lng']) if kh else (None, None)
+                                        
+                                        if not lat or not lng:
+                                            lat, lng = get_coordinates_from_address(j["dia_chi"], google_api_key)
+                                            if lat and lng:
+                                                conn.execute("UPDATE customers SET lat=?, lng=? WHERE ma_kh=?", (lat, lng, j['ma_kh']))
+                                                conn.commit()
+                                                
+                                        if lat and lng:
+                                            waypoints.append({
+                                                "id": str(j["id"]),
+                                                "lat": lat,
+                                                "lng": lng,
+                                                "name": j["ten_cty"],
+                                                "time": j["gio_bat_dau"]
+                                            })
+                                            
+                                    conn.close()
+                                    
+                                    if len(waypoints) < 2:
+                                        st.warning("Cần ít nhất 2 điểm có tọa độ để vẽ lộ trình.")
+                                    else:
+                                        start_point = waypoints[0]
+                                        destinations = waypoints[1:]
+                                        
+                                        optimized_sequence, polyline_points = get_optimized_motorcycle_route(start_point, destinations, here_api_key)
+                                        
+                                        # Render Folium
+                                        m = folium.Map(location=[start_point["lat"], start_point["lng"]], zoom_start=13)
+                                        
+                                        # Start
+                                        folium.Marker(
+                                            [start_point["lat"], start_point["lng"]], 
+                                            popup=f"Xuất phát: {start_point['name']}",
+                                            icon=folium.Icon(color='green', icon='play')
+                                        ).add_to(m)
+                                        
+                                        # Dests
+                                        waypoint_map = {wp["id"]: wp for wp in waypoints}
+                                        for seq in optimized_sequence:
+                                            wp_info = waypoint_map[seq["id"]]
+                                            folium.Marker(
+                                                [seq["lat"], seq["lng"]], 
+                                                popup=f"Thứ tự {seq['sequence']}: {wp_info['name']}",
+                                                icon=folium.Icon(color='blue', icon='info-sign')
+                                            ).add_to(m)
+                                            
+                                        if polyline_points:
+                                            folium.PolyLine(polyline_points, color="red", weight=4, opacity=0.8).add_to(m)
+                                            
+                                        st_folium(m, width=600, height=450)
+                                        
+                                        import pandas as pd
+                                        st.markdown("### Đề xuất thứ tự đi (Tối ưu nhất):")
+                                        new_order_data = [{"Thứ tự": 1, "Công ty": start_point["name"], "Giờ": start_point["time"]}]
+                                        for seq in optimized_sequence:
+                                            wp_info = waypoint_map[seq["id"]]
+                                            new_order_data.append({"Thứ tự": seq["sequence"] + 1, "Công ty": wp_info["name"], "Giờ": wp_info["time"]})
+                                            
+                                        st.dataframe(pd.DataFrame(new_order_data), hide_index=True)
+                                        
+                                except Exception as e:
+                                    st.error(f"Lỗi vẽ bản đồ: {e}")
 
     # ═══════════════════════════════════
     # THEO THÁNG / HĐ
