@@ -8,7 +8,7 @@ def format_money(val):
 
 
 from utils.database import init_db, get_connection
-from utils.styles import GLOBAL_CSS, card, badge, section_header, stat_row, COLORS
+from utils.styles import GLOBAL_CSS, FONT_CSS, card, badge, section_header, stat_row, COLORS
 from datetime import timezone, datetime, date, timedelta
 import plotly.graph_objects as go
 import streamlit.components.v1 as components
@@ -26,6 +26,8 @@ st.set_page_config(
 )
 init_db()
 
+st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
+st.markdown(FONT_CSS, unsafe_allow_html=True)
 # Global CSS override for primary buttons
 st.markdown("""
 <style>
@@ -247,10 +249,9 @@ div[data-testid="InputInstructions"] {{ display: none !important; }}
 </style>
 <div style="animation:pinSlideIn 0.5s cubic-bezier(0.16,1,0.3,1);text-align:center;padding:20px 0 24px;">
     <img src="{_LOGO_URI}" style="width:90px;height:90px;margin:0 auto 20px;display:block;filter:drop-shadow(0 0 20px rgba(22,163,74,0.4));animation:pinPulse 2s infinite;" />
-    <div style="font-size:26px;font-weight:800;color:#f8fafc;margin-bottom:6px;letter-spacing:-0.3px;">VHSCRM</div>
+    <div class="vhs-logo-font" style="font-size:26px;font-weight:800;color:#f8fafc;margin-bottom:6px;letter-spacing:-0.3px;">VHSCRM</div>
     <div style="font-size:13px;color:#64748b;margin-bottom:24px;">Nhập mã PIN để truy cập hệ thống</div>
     {error_html}
-</div>
 """, unsafe_allow_html=True)
 
     st.markdown("""
@@ -350,8 +351,6 @@ div[data-testid="InputInstructions"] {{ display: none !important; }}
 # ============================================================
 # AUTHENTICATED — MAIN APP
 # ============================================================
-
-st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
 
 if st.session_state.get("auth_role") == "ktv":
     import importlib

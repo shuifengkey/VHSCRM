@@ -1,5 +1,21 @@
 # utils/styles.py — VHS CRM v4 — Top nav layout
 
+from utils.font_sqr721e_b64 import FONT_SQR721E_B64
+
+FONT_CSS = f"""
+<style>
+@font-face {{
+    font-family: 'Square721 Ex BT';
+    src: url(data:font/truetype;charset=utf-8;base64,{FONT_SQR721E_B64}) format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}}
+.vhs-nav-brand-text, .vhs-logo-font {{
+    font-family: 'Square721 Ex BT', sans-serif !important;
+}}
+</style>
+"""
+
 GLOBAL_CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');

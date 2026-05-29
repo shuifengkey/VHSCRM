@@ -15,6 +15,13 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 import os
 
+_font_path = os.path.join(os.path.dirname(__file__), "Square-721-Extended-BT.ttf")
+if os.path.exists(_font_path):
+    pdfmetrics.registerFont(TTFont('Square721', _font_path))
+    HEADER_FONT = "Square721"
+else:
+    HEADER_FONT = "Helvetica-Bold"
+
 # Màu thương hiệu VHS
 VHS_GREEN = colors.HexColor("#1a6b3c")
 VHS_LIGHT = colors.HexColor("#e8f5ee")
@@ -28,10 +35,10 @@ def _build_header(elements, styles, doc_type: str, ma_so: str):
     """Xây dựng phần header chung cho tất cả loại chứng từ"""
     # Tiêu đề công ty
     elements.append(Paragraph(
-        "<b>CÔNG TY TNHH VHS</b>",
+        "CÔNG TY TNHH VHS",
         ParagraphStyle("CompanyName", parent=styles["Normal"],
                        fontSize=16, textColor=VHS_GREEN,
-                       spaceAfter=2, alignment=TA_CENTER, fontName="Helvetica-Bold")
+                       spaceAfter=2, alignment=TA_CENTER, fontName=HEADER_FONT)
     ))
     elements.append(Paragraph(
         "Dịch vụ Kiểm soát Dịch hại Chuyên nghiệp",
