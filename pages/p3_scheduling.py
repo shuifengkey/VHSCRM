@@ -529,12 +529,12 @@ def render():
                                             conn = get_connection()
                                             
                                             # Thu thập các ngày sẽ cập nhật (ca hiện tại + ca tương lai nếu apply_future)
-                                            dates_to_check = [new_ngay.isoformat()]
+                                            dates_to_check = [new_ngay]
                                             future_ids = []
                                             if apply_future:
                                                 future_schedules = conn.execute("SELECT id, ngay_du_kien FROM schedules WHERE ma_hd=? AND lan_thu=? AND ky_thang > ? AND trang_thai!='skipped' AND trang_thai!='completed'", (r["ma_hd"], r["lan_thu"], r["ky_thang"])).fetchall()
                                                 for fs in future_schedules:
-                                                    dates_to_check.append(fs["ngay_du_kien"])
+                                                    dates_to_check.append(date.fromisoformat(fs["ngay_du_kien"]))
                                                     future_ids.append(fs["id"])
                                             
                                             # Check overlap
