@@ -3,26 +3,26 @@ import json
 import logging
 import urllib.parse
 
-def get_coordinates_from_address(address, here_api_key):
+def get_coordinates_from_address(address, google_api_key):
     """
-    Sử dụng HERE Geocoding API để chuyển đổi địa chỉ thành tọa độ.
+    Sử dụng Google Maps Geocoding API để chuyển đổi địa chỉ thành tọa độ.
     """
-    if not here_api_key:
-        raise ValueError("Thiếu HERE Maps API Key")
+    if not google_api_key:
+        raise ValueError("Thiếu Google Maps API Key")
     
-    url = "https://geocode.search.hereapi.com/v1/geocode"
+    url = "https://maps.googleapis.com/maps/api/geocode/json"
     params = {
-        "q": f"{address}, Vietnam",
-        "apiKey": here_api_key
+        "address": f"{address}, Vietnam",
+        "key": google_api_key
     }
     try:
         resp = requests.get(url, params=params)
         data = resp.json()
-        if "items" in data and len(data["items"]) > 0:
-            location = data["items"][0]["position"]
+        if data.get("status") == "OK" and data.get("results"):
+            location = data["results"][0]["geometry"]["location"]
             return location["lat"], location["lng"]
         else:
-            logging.error(f"Geocoding failed for '{address}': {data}")
+            logging.error(f"Geocoding failed for '{address}': {data.get('status')} - {data.get('error_message', '')}")
             return None, None
     except Exception as e:
         logging.error(f"Geocoding exception: {e}")
