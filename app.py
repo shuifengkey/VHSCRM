@@ -736,9 +736,7 @@ elif page == "💰 Công Nợ":
 elif page == "🖨️ Xuất PDF":
     from pages import p5_pdf; p5_pdf.render()
 elif page == "📝 Báo Giá":
-    importlib.reload(sys.modules.get('pages.p8_quotes', __import__('pages.p8_quotes')))
-    from pages import p8_quotes
-    p8_quotes.render()
+    from pages import p8_quotes; p8_quotes.render()
 elif page == "⚙️ Cài đặt":
     st.markdown("### 🔧 Cài đặt hệ thống")
     
