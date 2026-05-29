@@ -266,6 +266,11 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, logbook_entry: dict)
 
             c.setFont(fnt, 12)
             c.drawString(100, 105, str(logbook_entry.get("ky_thuat_vien", "")))
+            
+            # Small debug timestamp
+            c.setFont(fnt, 8)
+            now_str = (datetime.now(timezone.utc) + timedelta(hours=7)).strftime("%d/%m %H:%M:%S")
+            c.drawString(30, 30, f"Generated: {now_str} (v2)")
 
             c.save()
             packet.seek(0)
