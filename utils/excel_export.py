@@ -11,14 +11,6 @@ _LOGO_PATH = os.path.normpath(os.path.join(_HERE, "..", "LOGO TEN.png"))
 def _register_fonts():
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
-    
-    _font_path = os.path.join(_HERE, "Square-721-Extended-BT.ttf")
-    if os.path.exists(_font_path):
-        try:
-            pdfmetrics.registerFont(TTFont("Square721", _font_path))
-        except Exception:
-            pass
-
     try:
         pdfmetrics.getFont("Roboto")
         return "Roboto", "Roboto-Bold"
@@ -27,8 +19,6 @@ def _register_fonts():
     if os.path.exists(_FONT_REG) and os.path.exists(_FONT_BOLD):
         pdfmetrics.registerFont(TTFont("Roboto",      _FONT_REG))
         pdfmetrics.registerFont(TTFont("Roboto-Bold", _FONT_BOLD))
-        from reportlab.pdfbase.pdfmetrics import registerFontFamily
-        registerFontFamily("Roboto", normal="Roboto", bold="Roboto-Bold")
         return "Roboto", "Roboto-Bold"
     return "Helvetica", "Helvetica-Bold"
 
@@ -164,7 +154,7 @@ def generate_payment_request_pdf(debt_data, attachments=None):
         logo_cell = P("<b>VHS</b>", size=18, bold=True, color=VHS_BLUE)
 
     company_block = [
-        P("CÔNG TY TNHH VHS", font="Square721", size=12, color=VHS_BLUE),
+        P("<b>CÔNG TY TNHH VHS</b>", size=12, bold=True, color=VHS_BLUE),
         Spacer(1, 3),
         P("Địa chỉ: 67 Đường số 3, KP2, An Khánh, TP. HCM", size=8),
         P("Hotline: 0783 487 586", size=8),
