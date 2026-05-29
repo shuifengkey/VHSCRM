@@ -356,28 +356,51 @@ def generate_payment_request_pdf(debt_data, attachments=None):
     content.append(Spacer(1, 0.4*cm))
 
     # ── KÝ TÊN ───────────────────────────────────────────────
-    _SIGN_PATH = os.path.normpath(os.path.join(_HERE, "..", "Thuyansign.png"))
-    _SEAL_PATH = os.path.normpath(os.path.join(_HERE, "..", "VHS SEAL.png"))
+    _SIGN_PATH = os.path.normpath(os.path.join(_HERE, "..", "Thuyansign.png.enc"))
+    _SEAL_PATH = os.path.normpath(os.path.join(_HERE, "..", "VHS SEAL.png.enc"))
     
     sign_cell = ""
     if os.path.exists(_SIGN_PATH) and os.path.exists(_SEAL_PATH):
-        from reportlab.graphics import shapes
-        from PIL import Image as PILImage
-        
-        # Đọc kích thước gốc của 2 file để giữ nguyên tỷ lệ tương quan
         try:
-            with PILImage.open(_SIGN_PATH) as img_sign_pil:
+            import streamlit as st
+            from cryptography.fernet import Fernet
+            from PIL import Image as PILImage
+            from reportlab.platypus import Flowable
+            from reportlab.lib.utils import ImageReader
+            
+            # Giải mã hình ảnh
+            enc_key = st.secrets.get("IMAGE_ENCRYPTION_KEY")
+            if not enc_key:
+                raise ValueError("IMAGE_ENCRYPTION_KEY not found in secrets")
+                
+            fernet = Fernet(enc_key)
+            
+            with open(_SIGN_PATH, 'rb') as f:
+                sign_bytes = fernet.decrypt(f.read())
+            with open(_SEAL_PATH, 'rb') as f:
+                seal_bytes = fernet.decrypt(f.read())
+                
+            sign_stream = io.BytesIO(sign_bytes)
+            seal_stream = io.BytesIO(seal_bytes)
+            
+            # Đọc kích thước gốc
+            with PILImage.open(sign_stream) as img_sign_pil:
                 w_sign, h_sign = img_sign_pil.size
-            with PILImage.open(_SEAL_PATH) as img_seal_pil:
+            with PILImage.open(seal_stream) as img_seal_pil:
                 w_seal, h_seal = img_seal_pil.size
                 
-            from reportlab.platypus import Flowable
+            # Reset stream position after reading size
+            sign_stream.seek(0)
+            seal_stream.seek(0)
+            
+            img_sign_reader = ImageReader(sign_stream)
+            img_seal_reader = ImageReader(seal_stream)
             
             class SignatureOverlay(Flowable):
-                def __init__(self, sign_path, seal_path, sign_w, sign_h, seal_w, seal_h):
+                def __init__(self, sign_img, seal_img, sign_w, sign_h, seal_w, seal_h):
                     Flowable.__init__(self)
-                    self.sign_path = sign_path
-                    self.seal_path = seal_path
+                    self.sign_img = sign_img
+                    self.seal_img = seal_img
                     self.width = 8.0*cm
                     self.height = 1.8*cm
                     self.w_sign_pt = sign_w
@@ -386,17 +409,14 @@ def generate_payment_request_pdf(debt_data, attachments=None):
                     self.h_seal_pt = seal_h
                     
                 def draw(self):
-                    # Chữ ký: căn giữa cột 8cm -> x = 2.0cm
                     sign_x = 2.0*cm
                     sign_y = 0.0*cm
-                    # mask='auto' giữ nguyên nền trong suốt của PNG
-                    self.canv.drawImage(self.sign_path, sign_x, sign_y, 
+                    self.canv.drawImage(self.sign_img, sign_x, sign_y, 
                                         width=self.w_sign_pt, height=self.h_sign_pt, mask='auto')
                     
-                    # Con dấu đè lên bên trái chữ ký (x = 1.2cm), tràn lên chữ phía trên (y = 0.4cm)
                     seal_x = 1.2*cm
                     seal_y = 0.4*cm
-                    self.canv.drawImage(self.seal_path, seal_x, seal_y, 
+                    self.canv.drawImage(self.seal_img, seal_x, seal_y, 
                                         width=self.w_seal_pt, height=self.h_seal_pt, mask='auto')
 
             # Chữ ký: Rộng 4.7cm (+0.7cm)
@@ -407,8 +427,9 @@ def generate_payment_request_pdf(debt_data, attachments=None):
             w_seal_pt = 3.55*cm
             h_seal_pt = w_seal_pt * (h_seal / w_seal)
             
-            sign_cell = SignatureOverlay(_SIGN_PATH, _SEAL_PATH, w_sign_pt, h_sign_pt, w_seal_pt, h_seal_pt)
-        except Exception:
+            sign_cell = SignatureOverlay(img_sign_reader, img_seal_reader, w_sign_pt, h_sign_pt, w_seal_pt, h_seal_pt)
+        except Exception as e:
+            print(f"Error loading signature: {e}")
             sign_cell = Spacer(1, 1.5*cm)
     else:
         sign_cell = Spacer(1, 1.5*cm)

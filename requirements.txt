@@ -18,3 +18,4 @@ pypdf
 pdfrw
 opencv-python-headless
 numpy
+cryptography
