@@ -43,6 +43,7 @@ def render():
         <div style="font-size:16px;font-weight:700;color:#0f172a;">{r['ten']} <span style="font-size:12px;color:#64748b;font-weight:normal;">({r['ma_ktv']})</span></div>
         <div style="font-size:13px;color:#64748b;margin-top:4px;">
             <i class=\"ph-phone\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {r['sdt'] or 'Chưa cập nhật'} &nbsp;|&nbsp; 
+            🔑 PIN: <b>{r.get('pin') or 'Chưa tạo'}</b> &nbsp;|&nbsp;
             <span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;
                   background:{'#dcfce7' if r['active'] else '#fee2e2'};color:{'#166534' if r['active'] else '#991b1b'};">
                 {'Đang làm việc' if r['active'] else 'Đã nghỉ'}
@@ -58,13 +59,14 @@ def render():
                                 st.markdown("##### ✏️ Sửa Thông Tin")
                                 e_ten = st.text_input("Tên KTV", value=r['ten'])
                                 e_sdt = st.text_input("SĐT", value=r['sdt'] or "")
+                                e_pin = st.text_input("Mã PIN (Đăng nhập App)", value=r.get('pin') or "")
                                 e_act = st.selectbox("Trạng thái", ["Đang làm việc", "Đã nghỉ"], index=0 if r['active'] else 1)
                                 
                                 if st.form_submit_button("💾 Lưu Cập Nhật", type="primary", use_container_width=True):
                                     e_sdt_clean = ''.join(filter(str.isdigit, e_sdt)) if e_sdt else ""
                                     conn_edit = get_connection()
-                                    conn_edit.execute("UPDATE technicians SET ten=?, sdt=?, active=? WHERE ma_ktv=?",
-                                                      (e_ten, e_sdt_clean, 1 if e_act=="Đang làm việc" else 0, r['ma_ktv']))
+                                    conn_edit.execute("UPDATE technicians SET ten=?, sdt=?, active=?, pin=? WHERE ma_ktv=?",
+                                                      (e_ten, e_sdt_clean, 1 if e_act=="Đang làm việc" else 0, e_pin, r['ma_ktv']))
                                     conn_edit.commit(); conn_edit.close()
                                     st.success("Đã cập nhật!"); st.rerun()
                                 
@@ -94,6 +96,7 @@ def render():
             with c2:
                 sdt = st.text_input("Số Điện Thoại", placeholder="0901234567")
                 active = st.selectbox("Trạng thái", ["Đang làm việc", "Đã nghỉ"])
+            pin = st.text_input("Mã PIN (Đăng nhập App Mobile)", placeholder="VD: 123456")
                 
             if st.form_submit_button("➕ Thêm KTV", use_container_width=True):
                 if not ma_ktv or not ten:
@@ -102,8 +105,8 @@ def render():
                     sdt_clean = ''.join(filter(str.isdigit, sdt)) if sdt else ""
                     try:
                         conn2 = get_connection()
-                        conn2.execute("INSERT INTO technicians (ma_ktv, ten, sdt, active) VALUES (?,?,?,?)",
-                                      (ma_ktv.strip(), ten.strip(), sdt_clean, 1 if active=="Đang làm việc" else 0))
+                        conn2.execute("INSERT INTO technicians (ma_ktv, ten, sdt, active, pin) VALUES (?,?,?,?,?)",
+                                      (ma_ktv.strip(), ten.strip(), sdt_clean, 1 if active=="Đang làm việc" else 0, pin))
                         conn2.commit(); conn2.close()
                         st.success(f"✓ Đã thêm KTV {ten}!")
                         st.rerun()

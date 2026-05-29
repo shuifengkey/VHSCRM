@@ -266,6 +266,8 @@ def _do_init_db():
     except Exception: pass
     try: c.execute("ALTER TABLE contracts ADD COLUMN ky_thuat_vien TEXT")
     except Exception: pass
+    try: c.execute("ALTER TABLE technicians ADD COLUMN pin TEXT")
+    except Exception: pass
     
     conn.commit()
     conn.close()
