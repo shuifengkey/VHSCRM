@@ -222,7 +222,7 @@ def generate_payment_request_pdf(debt_data, attachments=None):
         
     table_data.append([P("<b>Người liên hệ (Attn):</b>",  size=9,  bold=True), P(nguoi_lh, size=9)])
 
-    kg = Table(table_data, colWidths=[5.5*cm, W - 5.5*cm])
+    kg = Table(table_data, colWidths=[3.5*cm, W - 3.5*cm])
     kg.setStyle(TableStyle([
         ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
