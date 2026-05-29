@@ -214,6 +214,17 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, schedule_entry: dict
         else:
             fnt = "Helvetica"
 
+        # Đăng ký Square721 Ex BT ngay trong hàm để chắc chắn dùng được
+        sq721_path = os.path.join(os.path.dirname(__file__), "Square-721-Extended-BT.ttf")
+        if os.path.exists(sq721_path):
+            try:
+                pdfmetrics.registerFont(TTFont("Square721", sq721_path))
+                has_sq721 = True
+            except Exception:
+                has_sq721 = False
+        else:
+            has_sq721 = False
+
         template_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "VHS PCC.pdf"))
         
         if os.path.exists(template_path):
@@ -222,23 +233,25 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, schedule_entry: dict
             c = canvas.Canvas(packet, pagesize=A4)
             c.setFont(fnt, 11)
 
-            # Đổi font chữ CÔNG TY TNHH VHS ở đầu trang thành Square721 Ex BT (có dấu Ô)
+            # Đổi font chữ CÔNG TY TNHH VHS ở đầu trang thành Square721 Ex BT
             from reportlab.lib import colors
-            from reportlab.platypus import Paragraph
-            from reportlab.lib.styles import ParagraphStyle
-            
-            # Tăng chiều cao hcn trắng để xóa sạch vùng phía trên, tránh đè lên chữ cũ
+
+            # Vẽ hình chữ nhật trắng đủ cao (40pt) để xóa chữ cũ và có khoảng trống phía trên cho dấu
             c.setFillColor(colors.white)
-            c.rect(105, 765, 230, 35, fill=1, stroke=0)
-            
-            # Dùng leading lớn (24) để Paragraph không tự cắt xén dấu Ô
-            style = ParagraphStyle("Overlay", fontName="Square721", fontSize=13, leading=24, textColor=colors.HexColor("#1a6b3c"))
-            p = Paragraph('C<font name="Helvetica-Bold">Ô</font>NG TY TNHH VHS', style)
-            p.wrapOn(c, 230, 35)
-            # Vẽ ở Y=772 để cách xa biên trên
-            p.drawOn(c, 113, 772)
-            
-            c.setFillColor(colors.black) # Reset lại màu đen cho các chữ bên dưới
+            c.rect(105, 762, 235, 42, fill=1, stroke=0)
+
+            if has_sq721:
+                company_font = "Square721"
+            else:
+                company_font = "Helvetica-Bold"
+
+            c.setFillColor(colors.HexColor("#1a6b3c"))
+            c.setFont(company_font, 13)
+            # Vẽ ở Y=774 – có 12pt khoảng trống phía trên dấu Ô (42 - 13 - vài pt padding)
+            c.drawCentredString(220, 774, "CÔNG TY TNHH VHS")
+
+            c.setFont(fnt, 11)
+            c.setFillColor(colors.black)  # Reset lại màu đen
 
             c.drawString(148, 672, str(customer.get("ten_cty", "")))
             c.drawString(148, 650, str(customer.get("dia_chi", "")))
