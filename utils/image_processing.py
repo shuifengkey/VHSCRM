@@ -48,15 +48,9 @@ class DocumentScanner:
     def detect_edges(self, blurred_img):
         """
         Phát hiện biên (Edge Detection): Sử dụng Canny Edge Detection
-        Kết hợp morphological closing để nối các đứt gãy biên.
         """
-        # Hạ thấp ngưỡng Canny để nhạy hơn với viền mờ
-        edged = cv2.Canny(blurred_img, 30, 150)
-        
-        # Dùng toán tử hình thái học (closing) để kết nối các đoạn đứt gãy
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-        edged = cv2.dilate(edged, kernel, iterations=1)
-        edged = cv2.erode(edged, kernel, iterations=1)
+        # Trả lại ngưỡng chuẩn, chỉ hạ nhẹ xuống để tránh quá nhiều nhiễu làm mất khung
+        edged = cv2.Canny(blurred_img, 50, 180)
         return edged
 
     def find_document_contour(self, edged, img_area):
