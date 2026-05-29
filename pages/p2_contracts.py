@@ -12,7 +12,8 @@ from pages.p2_contracts_edit import edit_contract_dialog
 import plotly.graph_objects as go
 
 TAN_SUAT_OPTS = {1:"1 lần/tháng", 2:"2 lần/tháng",
-                 3:"3 lần/tháng", 4:"4 lần/tháng"}
+                 3:"3 lần/tháng", 4:"4 lần/tháng",
+                 5:"5 lần/tháng", 6:"6 lần/tháng"}
 
 KHU_VUC_OPTIONS = [
     "Nhà hàng", "Văn phòng", "Cửa hàng",
@@ -332,7 +333,7 @@ def render():
                         with c_gia:
                             gia_tri_str = st.text_input("Giá Trị (VNĐ) *", key="raw_gia_tri", value=st.session_state.fmt_gia_tri, placeholder="3.500.000", on_change=format_currency)
                         with c_dvt:
-                            don_vi_tinh = st.selectbox("Đơn Vị", ["/tháng", "/lần thi công"])
+                            don_vi_tinh = st.selectbox("Đơn Vị", ["/tháng", "/lần"])
                         with c_vat:
                             vat_pct = st.selectbox("VAT (%)", [0, 8, 10], index=0)
     
@@ -371,7 +372,7 @@ def render():
                         with c_ts:
                             tan_suat = st.selectbox(
                                 "Số Lần Thi Công / Tháng *",
-                                [1,2,3,4], format_func=lambda x: TAN_SUAT_OPTS[x]
+                                [1,2,3,4,5,6], format_func=lambda x: TAN_SUAT_OPTS[x]
                             )
                         
                         st.markdown("""
@@ -482,18 +483,49 @@ def render():
                             "lap_thu":  lap_thu_val,
                             "tuan_lap_lai": tuan_lap_lai_val,
                             "gio_bat_dau": gbd, "gio_ket_thuc": gkt,
+                            "loai_khach": loai_khach,
+                            "chu_ky_lap": chu_ky_lap
                         }
                         ky_preview = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().strftime("%Y-%m")
                         prev_html = _preview_schedule(hd_preview, ky_preview)
                         st.markdown(f"""
                         <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;margin:10px 0;">
                           <div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:8px;">
-                            <i class=\"ph-calendar\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Preview lịch tháng {ky_preview} — {TAN_SUAT_OPTS[tan_suat]}
+                            <i class=\"ph-calendar\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Preview lịch tháng {ky_preview} — {TAN_SUAT_OPTS.get(tan_suat, str(tan_suat))}
                           </div>
                           {prev_html}
                         </div>
                         """, unsafe_allow_html=True)
-                    except: pass
+                        
+                        from utils.scheduling import check_ktv_schedule_conflict, calc_dates_for_month
+                        dates_preview = calc_dates_for_month(hd_preview, ky_preview)
+                        
+                        ky_next = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().replace(day=1) + timedelta(days=32)
+                        ky_next_str = ky_next.strftime("%Y-%m")
+                        dates_next = calc_dates_for_month(hd_preview, ky_next_str)
+                        
+                        all_preview_dates = dates_preview + dates_next
+                        conflicts = check_ktv_schedule_conflict(ktv_val, None, all_preview_dates, gbd, gkt)
+                        if conflicts:
+                            c_lines = []
+                            for c in conflicts[:5]: # Chỉ hiện max 5
+                                c_lines.append(f"<li>Ngày <b>{datetime.strptime(c['date'], '%Y-%m-%d').strftime('%d/%m/%Y')}</b>: Trùng với <b>{c['ten_cty']}</b> ({c['gio_bat_dau']} - {c['gio_ket_thuc']})</li>")
+                            if len(conflicts) > 5:
+                                c_lines.append(f"<li><i>...và {len(conflicts)-5} ca khác</i></li>")
+                            c_html = "".join(c_lines)
+                            st.markdown(f"""
+                            <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px;margin:10px 0;">
+                              <div style="font-size:13px;font-weight:700;color:#dc2626;margin-bottom:6px;">
+                                ⚠️ CẢNH BÁO: KTV {ktv_val} bị trùng lịch
+                              </div>
+                              <ul style="margin:0;padding-left:20px;font-size:12px;color:#991b1b;">
+                                {c_html}
+                              </ul>
+                            </div>
+                            """, unsafe_allow_html=True)
+                            
+                    except Exception as e:
+                        print("Error in live preview:", e)
     
                     submitted = st.button("📄 Tạo Hợp Đồng", use_container_width=True)
                     if submitted:
@@ -502,7 +534,9 @@ def render():
                         except ValueError:
                             gia_tri = -1
                             
-                        if not ma_hd:
+                        if conflicts:
+                            st.error(f"❌ Không thể tạo hợp đồng! KTV {ktv_val} bị trùng lịch. Vui lòng đổi KTV hoặc đổi khung giờ thi công.")
+                        elif not ma_hd:
                             st.error("! Phải nhập mã hợp đồng!")
                         elif gia_tri < 0:
                             st.error("! Giá trị hợp đồng không hợp lệ!")

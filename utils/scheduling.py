@@ -474,3 +474,87 @@ def auto_generate_all_future_schedules(months: int = 2) -> int:
         start = (start + timedelta(days=32)).replace(day=1)
             
     return created
+
+# ============================================================
+# CONFLICT CHECKING
+# ============================================================
+
+def check_ktv_schedule_conflict(ktv_name: str, ma_hd_exclude: str, dates_list: list, gio_bat_dau: str, gio_ket_thuc: str) -> list:
+    """
+    Kiểm tra xem ktv_name có bị trùng lịch vào các ngày dates_list với khung giờ gio_bat_dau - gio_ket_thuc không.
+    Trả về list dict chứa thông tin các ca bị trùng.
+    """
+    if not ktv_name or ktv_name == "(Chưa chọn)":
+        return []
+        
+    if not dates_list:
+        return []
+        
+    from utils.database import get_connection
+    conn = get_connection()
+    
+    # Lấy các lịch của KTV trong tương lai (từ ngày nhỏ nhất trong list)
+    min_date = min(dates_list).strftime("%Y-%m-%d")
+    max_date = max(dates_list).strftime("%Y-%m-%d")
+    
+    query = """
+        SELECT s.ngay_du_kien, s.gio_bat_dau, s.gio_ket_thuc, s.ma_hd, c.ten_cty
+        FROM schedules s
+        JOIN contracts ct ON s.ma_hd = ct.ma_hd
+        JOIN customers c ON ct.ma_kh = c.ma_kh
+        WHERE s.ky_thuat_vien = ? 
+        AND s.ngay_du_kien >= ? AND s.ngay_du_kien <= ?
+        AND s.trang_thai != 'skipped'
+    """
+    params = [ktv_name, min_date, max_date]
+    
+    if ma_hd_exclude:
+        query += " AND s.ma_hd != ?"
+        params.append(ma_hd_exclude)
+        
+    existing = conn.execute(query, params).fetchall()
+    conn.close()
+    
+    if not existing:
+        return []
+        
+    def get_dts(date_str, time_str_start, time_str_end):
+        # Trả về start_dt, end_dt
+        # Nếu ca qua đêm thì end_dt + 1 ngày
+        try:
+            d = date.fromisoformat(date_str)
+            h_s, m_s = map(int, time_str_start.split(":"))
+            h_e, m_e = map(int, time_str_end.split(":"))
+            dt_start = datetime(d.year, d.month, d.day, h_s, m_s)
+            dt_end = datetime(d.year, d.month, d.day, h_e, m_e)
+            if dt_start > dt_end: # ca qua đêm
+                dt_end += timedelta(days=1)
+            return dt_start, dt_end
+        except:
+            return None, None
+
+    conflicts = []
+    
+    for d_obj in dates_list:
+        d_str = d_obj.strftime("%Y-%m-%d")
+        new_start, new_end = get_dts(d_str, gio_bat_dau, gio_ket_thuc)
+        if not new_start: continue
+        
+        for ex in existing:
+            # Chỉ check nếu cùng ngày hoặc lệch 1 ngày (do ca đêm)
+            ex_d_str = ex["ngay_du_kien"]
+            ex_start, ex_end = get_dts(ex_d_str, ex["gio_bat_dau"], ex["gio_ket_thuc"])
+            if not ex_start: continue
+            
+            # Check overlap logic
+            # (StartA < EndB) and (EndA > StartB)
+            if new_start < ex_end and new_end > ex_start:
+                conflicts.append({
+                    "date": d_str,
+                    "ma_hd": ex["ma_hd"],
+                    "ten_cty": ex["ten_cty"],
+                    "gio_bat_dau": ex["gio_bat_dau"],
+                    "gio_ket_thuc": ex["gio_ket_thuc"]
+                })
+                
+    return conflicts

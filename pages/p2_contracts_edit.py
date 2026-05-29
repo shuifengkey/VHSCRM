@@ -14,6 +14,7 @@ def edit_contract_dialog(ma_hd):
     hd = dict(hd)
     
     all_kh = conn.execute("SELECT ma_kh, ten_cty FROM customers ORDER BY ma_kh").fetchall()
+    ktv_list = [r["username"] for r in conn.execute("SELECT username FROM users WHERE role='Kỹ thuật viên'").fetchall()]
     conn.close()
     
     kh_opts = {f"{r['ma_kh']} – {r['ten_cty']}": r['ma_kh'] for r in all_kh}
@@ -43,8 +44,11 @@ def edit_contract_dialog(ma_hd):
             val_str = f"{int(hd['gia_tri_thang']):,.0f}".replace(",", ".") if hd['gia_tri_thang'] else "0"
             gia_tri_str = st.text_input("Giá Trị (VNĐ)", value=val_str, key=f"e_gt_{ma_hd}")
         with c_dvt:
-            idx_dvt = 0 if hd['don_vi_tinh'] == "/tháng" else 1
-            don_vi_tinh = st.selectbox("Đơn Vị", ["/tháng", "/lần thi công"], index=idx_dvt, key=f"e_dvt_{ma_hd}")
+            dvt_opts = ["/tháng", "/lần"]
+            db_val = hd.get('don_vi_tinh')
+            if db_val == "/lần thi công": db_val = "/lần"
+            idx_dvt = dvt_opts.index(db_val) if db_val in dvt_opts else 0
+            don_vi_tinh = st.selectbox("Đơn Vị", dvt_opts, index=idx_dvt, key=f"e_dvt_{ma_hd}")
         with c_vat:
             try: curr_vat = int(hd.get('vat_pct', 0))
             except: curr_vat = 0
@@ -53,13 +57,19 @@ def edit_contract_dialog(ma_hd):
             vat_pct = st.selectbox("VAT (%)", vat_opts, index=vat_idx, key=f"e_vat_{ma_hd}")
 
     # Thông tin thi công
-    c4, c5, c6 = st.columns(3)
+    c4, c5, c6, c7 = st.columns(4)
     with c4:
         khu_vuc_xu_ly = st.text_input("Khu Vực", value=hd.get('khu_vuc_xu_ly') or "", key=f"e_kv_{ma_hd}")
     with c5:
         loai_con_trung = st.text_input("Dịch Hại", value=hd.get('loai_con_trung') or "", key=f"e_ct_{ma_hd}")
     with c6:
         phuong_phap_xu_ly = st.text_input("Phương Pháp", value=hd.get('phuong_phap_xu_ly') or "", key=f"e_pp_{ma_hd}")
+    with c7:
+        ktv_options = ["(Chưa chọn)"] + ktv_list
+        curr_ktv = hd.get("ky_thuat_vien")
+        ktv_idx = ktv_options.index(curr_ktv) if curr_ktv in ktv_options else 0
+        ktv_hd = st.selectbox("👷 Kỹ Thuật Viên", ktv_options, index=ktv_idx, key=f"e_ktv_{ma_hd}")
+        ktv_val = ktv_hd if ktv_hd != "(Chưa chọn)" else None
 
     st.markdown("---")
     
@@ -80,8 +90,8 @@ def edit_contract_dialog(ma_hd):
     gkt_val = _parse_time(hd.get("gio_ket_thuc"), is_end=True)
 
     if loai_khach == "Định kỳ":
-        tan_suat_opts = {1:"1 lần/tháng", 2:"2 lần/tháng", 3:"3 lần/tháng", 4:"4 lần/tháng", 5:"Khác (nhập tay)"}
-        curr_ts_idx = min(tan_suat - 1, 4) if tan_suat else 0
+        tan_suat_opts = {1:"1 lần/tháng", 2:"2 lần/tháng", 3:"3 lần/tháng", 4:"4 lần/tháng", 5:"5 lần/tháng", 6:"6 lần/tháng", 7:"Khác (nhập tay)"}
+        curr_ts_idx = min(tan_suat - 1, 6) if tan_suat else 0
         c_ts1, c_ts2 = st.columns(2)
         with c_ts1:
             tan_suat_sel = st.selectbox("Tần Suất", list(tan_suat_opts.values()), index=curr_ts_idx, key=f"e_ts_{ma_hd}")
@@ -182,55 +192,94 @@ def edit_contract_dialog(ma_hd):
 
     ghi_chu = st.text_area("Ghi Chú", value=hd.get("ghi_chu") or "", height=60, key=f"e_gc_{ma_hd}")
 
-
+    from utils.scheduling import check_ktv_schedule_conflict, calc_dates_for_month
+    gbd_str = gbd.strftime("%H:%M")
+    gkt_str = gkt.strftime("%H:%M")
+    hd_preview = {
+        "ngay_thi_cong_dau": ngay_thi_cong_dau.isoformat(),
+        "tan_suat": tan_suat,
+        "kieu_lap": kieu_lap_val,
+        "lap_thu":  lap_thu_val,
+        "tuan_lap_lai": tuan_lap_lai_val,
+        "gio_bat_dau": gbd_str, "gio_ket_thuc": gkt_str,
+        "loai_khach": loai_khach,
+        "chu_ky_lap": chu_ky_lap
+    }
+    ky_preview = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().strftime("%Y-%m")
+    dates_preview = calc_dates_for_month(hd_preview, ky_preview)
+    ky_next = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().replace(day=1) + timedelta(days=32)
+    ky_next_str = ky_next.strftime("%Y-%m")
+    dates_next = calc_dates_for_month(hd_preview, ky_next_str)
+    
+    conflicts = check_ktv_schedule_conflict(ktv_val, ma_hd, dates_preview + dates_next, gbd_str, gkt_str)
+    if conflicts:
+        c_lines = []
+        for c in conflicts[:5]:
+            c_lines.append(f"<li>Ngày <b>{datetime.strptime(c['date'], '%Y-%m-%d').strftime('%d/%m/%Y')}</b>: Trùng với <b>{c['ten_cty']}</b> ({c['gio_bat_dau']} - {c['gio_ket_thuc']})</li>")
+        if len(conflicts) > 5:
+            c_lines.append(f"<li><i>...và {len(conflicts)-5} ca khác</i></li>")
+        c_html = "".join(c_lines)
+        st.markdown(f"""
+        <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px;margin:10px 0;">
+          <div style="font-size:13px;font-weight:700;color:#dc2626;margin-bottom:6px;">
+            ⚠️ CẢNH BÁO: KTV {ktv_val} bị trùng lịch
+          </div>
+          <ul style="margin:0;padding-left:20px;font-size:12px;color:#991b1b;">
+            {c_html}
+          </ul>
+        </div>
+        """, unsafe_allow_html=True)
 
     if st.button("💾 Lưu Thay Đổi Hợp Đồng", type="primary", use_container_width=True, key=f"btn_save_{ma_hd}"):
-        try:
-            gia_tri = int(gia_tri_str.replace(".", "").replace(",", "").strip())
-            
-            c = get_connection()
-            c.execute("""
-                UPDATE contracts SET 
-                    ma_kh=?, ngay_ky=?, ngay_het_han=?, loai_khach=?,
-                    gia_tri_thang=?, don_vi_tinh=?, khu_vuc_xu_ly=?, loai_con_trung=?, phuong_phap_xu_ly=?,
-                    tan_suat=?, kieu_lap=?, lap_thu=?, chu_ky_lap=?, tuan_lap_lai=?,
-                    ngay_thi_cong_dau=?, gio_bat_dau=?, gio_ket_thuc=?, ghi_chu=?, vat_pct=?
-                WHERE ma_hd=?
-            """, (kh_opts[kh_sel], ngay_ky.isoformat(), ngay_ht.isoformat(), loai_khach,
-                  gia_tri, don_vi_tinh, khu_vuc_xu_ly, loai_con_trung, phuong_phap_xu_ly,
-                  tan_suat, kieu_lap_val, lap_thu_val, chu_ky_lap, tuan_lap_lai_val,
-                  ngay_thi_cong_dau.isoformat(), gbd.strftime("%H:%M"), gkt.strftime("%H:%M"), ghi_chu, vat_pct,
-                  ma_hd))
-            c.commit()
-            
-            # Xóa các ca chưa làm (không nằm trong logbook) để sinh lại theo cấu hình mới
-            to_delete = c.execute("""
-                SELECT google_event_id FROM schedules 
-                WHERE ma_hd=? AND trang_thai='scheduled' 
-                  AND id NOT IN (SELECT schedule_id FROM logbook)
-            """, (ma_hd,)).fetchall()
-            from utils.google_sync import auto_sync_schedule_to_google
-            for row in to_delete:
-                if row["google_event_id"]:
-                    auto_sync_schedule_to_google(c, row["google_event_id"], "delete")
-                    
-            c.execute("""
-                DELETE FROM schedules 
-                WHERE ma_hd=? AND trang_thai='scheduled' 
-                  AND id NOT IN (SELECT schedule_id FROM logbook)
-            """, (ma_hd,))
-            c.commit()
-            c.close()
-            
-            # Sinh lại lịch mới cho tháng bắt đầu + 2 tháng tới
-            from utils.scheduling import auto_generate_schedules
-            start = ngay_thi_cong_dau.replace(day=1)
-            n = 0
-            for _ in range(3):
-                n += auto_generate_schedules(ma_hd, start.strftime("%Y-%m"))
-                start = (start + timedelta(days=32)).replace(day=1)
+        if conflicts:
+            st.error(f"❌ Không thể cập nhật! KTV {ktv_val} bị trùng lịch. Vui lòng đổi KTV hoặc đổi khung giờ thi công.")
+        else:
+            try:
+                gia_tri = int(gia_tri_str.replace(".", "").replace(",", "").strip())
                 
-            st.session_state.add_hd_success = f"✓ Đã cập nhật hợp đồng {ma_hd} và sinh lại {n} ca thi công mới!"
-            st.rerun()
-        except Exception as e:
-            st.error(f"Lỗi: {e}")
+                c = get_connection()
+                c.execute("""
+                    UPDATE contracts SET 
+                        ma_kh=?, ngay_ky=?, ngay_het_han=?, loai_khach=?,
+                        gia_tri_thang=?, don_vi_tinh=?, khu_vuc_xu_ly=?, loai_con_trung=?, phuong_phap_xu_ly=?,
+                        tan_suat=?, kieu_lap=?, lap_thu=?, chu_ky_lap=?, tuan_lap_lai=?,
+                        ngay_thi_cong_dau=?, gio_bat_dau=?, gio_ket_thuc=?, ghi_chu=?, vat_pct=?, ky_thuat_vien=?
+                    WHERE ma_hd=?
+                """, (kh_opts[kh_sel], ngay_ky.isoformat(), ngay_ht.isoformat(), loai_khach,
+                      gia_tri, don_vi_tinh, khu_vuc_xu_ly, loai_con_trung, phuong_phap_xu_ly,
+                      tan_suat, kieu_lap_val, lap_thu_val, chu_ky_lap, tuan_lap_lai_val,
+                      ngay_thi_cong_dau.isoformat(), gbd.strftime("%H:%M"), gkt.strftime("%H:%M"), ghi_chu, vat_pct, ktv_val,
+                      ma_hd))
+                c.commit()
+                
+                # Xóa các ca chưa làm (không nằm trong logbook) để sinh lại theo cấu hình mới
+                to_delete = c.execute("""
+                    SELECT google_event_id FROM schedules 
+                    WHERE ma_hd=? AND trang_thai='scheduled' 
+                      AND id NOT IN (SELECT schedule_id FROM logbook)
+                """, (ma_hd,)).fetchall()
+                from utils.google_sync import auto_sync_schedule_to_google
+                for row in to_delete:
+                    if row["google_event_id"]:
+                        auto_sync_schedule_to_google(c, row["google_event_id"], "delete")
+                        
+                c.execute("""
+                    DELETE FROM schedules 
+                    WHERE ma_hd=? AND trang_thai='scheduled' 
+                      AND id NOT IN (SELECT schedule_id FROM logbook)
+                """, (ma_hd,))
+                c.commit()
+                c.close()
+                
+                # Sinh lại lịch mới cho tháng bắt đầu + 2 tháng tới
+                from utils.scheduling import auto_generate_schedules
+                start = ngay_thi_cong_dau.replace(day=1)
+                n = 0
+                for _ in range(3):
+                    n += auto_generate_schedules(ma_hd, start.strftime("%Y-%m"))
+                    start = (start + timedelta(days=32)).replace(day=1)
+                    
+                st.session_state.add_hd_success = f"✓ Đã cập nhật hợp đồng {ma_hd} và sinh lại {n} ca thi công mới!"
+                st.rerun()
+            except Exception as e:
+                st.error(f"Lỗi: {e}")
