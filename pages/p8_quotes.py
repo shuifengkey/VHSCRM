@@ -70,6 +70,10 @@ def render():
     cols = ["name", "targets", "chemicals", "frequency", "price", "quantity", "note"]
     df = pd.DataFrame(st.session_state.quote_items, columns=cols)
     
+    # Enforce text types
+    for c in ["name", "targets", "chemicals", "frequency", "note"]:
+        df[c] = df[c].fillna("").astype(str)
+        
     # Enforce numeric types properly (works even on empty dataframe)
     df['price'] = pd.to_numeric(df['price'], errors='coerce').fillna(0).astype('int64')
     df['quantity'] = pd.to_numeric(df['quantity'], errors='coerce').fillna(1).astype('int64')
@@ -79,13 +83,13 @@ def render():
         num_rows="dynamic",
         use_container_width=True,
         column_config={
-            "name": st.column_config.TextColumn("Hạng mục dịch vụ", width="large"),
-            "targets": st.column_config.TextColumn("Đối tượng", width="medium"),
-            "chemicals": st.column_config.TextColumn("Hóa chất & Vật tư", width="medium"),
-            "frequency": st.column_config.TextColumn("Tần suất", width="small"),
+            "name": st.column_config.Column("Hạng mục dịch vụ", width="large"),
+            "targets": st.column_config.Column("Đối tượng", width="medium"),
+            "chemicals": st.column_config.Column("Hóa chất & Vật tư", width="medium"),
+            "frequency": st.column_config.Column("Tần suất", width="small"),
             "price": st.column_config.NumberColumn("Đơn giá", min_value=0, step=1000),
             "quantity": st.column_config.NumberColumn("SL", min_value=1, step=1),
-            "note": st.column_config.TextColumn("Ghi chú", width="medium"),
+            "note": st.column_config.Column("Ghi chú", width="medium"),
         },
         hide_index=True
     )
