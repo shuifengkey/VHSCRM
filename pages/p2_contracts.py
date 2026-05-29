@@ -522,7 +522,7 @@ def render():
                                       ngay_ky.isoformat(), ngay_ht.isoformat(),
                                       ngay_thi_cong_dau.isoformat(),
                                       gbd, gkt, tan_suat, kieu_lap_val, lap_thu_val,
-                                      gia_tri, ghi_chu, don_vi_tinh, loai_khach, khu_vuc_xu_ly, loai_con_trung, chu_ky_lap, phuong_phap_xu_ly, tuan_lap_lai_val, ktv_val))
+                                      gia_tri, ghi_chu, don_vi_tinh, loai_khach, khu_vuc_xu_ly, loai_con_trung, chu_ky_lap, phuong_phap_xu_ly, tuan_lap_lai_val, ktv_val, vat_pct))
                                 conn.commit(); conn.close()
                                 if gen_now:
                                     # Sinh lịch từ tháng bắt đầu HĐ + 2 tháng tới
