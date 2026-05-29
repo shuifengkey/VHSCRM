@@ -21,8 +21,7 @@ def generate_quote_pdf(quote_data, items_data):
     def P(text, font=None, size=9, align=TA_LEFT, color=colors.black, bold=False, leading=None):
         fn = FB if bold else (font or F)
         kw = dict(fontName=fn, fontSize=size, alignment=align, textColor=color, wordWrap='CJK')
-        if leading:
-            kw["leading"] = leading
+        kw["leading"] = leading if leading else size * 1.3
         style = ParagraphStyle("_", **kw)
         return Paragraph(text, style)
 
@@ -56,12 +55,28 @@ def generate_quote_pdf(quote_data, items_data):
     content = []
 
     # --- TOP HEADER ---
+    logo_path = os.path.normpath(os.path.join(_HERE, "..", "logo.png"))
+    if os.path.exists(logo_path):
+        img_w = 2.0*cm
+        img_h = img_w * (1024/905)
+        logo_img = Image(logo_path, width=img_w, height=img_h)
+    else:
+        logo_img = ""
+
     header_table = Table([
-        [P("<b>CÔNG TY TNHH VHS</b>", size=10, bold=True, color=colors.HexColor("#1e3a5f")), ""],
-        [P("Địa chỉ (Address): 67 Đường số 3, KP2, An Khánh, HCM", size=8), ""],
-        [P("Hotline: 0783 487 586", size=8), ""],
-        [P("Email: congtytnhhvhs@gmail.com", size=8), ""],
-    ], colWidths=[20*cm, 7*cm])
+        [logo_img, P("<b>CÔNG TY TNHH VHS</b>", font="Square721", size=14, color=colors.HexColor("#1e3a5f")), ""],
+        ["", P("Địa chỉ (Address): 67 Đường số 3, KP2, An Khánh, HCM", size=8), ""],
+        ["", P("Hotline: 0783 487 586", size=8), ""],
+        ["", P("Email: congtytnhhvhs@gmail.com", size=8), ""],
+    ], colWidths=[2.2*cm, 18*cm, 7*cm])
+    
+    header_table.setStyle(TableStyle([
+        ('SPAN', (0,0), (0,-1)),
+        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 0),
+        ('TOPPADDING', (0,0), (-1,-1), 0),
+        ('LEFTPADDING', (1,0), (1,-1), 0),
+    ]))
     content.append(header_table)
     content.append(Spacer(1, 0.5*cm))
 
