@@ -371,28 +371,43 @@ def generate_payment_request_pdf(debt_data, attachments=None):
             with PILImage.open(_SEAL_PATH) as img_seal_pil:
                 w_seal, h_seal = img_seal_pil.size
                 
-            # Khung vẽ rộng 8cm (bằng độ rộng cột Giám đốc), cao 2.5cm
-            drawing_width = 8.0*cm
-            drawing_height = 2.5*cm
-            sign_drawing = shapes.Drawing(drawing_width, drawing_height)
+            from reportlab.platypus import Flowable
             
-            # Chữ ký: rộng khoảng 4cm, căn giữa cột 8cm -> x = 2.0cm
+            class SignatureOverlay(Flowable):
+                def __init__(self, sign_path, seal_path, sign_w, sign_h, seal_w, seal_h):
+                    Flowable.__init__(self)
+                    self.sign_path = sign_path
+                    self.seal_path = seal_path
+                    self.width = 8.0*cm
+                    self.height = 2.5*cm
+                    self.w_sign_pt = sign_w
+                    self.h_sign_pt = sign_h
+                    self.w_seal_pt = seal_w
+                    self.h_seal_pt = seal_h
+                    
+                def draw(self):
+                    # Chữ ký: căn giữa cột 8cm -> x = 2.0cm
+                    sign_x = 2.0*cm
+                    sign_y = 0.2*cm
+                    # mask='auto' giữ nguyên nền trong suốt của PNG
+                    self.canv.drawImage(self.sign_path, sign_x, sign_y, 
+                                        width=self.w_sign_pt, height=self.h_sign_pt, mask='auto')
+                    
+                    # Con dấu đè lên 3/4 chữ ký (x = 3.0cm), tràn lên chữ phía trên (y = 1.0cm)
+                    seal_x = sign_x + (self.w_sign_pt * 0.25)
+                    seal_y = 1.0*cm
+                    self.canv.drawImage(self.seal_path, seal_x, seal_y, 
+                                        width=self.w_seal_pt, height=self.h_seal_pt, mask='auto')
+
+            # Rộng 4cm
             w_sign_pt = 4.0*cm
             h_sign_pt = w_sign_pt * (h_sign / w_sign)
-            sign_x = 2.0*cm
-            sign_y = 0.2*cm
-            sign_drawing.add(shapes.Image(sign_x, sign_y, w_sign_pt, h_sign_pt, _SIGN_PATH))
             
             # Con dấu: đè lên 3/4 chữ ký -> rộng 3cm
             w_seal_pt = 3.0*cm
             h_seal_pt = w_seal_pt * (h_seal / w_seal)
-            # Bắt đầu đè từ 1/4 chữ ký
-            seal_x = sign_x + (w_sign_pt * 0.25)
-            # Nằm đè lên chữ phía trên (overlay nhìn xuyên), dịch y cao lên
-            seal_y = 1.0*cm
-            sign_drawing.add(shapes.Image(seal_x, seal_y, w_seal_pt, h_seal_pt, _SEAL_PATH))
             
-            sign_cell = sign_drawing
+            sign_cell = SignatureOverlay(_SIGN_PATH, _SEAL_PATH, w_sign_pt, h_sign_pt, w_seal_pt, h_seal_pt)
         except Exception:
             sign_cell = Spacer(1, 1.5*cm)
     else:
