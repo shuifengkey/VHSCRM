@@ -496,7 +496,7 @@ def render():
                               {'<i class=\"ph-map-pin\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> <b>' + hd['dia_chi'] + '</b><br>' if hd.get('dia_chi') else ''}
                               {'<i class=\"ph-house\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Khu vực: <b>' + hd['khu_vuc_xu_ly'] + '</b><br>' if hd.get('khu_vuc_xu_ly') else ''}
                               {'<i class=\"ph-bug\" style=\"font-size:15px;color:#dc2626;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Dịch hại: <b>' + (r.get('loai_con_trung') or hd.get('loai_con_trung') or '') + '</b><br>' if (r.get('loai_con_trung') or hd.get('loai_con_trung')) else ''}
-                              {'<i class=\"ph-pill\" style=\"font-size:15px;color:#7c3aed;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Phương pháp: <b>' + hd['phuong_phap_xu_ly'] + '</b>' if hd.get('phuong_phap_xu_ly') else ''}
+                              {'<i class=\"ph-pill\" style=\"font-size:15px;color:#7c3aed;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Phương pháp: <b>' + (r.get('phuong_phap_xu_ly') or hd.get('phuong_phap_xu_ly') or '') + '</b>' if (r.get('phuong_phap_xu_ly') or hd.get('phuong_phap_xu_ly')) else ''}
                             </div>
                             {f'<div style="font-size:12px;color:#64748b;"><i class=\"ph-note-pencil\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {r["ghi_chu"]}</div>' if r.get("ghi_chu") else ""}
                             """, unsafe_allow_html=True)
