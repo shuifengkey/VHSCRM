@@ -371,21 +371,26 @@ def generate_payment_request_pdf(debt_data, attachments=None):
             with PILImage.open(_SEAL_PATH) as img_seal_pil:
                 w_seal, h_seal = img_seal_pil.size
                 
-            # Scale chung để vừa vào ô chữ ký (ví dụ 0.12 points / pixel)
-            scale = 0.12
-            w_sign_pt, h_sign_pt = w_sign * scale, h_sign * scale
-            w_seal_pt, h_seal_pt = w_seal * scale, h_seal * scale
-            
-            # Khung vẽ vừa đủ chứa cả chữ ký và con dấu
-            drawing_width = w_sign_pt + w_seal_pt
-            drawing_height = max(h_sign_pt, h_seal_pt)
+            # Khung vẽ rộng 8cm (bằng độ rộng cột Giám đốc), cao 2.5cm
+            drawing_width = 8.0*cm
+            drawing_height = 2.5*cm
             sign_drawing = shapes.Drawing(drawing_width, drawing_height)
             
-            # Chữ ký (nâng lên 1 chút)
-            sign_drawing.add(shapes.Image(0, 0.4*cm, w_sign_pt, h_sign_pt, _SIGN_PATH))
-            # Con dấu đè lên chữ ký ở khoảng 3/4 chiều rộng chữ ký
-            seal_x = w_sign_pt * 0.65
-            sign_drawing.add(shapes.Image(seal_x, 0, w_seal_pt, h_seal_pt, _SEAL_PATH))
+            # Chữ ký: rộng khoảng 4cm, căn giữa cột 8cm -> x = 2.0cm
+            w_sign_pt = 4.0*cm
+            h_sign_pt = w_sign_pt * (h_sign / w_sign)
+            sign_x = 2.0*cm
+            sign_y = 0.2*cm
+            sign_drawing.add(shapes.Image(sign_x, sign_y, w_sign_pt, h_sign_pt, _SIGN_PATH))
+            
+            # Con dấu: đè lên 3/4 chữ ký -> rộng 3cm
+            w_seal_pt = 3.0*cm
+            h_seal_pt = w_seal_pt * (h_seal / w_seal)
+            # Bắt đầu đè từ 1/4 chữ ký
+            seal_x = sign_x + (w_sign_pt * 0.25)
+            # Nằm đè lên chữ phía trên (overlay nhìn xuyên), dịch y cao lên
+            seal_y = 1.0*cm
+            sign_drawing.add(shapes.Image(seal_x, seal_y, w_seal_pt, h_seal_pt, _SEAL_PATH))
             
             sign_cell = sign_drawing
         except Exception:
