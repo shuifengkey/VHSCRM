@@ -49,11 +49,11 @@ section[data-testid="stSidebar"] { display: none !important; }
 .vhs-nav {
     position: sticky; top: 0; z-index: 999;
     background: #ffffff;
-    padding: 0 24px;
+    padding: 0 20px;
     display: flex; align-items: center; gap: 0;
-    height: 54px;
-    box-shadow: 0 2px 12px rgba(0,0,0,.08);
-    margin-bottom: 20px;
+    height: 64px;
+    border-radius: 14px 14px 0 0;
+    border-bottom: 1px solid #f1f5f9;
 }
 .vhs-nav-brand {
     display: flex; align-items: center; gap: 10px;
@@ -79,13 +79,27 @@ section[data-testid="stSidebar"] { display: none !important; }
 }
 
 /* ── NAV ITEMS (radio buttons restyled) ── */
-div[data-testid="stRadio"] { margin: 0 !important; width: 100% !important; }
+.vhs-nav-st-radio {
+    position: sticky !important; top: 64px !important; z-index: 998 !important;
+    background: #ffffff !important;
+    padding: 10px 20px 14px 20px !important;
+    margin-bottom: 24px !important;
+    border-radius: 0 0 14px 14px !important;
+    box-shadow: 0 6px 16px rgba(0,0,0,.05) !important;
+}
+
+div[data-testid="stRadio"] { 
+    margin: 0 !important; 
+    width: 100% !important; 
+    max-width: 100% !important; 
+}
 div[data-testid="stRadio"] > label { display: none !important; }
 div[data-testid="stRadio"] [role="radiogroup"] {
     display: flex !important; flex-direction: row !important;
-    flex-wrap: nowrap !important; gap: 8px !important;
+    flex-wrap: nowrap !important; gap: 6px !important;
     justify-content: space-between !important;
     width: 100% !important;
+    max-width: 100% !important;
 }
 div[data-testid="stRadio"] [role="radiogroup"] > div {
     flex: 1 !important;
@@ -107,24 +121,28 @@ div[data-testid="stRadio"] [role="radiogroup"] label {
     white-space: nowrap !important;
     transition: all .15s !important;
 }
-.element-container:has(.nav-marker) + .element-container div[data-testid="stRadio"] [role="radiogroup"] > label p {
+.vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"] > label p,
+.vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"] > div p {
     text-transform: uppercase !important;
     font-weight: 600 !important;
+    margin: 0 !important;
 }
 /* Hide the radio button circle itself */
-div[data-testid="stRadio"] [role="radiogroup"] > label > div:first-child {
+div[data-testid="stRadio"] [role="radiogroup"] > label > div:first-child,
+div[data-testid="stRadio"] [role="radiogroup"] > div > label > div:first-child {
     display: none !important;
 }
-div[data-testid="stRadio"] [role="radiogroup"] > label:hover {
+div[data-testid="stRadio"] [role="radiogroup"] label:hover {
     background: #f1f5f9 !important;
     color: #0f172a !important;
 }
-div[data-testid="stRadio"] [role="radiogroup"] > label[data-baseweb="radio"] input:checked + div,
+div[data-testid="stRadio"] [role="radiogroup"] label[data-baseweb="radio"] input:checked + div,
 div[data-testid="stRadio"] input:checked ~ div { color: white !important; }
 /* Active nav item */
 div[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
     background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 60%, #166534 100%) !important;
     color: white !important;
+    box-shadow: 0 2px 8px rgba(15,23,42,0.1) !important;
 }
 
 /* ── STATUS BAR (right side of nav) ── */
@@ -252,8 +270,7 @@ div[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
     .vhs-nav { display: none !important; }
     .block-container { padding: 60px .5rem 20px !important; }
     
-    .vhs-nav-st-radio,
-    .element-container:has(.nav-marker) + .element-container {
+    .vhs-nav-st-radio {
         position: fixed !important;
         top: 0 !important; left: 0 !important; right: 0 !important;
         bottom: auto !important;
@@ -265,15 +282,14 @@ div[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
         margin-bottom: 0 !important;
         box-shadow: 0 4px 24px rgba(0,0,0,0.08) !important;
         pointer-events: auto; /* Ensure mobile is clickable */
+        border-radius: 0 !important;
     }
     
     /* Scoped mobile styling for the nav radio only */
-    .vhs-nav-st-radio .stRadio,
-    .element-container:has(.nav-marker) + .element-container .stRadio { 
+    .vhs-nav-st-radio div[data-testid="stRadio"] { 
         width: 100% !important; margin: 0 !important; 
     }
-    .vhs-nav-st-radio .stRadio [role="radiogroup"],
-    .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] {
+    .vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"] {
         display: flex !important;
         width: 100% !important;
         gap: 0px !important;
@@ -284,13 +300,10 @@ div[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
         scroll-snap-type: x mandatory;
     }
     /* Ẩn thanh cuộn */
-    .vhs-nav-st-radio .stRadio [role="radiogroup"]::-webkit-scrollbar,
-    .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"]::-webkit-scrollbar { display: none; }
-    .vhs-nav-st-radio .stRadio [role="radiogroup"],
-    .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] { -ms-overflow-style: none; scrollbar-width: none; }
+    .vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"]::-webkit-scrollbar { display: none; }
+    .vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"] { -ms-overflow-style: none; scrollbar-width: none; }
 
-    .vhs-nav-st-radio .stRadio [role="radiogroup"] > div,
-    .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] > div {
+    .vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"] > div {
         flex: 0 0 auto !important;
         display: flex !important;
         scroll-snap-align: start;
@@ -302,8 +315,7 @@ div[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
     .mobile-logbook-item {
         order: -1 !important;
     }
-    .vhs-nav-st-radio .stRadio [role="radiogroup"] > div > label,
-    .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] > div > label {
+    .vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"] > div > label {
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
@@ -319,18 +331,15 @@ div[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
         margin-right: 2px !important; 
         margin: 0 !important;
     }
-    .vhs-nav-st-radio .stRadio [role="radiogroup"] > div > label:hover,
-    .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] > div > label:hover {
+    .vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"] > div > label:hover {
         background: #e2e8f0 !important;
     }
-    .vhs-nav-st-radio .stRadio [role="radiogroup"] label:has(input:checked),
-    .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] label:has(input:checked) {
+    .vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
         background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 60%, #166534 100%) !important;
         color: white !important;
         box-shadow: 0 4px 10px rgba(22,163,74,0.3) !important;
     }
-    .vhs-nav-st-radio .stRadio [role="radiogroup"] p,
-    .element-container:has(.nav-marker) + .element-container .stRadio [role="radiogroup"] p {
+    .vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"] p {
         font-size: 15px !important;
         font-weight: 700 !important;
         margin: 0 !important;

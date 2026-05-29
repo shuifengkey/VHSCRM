@@ -488,48 +488,41 @@ NAV_ITEMS = [
     "⚙️ Cài đặt"
 ]
 
-# Đặt radio ngay dưới navbar (CSS inline lo Desktop, CSS media query lo Mobile)
-st.markdown('<div style="background:#ffffff;padding:0 24px 0 180px;margin-top:-74px;margin-bottom:20px;" class="nav-marker">', unsafe_allow_html=True)
+# Đặt radio ngay dưới navbar.
 page = st.radio("nav", NAV_ITEMS, horizontal=True, label_visibility="collapsed", key="topnav")
-st.markdown("</div>", unsafe_allow_html=True)
 
-# JS: Thêm class vào đúng container của radio để CSS dễ style (không dùng appendChild để tránh lỗi React)
-# Và tag mục Logbook để đẩy lên đầu trên Mobile
+# JS: Thêm class vào đúng container của radio để CSS dễ style
+# Và tag mục Work Log để đẩy lên đầu trên Mobile
 components.html("""
 <script>
 (function() {
     const parentDoc = window.parent.document;
     
     function updateNav() {
-        const navMark = parentDoc.querySelector('.nav-marker');
-        if (navMark) {
-            const mdContainer = navMark.closest('.element-container');
+        const radios = parentDoc.querySelectorAll('div[data-testid="stRadio"]');
+        if (radios.length > 0) {
+            const topNav = radios[0];
+            const mdContainer = topNav.closest('.element-container');
             if (mdContainer) {
-                const radioContainer = mdContainer.nextElementSibling;
-                if (radioContainer) {
-                    radioContainer.classList.add('vhs-nav-st-radio');
-                    
-                    // Tìm Logbook và gắn class để CSS xếp nó lên đầu tiên
-                    const labels = radioContainer.querySelectorAll('label');
-                    labels.forEach(label => {
-                        if (label.innerText && label.innerText.includes('Work Log')) {
-                            // Đi ngược lên DOM để tìm phần tử con trực tiếp của radiogroup
-                            let current = label;
-                            while (current && current.parentElement) {
-                                if (current.parentElement.getAttribute('role') === 'radiogroup') {
-                                    current.classList.add('mobile-logbook-item');
-                                    break;
-                                }
-                                current = current.parentElement;
+                mdContainer.classList.add('vhs-nav-st-radio');
+                
+                const labels = topNav.querySelectorAll('label');
+                labels.forEach(label => {
+                    if (label.innerText && label.innerText.includes('Work Log')) {
+                        let current = label;
+                        while (current && current.parentElement) {
+                            if (current.parentElement.getAttribute('role') === 'radiogroup') {
+                                current.classList.add('mobile-logbook-item');
+                                break;
                             }
+                            current = current.parentElement;
                         }
-                    });
-                }
+                    }
+                });
             }
         }
     }
     
-    // Chạy định kỳ để đảm bảo không bị mất class khi React render lại
     setInterval(updateNav, 500);
     updateNav();
 })();
