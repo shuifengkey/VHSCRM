@@ -86,6 +86,8 @@ section[data-testid="stSidebar"] { display: none !important; }
     margin-bottom: 24px !important;
     border-radius: 0 0 14px 14px !important;
     box-shadow: 0 6px 16px rgba(0,0,0,.05) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 div[data-testid="stRadio"] { 
