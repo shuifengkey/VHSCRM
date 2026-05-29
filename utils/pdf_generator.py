@@ -228,41 +228,44 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, logbook_entry: dict)
             co = logbook_entry.get("checkout_time", "")
             d_str = ""
             m_str = ""
-            y_str = ""
             
             if ci:
                 try:
                     dt_ci = datetime.fromisoformat(ci)
-                    c.drawString(115, 308, dt_ci.strftime("%H:%M"))
+                    c.drawString(110, 308, dt_ci.strftime("%H:%M"))
                     d_str = dt_ci.strftime("%d")
                     m_str = dt_ci.strftime("%m")
-                    y_str = dt_ci.strftime("%Y")
                 except:
-                    c.drawString(115, 308, ci[:5])
+                    c.drawString(110, 308, ci[:5])
             if co:
                 try:
                     dt_co = datetime.fromisoformat(co)
-                    c.drawString(250, 308, dt_co.strftime("%H:%M"))
+                    c.drawString(245, 308, dt_co.strftime("%H:%M"))
                 except:
-                    c.drawString(250, 308, co[:5])
+                    c.drawString(245, 308, co[:5])
 
             if d_str:
-                c.drawString(350, 308, d_str)
+                c.drawString(345, 308, d_str)
                 c.drawString(410, 308, m_str)
 
-            # Ghi chú
-            hc = logbook_entry.get("hoa_chat", "Không có ghi chú")
-            kq = logbook_entry.get("ket_qua", "Hoàn thành tốt")
-            c.drawString(70, 328, f"Kết quả: {kq}")
+            # Checkboxes mapping
+            checkbox_coords = {
+                "Làm mới": [48.6, 579.0], "Định kì": [202.26, 579.0], "Bổ sung": [311.09, 579.0], "Kiểm tra": [450.26, 579.0],
+                "Ruồi": [48.6, 525.3], "Ong": [48.6, 508.96], "Mối": [48.6, 491.25], "Muỗi": [197.13, 525.3], "Nhện": [197.13, 508.28], "Mọt": [197.13, 491.26], "Chuột": [380.89, 525.3], "Kiến": [380.89, 508.28], "Gián": [380.89, 491.94],
+                "Nhà hàng": [48.6, 438.24], "Sân vườn": [48.6, 420.53], "Văn phòng": [245.58, 438.25], "Bếp": [245.58, 420.53], "Cửa hàng": [413.1, 437.56], "Toà nhà": [413.1, 421.22],
+                "Phun sương": [48.59, 366.84], "Đặt bẫy": [230.71, 366.84], "Phun tồn lưu": [383.7, 366.84], "Phun khói": [48.59, 350.5], "Khử trùng": [230.71, 349.81], "Bả": [383.7, 349.81]
+            }
             
-            # Draw multi-line for Ghi chú (hoa chat + remark)
-            text_obj = c.beginText(40, 265)
-            text_obj.setFont(fnt, 11)
-            text_obj.textLines(f"Hóa chất sử dụng:\n{hc}")
-            c.drawText(text_obj)
+            hc = logbook_entry.get("hoa_chat", "").lower()
+            kq = logbook_entry.get("ket_qua", "").lower()
+            combined_text = f"{hc} {kq}"
+            
+            for key, (x, y) in checkbox_coords.items():
+                if key.lower() in combined_text:
+                    c.drawString(x - 13, y + 2, 'x')
 
             c.setFont(fnt, 12)
-            c.drawString(100, 150, str(logbook_entry.get("ky_thuat_vien", "")))
+            c.drawString(100, 105, str(logbook_entry.get("ky_thuat_vien", "")))
 
             c.save()
             packet.seek(0)
