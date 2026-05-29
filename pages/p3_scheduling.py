@@ -623,6 +623,22 @@ def render():
                     st.success(f"✓ Đã sinh {n} ca cho {ky_next}"); st.rerun()
             else:
                 st.markdown(f'<div style="font-size:12px;color:#16a34a;margin-top:8px;">✓ Kỳ {ky_next} đã có {nc} ca</div>', unsafe_allow_html=True)
+            
+            st.markdown("<hr style='margin:10px 0;'/>", unsafe_allow_html=True)
+            if st.button("🔄 Làm mới / Xoá Lịch Kỳ Này", type="secondary", help="Xoá các ca chưa làm để sinh lại đúng thứ tự"):
+                conn = get_connection()
+                to_del = conn.execute("SELECT id, google_event_id FROM schedules WHERE ma_hd=? AND ky_thang=? AND trang_thai='scheduled'", (hd["ma_hd"], ky_sel)).fetchall()
+                if to_del:
+                    from utils.google_sync import auto_sync_schedule_to_google
+                    for d in to_del:
+                        if d["google_event_id"]:
+                            try:
+                                auto_sync_schedule_to_google(conn, d["id"], "delete")
+                            except: pass
+                    conn.execute("DELETE FROM schedules WHERE ma_hd=? AND ky_thang=? AND trang_thai='scheduled'", (hd["ma_hd"], ky_sel))
+                    conn.commit()
+                conn.close()
+                st.rerun()
 
     # ═══════════════════════════════════
     # CALENDAR
