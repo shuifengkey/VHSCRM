@@ -138,7 +138,7 @@ def render():
             "targets": st.column_config.Column("Đối tượng", width="medium"),
             "chemicals": st.column_config.Column("Hóa chất & Vật tư", width="medium"),
             "frequency": st.column_config.Column("Tần suất", width="small"),
-            "price": st.column_config.NumberColumn("Đơn giá", min_value=0, step=1000),
+            "price": st.column_config.NumberColumn("Đơn giá", min_value=0, step=1000, format="%,d"),
             "quantity": st.column_config.NumberColumn("SL", min_value=0, step=1),
             "note": st.column_config.Column("Ghi chú", width="medium"),
         },
