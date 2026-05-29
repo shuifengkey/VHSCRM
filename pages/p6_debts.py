@@ -411,13 +411,38 @@ def render():
                 submitted = st.form_submit_button("Lưu Chi Phí", type="primary", use_container_width=True)
                 if submitted:
                     if so_tien > 0:
-                        conn.execute("INSERT INTO expenses (ngay_chi, loai_chi_phi, so_tien, nguoi_chi, ghi_chu) VALUES (?, ?, ?, ?, ?)",
-                                     (ngay_chi.isoformat(), loai_cp, so_tien, nguoi_chi, ghi_chu))
-                        conn.commit()
-                        st.toast("Thêm chi phí thành công!", icon="✅")
-                        st.rerun()
+                        st.session_state["confirm_save_exp"] = {
+                            "ngay_chi": ngay_chi,
+                            "loai_cp": loai_cp,
+                            "so_tien": so_tien,
+                            "nguoi_chi": nguoi_chi,
+                            "ghi_chu": ghi_chu
+                        }
                     else:
                         st.warning("Vui lòng nhập số tiền hợp lệ")
+            
+            if "confirm_save_exp" in st.session_state:
+                data = st.session_state["confirm_save_exp"]
+                st.markdown(f"""
+                <div style="background:#fffbeb;border:1px solid #fcd34d;padding:12px;border-radius:8px;margin-top:10px;">
+                    <b style="color:#b45309;">⚠️ Xác nhận:</b><br>
+                    Bạn có chắc chắn muốn lưu chi phí <b>{format_money(data['so_tien'])}đ</b> cho mục <b>{data['loai_cp']}</b>?
+                </div>
+                """, unsafe_allow_html=True)
+                
+                c1, c2 = st.columns(2)
+                if c1.button("✅ Đồng ý", use_container_width=True, key="btn_yes_exp"):
+                    conn.execute("INSERT INTO expenses (ngay_chi, loai_chi_phi, so_tien, nguoi_chi, ghi_chu) VALUES (?, ?, ?, ?, ?)",
+                                 (data['ngay_chi'].isoformat(), data['loai_cp'], data['so_tien'], data['nguoi_chi'], data['ghi_chu']))
+                    conn.commit()
+                    del st.session_state["confirm_save_exp"]
+                    st.success("Thêm chi phí thành công!")
+                    st.rerun()
+                
+                if c2.button("❌ Hủy", use_container_width=True, key="btn_no_exp"):
+                    del st.session_state["confirm_save_exp"]
+                    st.rerun()
+
             st.markdown("</div>", unsafe_allow_html=True)
             
         with c_exp_list:
