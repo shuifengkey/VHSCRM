@@ -19,6 +19,15 @@ try:
     _conn.close()
 except Exception:
     pass
+try:
+    from utils.database import get_connection
+    _conn = get_connection()
+    _conn.execute("ALTER TABLE customers ADD COLUMN lat REAL")
+    _conn.execute("ALTER TABLE customers ADD COLUMN lng REAL")
+    _conn.commit()
+    _conn.close()
+except Exception:
+    pass
 
 import plotly.graph_objects as go
 

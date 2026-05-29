@@ -482,6 +482,7 @@ NAV_ITEMS = [
     "👥 Khách Hàng",
     "📄 Hợp Đồng",
     "📅 Lịch Thi Công",
+    "🗺️ Tối Ưu Lộ Trình",
     "📓 Work Log",
     "💰 Công Nợ",
     "📝 Báo Giá",
@@ -683,6 +684,8 @@ elif page == "📄 Hợp Đồng":
     from pages import p2_contracts; p2_contracts.render()
 elif page == "📅 Lịch Thi Công":
     from pages import p3_scheduling; p3_scheduling.render()
+elif page == "🗺️ Tối Ưu Lộ Trình":
+    from pages import p9_routing; p9_routing.ui()
 elif page == "📓 Work Log":
     from pages import p4_logbook; p4_logbook.render()
 elif page == "💰 Công Nợ":

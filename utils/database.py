@@ -239,6 +239,11 @@ def _do_init_db():
     except Exception: pass
     try: c.execute("ALTER TABLE customers ADD COLUMN dia_chi_phap_ly TEXT")
     except Exception: pass
+    try: c.execute("ALTER TABLE customers ADD COLUMN lat REAL")
+    except Exception: pass
+    try: c.execute("ALTER TABLE customers ADD COLUMN lng REAL")
+    except Exception: pass
+    
     try: c.execute("ALTER TABLE contracts ADD COLUMN vat_pct REAL DEFAULT 0")
     except Exception: pass
     try: c.execute("ALTER TABLE debts ADD COLUMN tien_vat REAL DEFAULT 0")
