@@ -140,8 +140,8 @@ def calc_dates_for_month(hd: dict, ky_thang: str) -> list[date]:
                 d = _clamp_to_month(d, year, month)
                 dates.append(d)
                 
-        # Remove duplicates and sort just in case
-        dates = sorted(list(set(dates)))
+        # Remove duplicates but preserve order
+        dates = list(dict.fromkeys(dates))
         # If set removes duplicates making len < tan_suat, we might need to add fallback days,
         # but for explicit selections the user shouldn't select duplicate days.
         return dates
@@ -180,7 +180,7 @@ def calc_dates_for_month(hd: dict, ky_thang: str) -> list[date]:
                             dates.append(all_days[-1])
             except Exception as e:
                 print(f"Error parsing mixed config: {e}")
-        return sorted(list(set(dates)))
+        return list(dict.fromkeys(dates))
 
     # ── B: THỨ CỐ ĐỊNH ──
     else:
@@ -203,7 +203,7 @@ def calc_dates_for_month(hd: dict, ky_thang: str) -> list[date]:
                 elif w.lower() == "cuối":
                     chosen.append(all_days[-1])
             
-            chosen = sorted(list(dict.fromkeys(chosen)))
+            chosen = list(dict.fromkeys(chosen))
             return chosen
 
         n_avail = len(all_days)    # số thứ X có trong tháng (thường 4-5)
