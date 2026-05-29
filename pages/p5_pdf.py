@@ -17,21 +17,41 @@ def render():
         LEFT JOIN contracts ct ON c.ma_kh = ct.ma_kh
         ORDER BY c.ma_kh
     """).fetchall()
+    
+    upcoming_kh = conn.execute("""
+        SELECT DISTINCT ma_kh FROM schedules WHERE trang_thai='scheduled'
+    """).fetchall()
+    upcoming_ma_khs = {r['ma_kh'] for r in upcoming_kh}
     conn.close()
     
     if not all_kh:
         st.warning("Chưa có dữ liệu khách hàng.")
         return
     
+    st.markdown("### Lọc Khách Hàng")
+    only_upcoming = st.checkbox("Chỉ hiển thị khách hàng đang có ca sắp thi công", value=True)
+    
+    if only_upcoming:
+        filtered_kh = [r for r in all_kh if r["ma_kh"] in upcoming_ma_khs]
+        if not filtered_kh:
+            st.info("Không có khách hàng nào đang có ca sắp thi công. Hiển thị tất cả.")
+            filtered_kh = all_kh
+    else:
+        filtered_kh = all_kh
+    
     col1, col2 = st.columns([2,1])
     
     with col1:
         # Chọn khách hàng (dedup)
         kh_dict = {}
-        for r in all_kh:
+        for r in filtered_kh:
             if r["ma_kh"] not in kh_dict:
                 kh_dict[r["ma_kh"]] = r["ten_cty"]
         
+        if not kh_dict:
+            st.warning("Không có khách hàng phù hợp.")
+            return
+            
         kh_options = {f"{ma} - {ten}": ma for ma, ten in kh_dict.items()}
         selected_kh_label = st.selectbox("👥 Chọn Khách Hàng", list(kh_options.keys()))
         selected_ma_kh = kh_options[selected_kh_label]
@@ -49,15 +69,22 @@ def render():
         (selected_ma_kh,)
     ).fetchone()
     
-    # Nếu xuất phiếu xác nhận, lấy log gần nhất
-    logbook_entry = None
+    # Lấy thông tin ca thi công sắp tới (hoặc gần nhất)
+    schedule_entry = None
     if "Phiếu Xác Nhận" in doc_type:
-        logbook_entry = conn.execute("""
-            SELECT l.* FROM logbook l
-            JOIN schedules s ON l.schedule_id = s.id
-            WHERE l.ma_kh=? AND l.checkout_time IS NOT NULL
-            ORDER BY l.checkout_time DESC LIMIT 1
+        schedule_entry = conn.execute("""
+            SELECT * FROM schedules 
+            WHERE ma_kh=? AND trang_thai='scheduled'
+            ORDER BY ngay_du_kien ASC LIMIT 1
         """, (selected_ma_kh,)).fetchone()
+        
+        # Fallback: nếu không có ca scheduled, lấy ca gần nhất bất kì
+        if not schedule_entry:
+            schedule_entry = conn.execute("""
+                SELECT * FROM schedules 
+                WHERE ma_kh=? 
+                ORDER BY ngay_du_kien DESC LIMIT 1
+            """, (selected_ma_kh,)).fetchone()
     conn.close()
     
     # Hiển thị preview thông tin
@@ -106,11 +133,8 @@ def render():
                             filename = f"HopDong_{contract_dict['ma_hd']}_{(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime('%Y%m%d')}.pdf"
                         else:
                             # Phiếu xác nhận
-                            if not logbook_entry:
-                                st.error("× Chưa có dữ liệu thi công (check-out) cho khách hàng này!")
-                                return
-                            logbook_dict = dict(logbook_entry)
-                            pdf_bytes = generate_phieu_xac_nhan(customer_dict, contract_dict, logbook_dict)
+                            schedule_dict = dict(schedule_entry) if schedule_entry else None
+                            pdf_bytes = generate_phieu_xac_nhan(customer_dict, contract_dict, schedule_dict)
                             filename = f"PhieuXacNhan_{selected_ma_kh}_{(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime('%Y%m%d%H%M')}.pdf"
                     
                     # Nút download

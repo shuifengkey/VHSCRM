@@ -195,26 +195,29 @@ def generate_bao_gia(customer: dict, contract: dict) -> bytes:
     return buffer.getvalue()
 
 
-def generate_phieu_xac_nhan(customer: dict, contract: dict, logbook_entry: dict) -> bytes:
-    """Sinh PDF Phiếu xác nhận dịch vụ sau khi thi công hoàn thành"""
-    
-    # Check if template exists
-    template_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "VHS PCC.pdf"))
-    if os.path.exists(template_path):
-        try:
-            from pypdf import PdfReader, PdfWriter
-            from reportlab.pdfgen import canvas
-            from reportlab.pdfbase import pdfmetrics
-            from reportlab.pdfbase.ttfonts import TTFont
-            import io
-            
-            font_path = os.path.join(os.path.dirname(__file__), "Roboto-Regular.ttf")
-            if os.path.exists(font_path):
-                pdfmetrics.registerFont(TTFont("Roboto", font_path))
-                fnt = "Roboto"
-            else:
-                fnt = "Helvetica"
+def generate_phieu_xac_nhan(customer: dict, contract: dict, schedule_entry: dict = None) -> bytes:
+    """Sinh file PDF Phiếu xác nhận dịch vụ từ template có sẵn hoặc tạo mới"""
+    if schedule_entry is None:
+        schedule_entry = {}
 
+    try:
+        from pypdf import PdfReader, PdfWriter
+        from reportlab.pdfgen import canvas
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+        import io
+        
+        font_path = os.path.join(os.path.dirname(__file__), "Roboto-Regular.ttf")
+        if os.path.exists(font_path):
+            pdfmetrics.registerFont(TTFont("Roboto", font_path))
+            fnt = "Roboto"
+        else:
+            fnt = "Helvetica"
+
+        template_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "VHS PCC.pdf"))
+        
+        if os.path.exists(template_path):
+            existing_pdf = PdfReader(open(template_path, "rb"))
             packet = io.BytesIO()
             c = canvas.Canvas(packet, pagesize=A4)
             c.setFont(fnt, 11)
@@ -223,26 +226,26 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, logbook_entry: dict)
             c.drawString(148, 650, str(customer.get("dia_chi", "")))
             c.drawString(148, 630, str(customer.get("sdt", "") or customer.get("so_dt", "")))
 
-            # Thời gian
-            ci = logbook_entry.get("checkin_time", "")
-            co = logbook_entry.get("checkout_time", "")
+            # Thời gian (Lấy từ schedule)
+            # Nếu có ca thi công dự kiến thì dùng gio_bat_dau, gio_ket_thuc, ngay_du_kien
+            ci = schedule_entry.get("gio_bat_dau", contract.get("gio_bat_dau", ""))
+            co = schedule_entry.get("gio_ket_thuc", contract.get("gio_ket_thuc", ""))
+            ngay = schedule_entry.get("ngay_du_kien", "")
             d_str = ""
             m_str = ""
             
             if ci:
-                try:
-                    dt_ci = datetime.fromisoformat(ci)
-                    c.drawString(117, 310, dt_ci.strftime("%H:%M"))
-                    d_str = dt_ci.strftime("%d")
-                    m_str = dt_ci.strftime("%m")
-                except:
-                    c.drawString(117, 310, ci[:5])
+                c.drawString(117, 310, str(ci)[:5])
             if co:
+                c.drawString(242, 310, str(co)[:5])
+
+            if ngay:
                 try:
-                    dt_co = datetime.fromisoformat(co)
-                    c.drawString(242, 310, dt_co.strftime("%H:%M"))
+                    dt_ngay = datetime.fromisoformat(ngay)
+                    d_str = dt_ngay.strftime("%d")
+                    m_str = dt_ngay.strftime("%m")
                 except:
-                    c.drawString(242, 310, co[:5])
+                    pass
 
             if d_str:
                 c.drawString(307, 310, d_str)
@@ -256,22 +259,30 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, logbook_entry: dict)
                 "Phun sương": [48.59, 366.84], "Đặt bẫy": [230.71, 366.84], "Phun tồn lưu": [383.7, 366.84], "Phun khói": [48.59, 350.5], "Khử trùng": [230.71, 349.81], "Bả": [383.7, 349.81]
             }
             
-            hc = (logbook_entry.get("hoa_chat") or "").lower()
-            kq = (logbook_entry.get("ket_qua") or "").lower()
-            combined_text = f"{hc} {kq}"
+            # Gộp dữ liệu từ hợp đồng và lịch để phân tích tick box
+            loai_khach = (contract.get("loai_khach") or "").lower()
+            khu_vuc = (contract.get("khu_vuc_xu_ly") or "").lower()
+            phan_khuc = (customer.get("phan_khuc") or "").lower()
+            phuong_phap = (contract.get("phuong_phap_xu_ly") or "").lower()
+            con_trung = (schedule_entry.get("loai_con_trung") or contract.get("loai_con_trung") or "").lower()
+            ghi_chu = (schedule_entry.get("ghi_chu") or "").lower()
+            
+            combined_text = f"{loai_khach} {khu_vuc} {phan_khuc} {phuong_phap} {con_trung} {ghi_chu}"
+            # Normalize 'định kỳ' to 'định kì' if necessary
+            if "định kỳ" in combined_text: combined_text += " định kì"
+            if "đánh bả" in combined_text: combined_text += " bả"
             
             for key, (x, y) in checkbox_coords.items():
                 if key.lower() in combined_text:
                     c.drawString(x - 13, y + 2, 'x')
 
             c.setFont(fnt, 12)
-            c.drawString(100, 105, str(logbook_entry.get("ky_thuat_vien", "")))
+            c.drawString(100, 105, str(schedule_entry.get("ky_thuat_vien") or contract.get("ky_thuat_vien") or ""))
 
             c.save()
             packet.seek(0)
 
             new_pdf = PdfReader(packet)
-            existing_pdf = PdfReader(open(template_path, "rb"))
             output = PdfWriter()
 
             page = existing_pdf.pages[0]
@@ -281,10 +292,9 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, logbook_entry: dict)
             out_buffer = io.BytesIO()
             output.write(out_buffer)
             return out_buffer.getvalue()
-        except Exception as e:
-            print(f"Error using PCC template: {e}")
-            # Fall back to normal generation if error
-            pass
+    except Exception as e:
+        print(f"Error using PCC template: {e}")
+        pass
 
     # --- FALLBACK TO NATIVE REPORTLAB ---
     buffer = io.BytesIO()
@@ -306,9 +316,9 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, logbook_entry: dict)
 
     info_data = [
         ["Khách hàng:", customer.get("ten_cty", ""), "Mã HĐ:", contract.get("ma_hd", "")],
-        ["Địa chỉ:", customer.get("dia_chi", ""), "Kỹ thuật viên:", logbook_entry.get("ky_thuat_vien", "")],
-        ["Thời gian vào:", logbook_entry.get("checkin_time", "")[:16] if logbook_entry.get("checkin_time") else "",
-         "Thời gian ra:", logbook_entry.get("checkout_time", "")[:16] if logbook_entry.get("checkout_time") else ""],
+        ["Địa chỉ:", customer.get("dia_chi", ""), "Kỹ thuật viên:", schedule_entry.get("ky_thuat_vien") or contract.get("ky_thuat_vien", "")],
+        ["Dự kiến từ:", schedule_entry.get("gio_bat_dau", "")[:5] if schedule_entry.get("gio_bat_dau") else "",
+         "Dự kiến đến:", schedule_entry.get("gio_ket_thuc", "")[:5] if schedule_entry.get("gio_ket_thuc") else ""],
     ]
     info_table = Table(info_data, colWidths=[3.5*cm, 6.5*cm, 3.5*cm, 3.5*cm])
     info_table.setStyle(TableStyle([
@@ -325,22 +335,24 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, logbook_entry: dict)
     elements.append(Spacer(1, 0.3*cm))
 
     # Hóa chất sử dụng
-    elements.append(Paragraph("<b>HÓA CHẤT & PHƯƠNG PHÁP XỬ LÝ</b>",
+    elements.append(Paragraph("<b>HÓA CHẤT & PHƯƠNG PHÁP XỬ LÝ (Dự kiến)</b>",
         ParagraphStyle("SH2", parent=styles["Normal"], fontSize=10, textColor=VHS_GREEN,
                        fontName="Helvetica-Bold", spaceAfter=4)))
+    
+    phuong_phap_str = contract.get("phuong_phap_xu_ly") or "Theo hợp đồng"
     elements.append(Paragraph(
-        logbook_entry.get("hoa_chat") or "Không có ghi chú",
+        phuong_phap_str,
         ParagraphStyle("Content", parent=styles["Normal"], fontSize=9,
                        borderPad=5, borderColor=VHS_GREEN, borderWidth=0.5)
     ))
     elements.append(Spacer(1, 0.3*cm))
 
     # Kết quả
-    elements.append(Paragraph("<b>NHẬN XÉT / KẾT QUẢ</b>",
+    elements.append(Paragraph("<b>GHI CHÚ / YÊU CẦU</b>",
         ParagraphStyle("SH3", parent=styles["Normal"], fontSize=10, textColor=VHS_GREEN,
                        fontName="Helvetica-Bold", spaceAfter=4)))
     elements.append(Paragraph(
-        logbook_entry.get("ket_qua") or "Hoàn thành tốt",
+        schedule_entry.get("ghi_chu") or contract.get("ghi_chu") or "Không có",
         ParagraphStyle("Content2", parent=styles["Normal"], fontSize=9)
     ))
     elements.append(Spacer(1, 1*cm))
