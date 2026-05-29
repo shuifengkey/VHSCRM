@@ -219,9 +219,9 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, logbook_entry: dict)
             c = canvas.Canvas(packet, pagesize=A4)
             c.setFont(fnt, 11)
 
-            c.drawString(136, 672, str(customer.get("ten_cty", "")))
-            c.drawString(136, 650, str(customer.get("dia_chi", "")))
-            c.drawString(136, 630, str(customer.get("sdt", "") or customer.get("so_dt", "")))
+            c.drawString(148, 672, str(customer.get("ten_cty", "")))
+            c.drawString(148, 650, str(customer.get("dia_chi", "")))
+            c.drawString(148, 630, str(customer.get("sdt", "") or customer.get("so_dt", "")))
 
             # Thời gian
             ci = logbook_entry.get("checkin_time", "")
@@ -232,21 +232,21 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, logbook_entry: dict)
             if ci:
                 try:
                     dt_ci = datetime.fromisoformat(ci)
-                    c.drawString(105, 310, dt_ci.strftime("%H:%M"))
+                    c.drawString(117, 310, dt_ci.strftime("%H:%M"))
                     d_str = dt_ci.strftime("%d")
                     m_str = dt_ci.strftime("%m")
                 except:
-                    c.drawString(105, 310, ci[:5])
+                    c.drawString(117, 310, ci[:5])
             if co:
                 try:
                     dt_co = datetime.fromisoformat(co)
-                    c.drawString(230, 310, dt_co.strftime("%H:%M"))
+                    c.drawString(242, 310, dt_co.strftime("%H:%M"))
                 except:
-                    c.drawString(230, 310, co[:5])
+                    c.drawString(242, 310, co[:5])
 
             if d_str:
-                c.drawString(295, 310, d_str)
-                c.drawString(340, 310, m_str)
+                c.drawString(307, 310, d_str)
+                c.drawString(352, 310, m_str)
 
             # Checkboxes mapping
             checkbox_coords = {
