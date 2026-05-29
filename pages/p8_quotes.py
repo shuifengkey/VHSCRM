@@ -67,6 +67,9 @@ def render():
         st.session_state.quote_items = default_items
         
     df = pd.DataFrame(st.session_state.quote_items)
+    if not df.empty:
+        df['price'] = pd.to_numeric(df.get('price', 0), errors='coerce')
+        df['quantity'] = pd.to_numeric(df.get('quantity', 0), errors='coerce')
     
     edited_df = st.data_editor(
         df,
