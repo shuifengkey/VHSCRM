@@ -48,8 +48,15 @@ class DocumentScanner:
     def detect_edges(self, blurred_img):
         """
         Phát hiện biên (Edge Detection): Sử dụng Canny Edge Detection
+        Kết hợp morphological closing để nối các đứt gãy biên.
         """
-        edged = cv2.Canny(blurred_img, 75, 200)
+        # Hạ thấp ngưỡng Canny để nhạy hơn với viền mờ
+        edged = cv2.Canny(blurred_img, 30, 150)
+        
+        # Dùng toán tử hình thái học (closing) để kết nối các đoạn đứt gãy
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+        edged = cv2.dilate(edged, kernel, iterations=1)
+        edged = cv2.erode(edged, kernel, iterations=1)
         return edged
 
     def find_document_contour(self, edged, img_area):
@@ -59,28 +66,31 @@ class DocumentScanner:
         # 1. Tìm tất cả contours
         cnts, _ = cv2.findContours(edged.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         
-        # Sắp xếp theo diện tích giảm dần
-        cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:5]
+        # Sắp xếp theo diện tích giảm dần, lấy top 10 để tăng cơ hội
+        cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:10]
         
         doc_cnt = None
         
         for c in cnts:
-            # 2. Bỏ qua các contour quá nhỏ
-            if cv2.contourArea(c) < img_area * 0.05:
+            # 2. Bỏ qua các contour quá nhỏ (giảm ngưỡng diện tích từ 5% xuống 2%)
+            if cv2.contourArea(c) < img_area * 0.02:
                 continue
                 
             # 3. Xấp xỉ contour đó thành hình 4 cạnh (4 góc) bằng approxPolyDP
             peri = cv2.arcLength(c, True)
-            approx = cv2.approxPolyDP(c, 0.02 * peri, True)
-            
-            if len(approx) == 4:
-                doc_cnt = approx.reshape(4, 2)
+            # Dùng dải ngưỡng linh hoạt
+            for eps in [0.02, 0.03, 0.04, 0.05]:
+                approx = cv2.approxPolyDP(c, eps * peri, True)
+                if len(approx) == 4:
+                    doc_cnt = approx.reshape(4, 2)
+                    break
+            if doc_cnt is not None:
                 break
                 
         # 4. Fallback: Nếu không tìm thấy contour 4 cạnh thì thử lấy bounding box của contour lớn nhất
         if doc_cnt is None and len(cnts) > 0:
             c = cnts[0]
-            if cv2.contourArea(c) > img_area * 0.05:
+            if cv2.contourArea(c) > img_area * 0.02:
                 rect = cv2.minAreaRect(c)
                 box = cv2.boxPoints(rect)
                 doc_cnt = np.int32(box)
