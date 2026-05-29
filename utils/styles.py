@@ -48,11 +48,11 @@ section[data-testid="stSidebar"] { display: none !important; }
 /* ── TOP NAVBAR ── */
 .vhs-nav {
     position: sticky; top: 0; z-index: 999;
-    background: #0f172a;
+    background: #ffffff;
     padding: 0 24px;
     display: flex; align-items: center; gap: 0;
     height: 54px;
-    box-shadow: 0 2px 12px rgba(0,0,0,.25);
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
     margin-bottom: 20px;
 }
 .vhs-nav-brand {
@@ -70,7 +70,7 @@ section[data-testid="stSidebar"] { display: none !important; }
     font-size: 16px;
 }
 .vhs-nav-brand-text {
-    font-size: 15px; font-weight: 800; color: #f1f5f9;
+    font-size: 15px; font-weight: 800; color: #0f172a;
     letter-spacing: -.02em;
 }
 .vhs-nav-brand-sub {
@@ -93,7 +93,7 @@ section[data-testid="stSidebar"] { display: none !important; }
     justify-content: center !important;
     text-align: center !important;
     background: transparent !important;
-    color: #94a3b8 !important;
+    color: #64748b !important;
     border: none !important; border-radius: 8px !important;
     padding: 8px 10px !important;
     font-size: 13px !important; font-weight: 500 !important;
@@ -110,8 +110,8 @@ section[data-testid="stSidebar"] { display: none !important; }
     display: none !important;
 }
 .stRadio > div > label:hover {
-    background: rgba(255,255,255,.07) !important;
-    color: #e2e8f0 !important;
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
 }
 .stRadio > div > label[data-baseweb="radio"] input:checked + div,
 .stRadio input:checked ~ div { color: white !important; }
@@ -127,13 +127,13 @@ section[data-testid="stSidebar"] { display: none !important; }
     display: flex; align-items: center; gap: 16px;
 }
 .vhs-status-pill {
-    background: rgba(255,255,255,.07);
+    background: #f1f5f9;
     border-radius: 20px; padding: 4px 12px;
-    font-size: 11px; color: #94a3b8;
+    font-size: 11px; color: #64748b;
     display: flex; align-items: center; gap: 5px;
     white-space: nowrap;
 }
-.vhs-status-pill b { color: #e2e8f0; }
+.vhs-status-pill b { color: #0f172a; }
 
 /* ── METRICS ── */
 [data-testid="metric-container"] {
