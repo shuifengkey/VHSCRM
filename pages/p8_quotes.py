@@ -68,8 +68,8 @@ def render():
         
     df = pd.DataFrame(st.session_state.quote_items)
     if not df.empty:
-        df['price'] = pd.to_numeric(df.get('price', 0), errors='coerce')
-        df['quantity'] = pd.to_numeric(df.get('quantity', 0), errors='coerce')
+        df['price'] = pd.to_numeric(df.get('price', 0), errors='coerce').fillna(0).astype('int64')
+        df['quantity'] = pd.to_numeric(df.get('quantity', 0), errors='coerce').fillna(1).astype('int64')
     
     edited_df = st.data_editor(
         df,
@@ -80,8 +80,8 @@ def render():
             "targets": st.column_config.TextColumn("Đối tượng", width="medium"),
             "chemicals": st.column_config.TextColumn("Hóa chất & Vật tư", width="medium"),
             "frequency": st.column_config.TextColumn("Tần suất", width="small"),
-            "price": st.column_config.NumberColumn("Đơn giá", min_value=0, step=1000, format="%d"),
-            "quantity": st.column_config.NumberColumn("SL", min_value=1, step=1, format="%d"),
+            "price": st.column_config.NumberColumn("Đơn giá", min_value=0, step=1000),
+            "quantity": st.column_config.NumberColumn("SL", min_value=1, step=1),
             "note": st.column_config.TextColumn("Ghi chú", width="medium"),
         },
         hide_index=True
