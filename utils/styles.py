@@ -79,14 +79,15 @@ section[data-testid="stSidebar"] { display: none !important; }
 }
 
 /* ── NAV ITEMS (radio buttons restyled) ── */
-.stRadio { margin: 0 !important; width: 100% !important; }
-.stRadio > label { display: none !important; }
-.stRadio > div {
+div[data-testid="stRadio"] { margin: 0 !important; width: 100% !important; }
+div[data-testid="stRadio"] > label { display: none !important; }
+div[data-testid="stRadio"] [role="radiogroup"] {
     display: flex !important; flex-direction: row !important;
     flex-wrap: nowrap !important; gap: 8px !important;
     justify-content: space-between !important;
+    width: 100% !important;
 }
-.stRadio > div > label {
+div[data-testid="stRadio"] [role="radiogroup"] > label {
     flex: 1 !important;
     display: flex !important;
     align-items: center !important;
@@ -101,22 +102,22 @@ section[data-testid="stSidebar"] { display: none !important; }
     white-space: nowrap !important;
     transition: all .15s !important;
 }
-.element-container:has(.nav-marker) + .element-container .stRadio > div > label p {
+.element-container:has(.nav-marker) + .element-container div[data-testid="stRadio"] [role="radiogroup"] > label p {
     text-transform: uppercase !important;
     font-weight: 600 !important;
 }
 /* Hide the radio button circle itself */
-.stRadio > div > label > div:first-child {
+div[data-testid="stRadio"] [role="radiogroup"] > label > div:first-child {
     display: none !important;
 }
-.stRadio > div > label:hover {
+div[data-testid="stRadio"] [role="radiogroup"] > label:hover {
     background: #f1f5f9 !important;
     color: #0f172a !important;
 }
-.stRadio > div > label[data-baseweb="radio"] input:checked + div,
-.stRadio input:checked ~ div { color: white !important; }
+div[data-testid="stRadio"] [role="radiogroup"] > label[data-baseweb="radio"] input:checked + div,
+div[data-testid="stRadio"] input:checked ~ div { color: white !important; }
 /* Active nav item */
-.stRadio > div label:has(input:checked) {
+div[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
     background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 60%, #166534 100%) !important;
     color: white !important;
 }
