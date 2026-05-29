@@ -518,7 +518,12 @@ def render():
                                     new_ktv = st.selectbox("Kỹ thuật viên", [""] + KTV_LIST, index=ktv_idx, key=f"ktv_{r['id']}")
                                     
                                     new_pest = st.text_input("Dịch hại", value=r.get("loai_con_trung") or hd.get("loai_con_trung") or "", key=f"pest_{r['id']}")
-                                    apply_future = st.checkbox("🔄 Áp dụng thay đổi (Giờ, KTV, Dịch hại) cho các tháng sau", value=False, key=f"apply_{r['id']}")
+                                    
+                                    st.markdown("<div style='font-size:13px;font-weight:600;margin-bottom:8px;color:#0f172a;'>🔄 Áp dụng cho các kỳ sau:</div>", unsafe_allow_html=True)
+                                    cc1, cc2, cc3 = st.columns(3)
+                                    with cc1: apply_time = st.checkbox("Giờ thi công", value=False, key=f"app_time_{r['id']}")
+                                    with cc2: apply_ktv = st.checkbox("KTV", value=False, key=f"app_ktv_{r['id']}")
+                                    with cc3: apply_pest = st.checkbox("Dịch hại", value=False, key=f"app_pest_{r['id']}")
     
                                     cs,ck = st.columns(2)
                                     with cs: save_btn = st.form_submit_button("💾 Lưu",use_container_width=True)
@@ -528,13 +533,14 @@ def render():
                                         try:
                                             conn = get_connection()
                                             
-                                            # Thu thập các ngày sẽ cập nhật (ca hiện tại + ca tương lai nếu apply_future)
+                                            # Thu thập các ngày sẽ cập nhật (ca hiện tại + ca tương lai)
                                             dates_to_check = [new_ngay]
                                             future_ids = []
-                                            if apply_future:
+                                            if apply_time or apply_ktv or apply_pest:
                                                 future_schedules = conn.execute("SELECT id, ngay_du_kien FROM schedules WHERE ma_hd=? AND lan_thu=? AND ky_thang > ? AND trang_thai!='skipped' AND trang_thai!='completed'", (r["ma_hd"], r["lan_thu"], r["ky_thang"])).fetchall()
                                                 for fs in future_schedules:
-                                                    dates_to_check.append(date.fromisoformat(fs["ngay_du_kien"]))
+                                                    if apply_ktv:
+                                                        dates_to_check.append(date.fromisoformat(fs["ngay_du_kien"]))
                                                     future_ids.append(fs["id"])
                                             
                                             # Check overlap
@@ -555,16 +561,26 @@ def render():
                                                 (new_ngay.isoformat(), new_gbd.strftime("%H:%M"),
                                                  new_gkt.strftime("%H:%M"), new_gc, new_ktv, new_pest, r["id"]))
                                             
-                                            if apply_future:
-                                                conn.execute("""
-                                                    UPDATE schedules 
-                                                    SET gio_bat_dau=?, gio_ket_thuc=?, ky_thuat_vien=?, loai_con_trung=?, nguon='manual'
-                                                    WHERE ma_hd=? AND lan_thu=? AND ky_thang > ? AND trang_thai!='skipped' AND trang_thai!='completed'
-                                                """, (new_gbd.strftime("%H:%M"), new_gkt.strftime("%H:%M"), new_ktv, new_pest, r["ma_hd"], r["lan_thu"], r["ky_thang"]))
+                                            if apply_time or apply_ktv or apply_pest:
+                                                set_clauses = ["nguon='manual'"]
+                                                params = []
+                                                if apply_time:
+                                                    set_clauses.extend(["gio_bat_dau=?", "gio_ket_thuc=?"])
+                                                    params.extend([new_gbd.strftime("%H:%M"), new_gkt.strftime("%H:%M")])
+                                                if apply_ktv:
+                                                    set_clauses.append("ky_thuat_vien=?")
+                                                    params.append(new_ktv)
+                                                if apply_pest:
+                                                    set_clauses.append("loai_con_trung=?")
+                                                    params.append(new_pest)
+                                                
+                                                params.extend([r["ma_hd"], r["lan_thu"], r["ky_thang"]])
+                                                query = f"UPDATE schedules SET {', '.join(set_clauses)} WHERE ma_hd=? AND lan_thu=? AND ky_thang > ? AND trang_thai!='skipped' AND trang_thai!='completed'"
+                                                conn.execute(query, params)
                                             
                                             from utils.google_sync import auto_sync_schedule_to_google
                                             auto_sync_schedule_to_google(conn, r["id"], "upsert")
-                                            if apply_future:
+                                            if apply_time or apply_ktv or apply_pest:
                                                 for fid in future_ids:
                                                     auto_sync_schedule_to_google(conn, fid, "upsert")
                                                     
