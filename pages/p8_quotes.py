@@ -76,7 +76,7 @@ def render():
         
     # Enforce numeric types properly (works even on empty dataframe)
     df['price'] = pd.to_numeric(df['price'], errors='coerce').fillna(0).astype('int64')
-    df['quantity'] = pd.to_numeric(df['quantity'], errors='coerce').fillna(1).astype('int64')
+    df['quantity'] = pd.to_numeric(df['quantity'], errors='coerce').fillna(0).astype('int64')
     
     edited_df = st.data_editor(
         df,
@@ -88,7 +88,7 @@ def render():
             "chemicals": st.column_config.Column("Hóa chất & Vật tư", width="medium"),
             "frequency": st.column_config.Column("Tần suất", width="small"),
             "price": st.column_config.NumberColumn("Đơn giá", min_value=0, step=1000),
-            "quantity": st.column_config.NumberColumn("SL", min_value=1, step=1),
+            "quantity": st.column_config.NumberColumn("SL", min_value=0, step=1),
             "note": st.column_config.Column("Ghi chú", width="medium"),
         },
         hide_index=True
@@ -98,8 +98,10 @@ def render():
     
     # Calculate preview totals safely using Pandas
     safe_price = pd.to_numeric(edited_df['price'], errors='coerce').fillna(0)
-    safe_qty = pd.to_numeric(edited_df['quantity'], errors='coerce').fillna(1)
-    subtotal = (safe_price * safe_qty).sum()
+    safe_qty = pd.to_numeric(edited_df['quantity'], errors='coerce').fillna(0)
+    # If qty is 0, treat it as 1 for total calculation (lump sum)
+    calc_qty = safe_qty.replace(0, 1)
+    subtotal = (safe_price * calc_qty).sum()
     
     vat_amt = subtotal * (vat_pct / 100.0)
     grand = subtotal + vat_amt
@@ -150,14 +152,17 @@ def render():
                     if not name and not targets and not chemicals and not note and p == 0:
                         continue
                         
+                    actual_q_for_calc = 1 if q == 0 else q
+                    display_q = "" if q == 0 else q
+                        
                     i_data.append({
                         "name": name,
                         "targets": targets,
                         "chemicals": chemicals,
                         "frequency": freq,
                         "price": p,
-                        "quantity": q,
-                        "total": p * q,
+                        "quantity": display_q,
+                        "total": p * actual_q_for_calc,
                         "note": note
                     })
                     
