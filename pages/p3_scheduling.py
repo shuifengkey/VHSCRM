@@ -450,8 +450,14 @@ def render():
                     except: pass
                     manual_tag = ' <span style="background:#fef9c3;color:#854d0e;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:700;">✏️ Đã chỉnh</span>' if r["nguon"]=="manual" else ""
     
+                    try:
+                        thu_idx = datetime.strptime(r['ngay_du_kien'], '%Y-%m-%d').weekday()
+                        thu_str = ['T2','T3','T4','T5','T6','T7','CN'][thu_idx]
+                    except:
+                        thu_str = ''
+
                     with st.expander(
-                        f"Lần {r['lan_thu']}/{expected} — {r['ngay_du_kien']} "
+                        f"Lần {r['lan_thu']}/{expected} — {r['ngay_du_kien']} ({thu_str}) "
                         f"{'🌙' if is_night else ''} · {r['gio_bat_dau']}–{r['gio_ket_thuc']} · {ST_LBL.get(tt,'?')}"
                     ):
                         col_info, col_edit = st.columns([3,2])
@@ -460,7 +466,7 @@ def render():
                             <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
                               <div style="background:#f8fafc;border-radius:8px;padding:10px 14px;min-width:100px;">
                                 <div style="font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;">Ngày</div>
-                                <div style="font-size:14px;font-weight:700;color:#0f172a;">{r['ngay_du_kien']}</div>
+                                <div style="font-size:14px;font-weight:700;color:#0f172a;">{r['ngay_du_kien']} ({thu_str})</div>
                               </div>
                               <div style="background:#f8fafc;border-radius:8px;padding:10px 14px;min-width:100px;">
                                 <div style="font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;">Giờ</div>
