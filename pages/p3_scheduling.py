@@ -512,7 +512,7 @@ def render():
                                     new_ktv = st.selectbox("Kỹ thuật viên", [""] + KTV_LIST, index=ktv_idx, key=f"ktv_{r['id']}")
                                     
                                     new_pest = st.text_input("Dịch hại", value=r.get("loai_con_trung") or hd.get("loai_con_trung") or "", key=f"pest_{r['id']}")
-                                    apply_future = st.checkbox("🔄 Áp dụng dịch hại này cho lần lặp tương ứng ở các tháng sau", value=False, key=f"apply_{r['id']}")
+                                    apply_future = st.checkbox("🔄 Áp dụng thay đổi (Giờ, KTV, Dịch hại) cho các tháng sau", value=False, key=f"apply_{r['id']}")
     
                                     cs,ck = st.columns(2)
                                     with cs: save_btn = st.form_submit_button("💾 Lưu",use_container_width=True)
@@ -522,23 +522,24 @@ def render():
                                         try:
                                             conn = get_connection()
                                             
+                                            # Thu thập các ngày sẽ cập nhật (ca hiện tại + ca tương lai nếu apply_future)
+                                            dates_to_check = [new_ngay.isoformat()]
+                                            future_ids = []
+                                            if apply_future:
+                                                future_schedules = conn.execute("SELECT id, ngay_du_kien FROM schedules WHERE ma_hd=? AND lan_thu=? AND ky_thang > ? AND trang_thai!='skipped' AND trang_thai!='completed'", (r["ma_hd"], r["lan_thu"], r["ky_thang"])).fetchall()
+                                                for fs in future_schedules:
+                                                    dates_to_check.append(fs["ngay_du_kien"])
+                                                    future_ids.append(fs["id"])
+                                            
                                             # Check overlap
                                             if new_ktv:
-                                                overlap = False
-                                                ovs = conn.execute("SELECT s.gio_bat_dau, s.gio_ket_thuc, c.ten_cty FROM schedules s JOIN customers c ON s.ma_kh=c.ma_kh WHERE s.ngay_du_kien=? AND s.ky_thuat_vien=? AND s.id!=? AND s.trang_thai!='skipped' AND s.trang_thai!='completed'", (new_ngay.isoformat(), new_ktv, r["id"])).fetchall()
-                                                for ov in ovs:
-                                                    def tm(t):
-                                                        h, m = map(int, t.split(':'))
-                                                        return h*60+m
-                                                    s1, e1 = tm(new_gbd.strftime("%H:%M")), tm(new_gkt.strftime("%H:%M"))
-                                                    s2, e2 = tm(ov["gio_bat_dau"]), tm(ov["gio_ket_thuc"])
-                                                    if e1 <= s1: e1 += 24*60
-                                                    if e2 <= s2: e2 += 24*60
-                                                    if max(s1, s2) < min(e1, e2):
-                                                        st.error(f"× KTV {new_ktv} bị trùng giờ với ca tại {ov['ten_cty']} ({ov['gio_bat_dau']} - {ov['gio_ket_thuc']})")
-                                                        overlap = True
-                                                        break
-                                                if overlap:
+                                                from utils.scheduling import check_ktv_schedule_conflict
+                                                conflicts = check_ktv_schedule_conflict(new_ktv, r["ma_hd"], dates_to_check, new_gbd.strftime("%H:%M"), new_gkt.strftime("%H:%M"))
+                                                if conflicts:
+                                                    for c in conflicts[:3]:
+                                                        st.error(f"❌ Ngày {datetime.strptime(c['date'], '%Y-%m-%d').strftime('%d/%m/%Y')}: Trùng lịch với {c['ten_cty']} ({c['gio_bat_dau']} - {c['gio_ket_thuc']})")
+                                                    if len(conflicts) > 3:
+                                                        st.error(f"...và {len(conflicts)-3} ca trùng khác.")
                                                     conn.close()
                                                     continue
                                             
@@ -547,15 +548,20 @@ def render():
                                                 WHERE id=?""",
                                                 (new_ngay.isoformat(), new_gbd.strftime("%H:%M"),
                                                  new_gkt.strftime("%H:%M"), new_gc, new_ktv, new_pest, r["id"]))
+                                            
                                             if apply_future:
                                                 conn.execute("""
                                                     UPDATE schedules 
-                                                    SET loai_con_trung=? 
-                                                    WHERE ma_hd=? AND lan_thu=? AND ky_thang > ?
-                                                """, (new_pest, r["ma_hd"], r["lan_thu"], r["ky_thang"]))
+                                                    SET gio_bat_dau=?, gio_ket_thuc=?, ky_thuat_vien=?, loai_con_trung=?, nguon='manual'
+                                                    WHERE ma_hd=? AND lan_thu=? AND ky_thang > ? AND trang_thai!='skipped' AND trang_thai!='completed'
+                                                """, (new_gbd.strftime("%H:%M"), new_gkt.strftime("%H:%M"), new_ktv, new_pest, r["ma_hd"], r["lan_thu"], r["ky_thang"]))
                                             
                                             from utils.google_sync import auto_sync_schedule_to_google
                                             auto_sync_schedule_to_google(conn, r["id"], "upsert")
+                                            if apply_future:
+                                                for fid in future_ids:
+                                                    auto_sync_schedule_to_google(conn, fid, "upsert")
+                                                    
                                             conn.commit(); conn.close()
                                             st.success("✓ Đã cập nhật!"); st.rerun()
                                         except Exception as e: st.error(f"× {e}")
