@@ -87,8 +87,13 @@ div[data-testid="stRadio"] [role="radiogroup"] {
     justify-content: space-between !important;
     width: 100% !important;
 }
-div[data-testid="stRadio"] [role="radiogroup"] > label {
+div[data-testid="stRadio"] [role="radiogroup"] > div {
     flex: 1 !important;
+    display: flex !important;
+}
+div[data-testid="stRadio"] [role="radiogroup"] label {
+    flex: 1 !important;
+    width: 100% !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
