@@ -243,7 +243,12 @@ def render():
 
 
                 con_no = u["can_thu"] - u["da_thu"]
-                so_tien = st.number_input("Số tiền khách trả (gồm VAT nếu có)", min_value=0, value=int(con_no), step=100000, key="pay_amount")
+                so_tien_str = st.text_input("Số tiền khách trả (gồm VAT nếu có)", value=f"{int(con_no):,}", key="pay_amount")
+                try:
+                    so_tien = int(so_tien_str.replace(".", "").replace(",", "").strip())
+                except ValueError:
+                    so_tien = 0
+
                 if st.button("Xác nhận thu", type="primary"):
                     now_iso = (datetime.now(timezone.utc) + timedelta(hours=7)).date().isoformat()
                     conn.execute("UPDATE debts SET da_thu=da_thu+?, ngay_thu=? WHERE id=?", (so_tien, now_iso, u["id"]))
@@ -267,7 +272,11 @@ def render():
                 hd = hd_opts[hd_sel]
                 
                 ky = st.text_input("Kỳ thu (YYYY-MM)", value=(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().strftime("%Y-%m"))
-                dt_adv = st.number_input("Số Tiền Khách Trả Trước", min_value=0, step=100000, key="adv_dt")
+                dt_adv_str = st.text_input("Số Tiền Khách Trả Trước", value="0", key="adv_dt")
+                try:
+                    dt_adv = int(dt_adv_str.replace(".", "").replace(",", "").strip())
+                except ValueError:
+                    dt_adv = 0
                 
                 if st.button("💰 Xác Nhận Thu Trước", type="primary", use_container_width=True):
                     if dt_adv <= 0:
