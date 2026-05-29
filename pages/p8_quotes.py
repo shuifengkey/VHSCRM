@@ -66,10 +66,13 @@ def render():
     if "quote_items" not in st.session_state:
         st.session_state.quote_items = default_items
         
-    df = pd.DataFrame(st.session_state.quote_items)
-    if not df.empty:
-        df['price'] = pd.to_numeric(df.get('price', 0), errors='coerce').fillna(0).astype('int64')
-        df['quantity'] = pd.to_numeric(df.get('quantity', 0), errors='coerce').fillna(1).astype('int64')
+    # Always ensure columns exist even if empty
+    cols = ["name", "targets", "chemicals", "frequency", "price", "quantity", "note"]
+    df = pd.DataFrame(st.session_state.quote_items, columns=cols)
+    
+    # Enforce numeric types properly (works even on empty dataframe)
+    df['price'] = pd.to_numeric(df['price'], errors='coerce').fillna(0).astype('int64')
+    df['quantity'] = pd.to_numeric(df['quantity'], errors='coerce').fillna(1).astype('int64')
     
     edited_df = st.data_editor(
         df,
