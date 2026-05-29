@@ -232,21 +232,21 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, logbook_entry: dict)
             if ci:
                 try:
                     dt_ci = datetime.fromisoformat(ci)
-                    c.drawString(110, 308, dt_ci.strftime("%H:%M"))
+                    c.drawString(110, 310, dt_ci.strftime("%H:%M"))
                     d_str = dt_ci.strftime("%d")
                     m_str = dt_ci.strftime("%m")
                 except:
-                    c.drawString(110, 308, ci[:5])
+                    c.drawString(110, 310, ci[:5])
             if co:
                 try:
                     dt_co = datetime.fromisoformat(co)
-                    c.drawString(245, 308, dt_co.strftime("%H:%M"))
+                    c.drawString(245, 310, dt_co.strftime("%H:%M"))
                 except:
-                    c.drawString(245, 308, co[:5])
+                    c.drawString(245, 310, co[:5])
 
             if d_str:
-                c.drawString(345, 308, d_str)
-                c.drawString(410, 308, m_str)
+                c.drawString(345, 310, d_str)
+                c.drawString(410, 310, m_str)
 
             # Checkboxes mapping
             checkbox_coords = {
