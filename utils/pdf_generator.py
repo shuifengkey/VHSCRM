@@ -197,6 +197,93 @@ def generate_bao_gia(customer: dict, contract: dict) -> bytes:
 
 def generate_phieu_xac_nhan(customer: dict, contract: dict, logbook_entry: dict) -> bytes:
     """Sinh PDF Phiếu xác nhận dịch vụ sau khi thi công hoàn thành"""
+    
+    # Check if template exists
+    template_path = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "VHS PCC.pdf"))
+    if os.path.exists(template_path):
+        try:
+            from pypdf import PdfReader, PdfWriter
+            from reportlab.pdfgen import canvas
+            from reportlab.pdfbase import pdfmetrics
+            from reportlab.pdfbase.ttfonts import TTFont
+            import io
+            
+            font_path = os.path.join(os.path.dirname(__file__), "Roboto-Regular.ttf")
+            if os.path.exists(font_path):
+                pdfmetrics.registerFont(TTFont("Roboto", font_path))
+                fnt = "Roboto"
+            else:
+                fnt = "Helvetica"
+
+            packet = io.BytesIO()
+            c = canvas.Canvas(packet, pagesize=A4)
+            c.setFont(fnt, 11)
+
+            c.drawString(160, 670, str(customer.get("ten_cty", "")))
+            c.drawString(120, 648, str(customer.get("dia_chi", "")))
+            c.drawString(140, 628, str(customer.get("sdt", "") or customer.get("so_dt", "")))
+
+            # Thời gian
+            ci = logbook_entry.get("checkin_time", "")
+            co = logbook_entry.get("checkout_time", "")
+            d_str = ""
+            m_str = ""
+            y_str = ""
+            
+            if ci:
+                try:
+                    dt_ci = datetime.fromisoformat(ci)
+                    c.drawString(115, 308, dt_ci.strftime("%H:%M"))
+                    d_str = dt_ci.strftime("%d")
+                    m_str = dt_ci.strftime("%m")
+                    y_str = dt_ci.strftime("%Y")
+                except:
+                    c.drawString(115, 308, ci[:5])
+            if co:
+                try:
+                    dt_co = datetime.fromisoformat(co)
+                    c.drawString(250, 308, dt_co.strftime("%H:%M"))
+                except:
+                    c.drawString(250, 308, co[:5])
+
+            if d_str:
+                c.drawString(350, 308, d_str)
+                c.drawString(410, 308, m_str)
+
+            # Ghi chú
+            hc = logbook_entry.get("hoa_chat", "Không có ghi chú")
+            kq = logbook_entry.get("ket_qua", "Hoàn thành tốt")
+            c.drawString(70, 328, f"Kết quả: {kq}")
+            
+            # Draw multi-line for Ghi chú (hoa chat + remark)
+            text_obj = c.beginText(40, 265)
+            text_obj.setFont(fnt, 11)
+            text_obj.textLines(f"Hóa chất sử dụng:\n{hc}")
+            c.drawText(text_obj)
+
+            c.setFont(fnt, 12)
+            c.drawString(100, 150, str(logbook_entry.get("ky_thuat_vien", "")))
+
+            c.save()
+            packet.seek(0)
+
+            new_pdf = PdfReader(packet)
+            existing_pdf = PdfReader(open(template_path, "rb"))
+            output = PdfWriter()
+
+            page = existing_pdf.pages[0]
+            page.merge_page(new_pdf.pages[0])
+            output.add_page(page)
+
+            out_buffer = io.BytesIO()
+            output.write(out_buffer)
+            return out_buffer.getvalue()
+        except Exception as e:
+            print(f"Error using PCC template: {e}")
+            # Fall back to normal generation if error
+            pass
+
+    # --- FALLBACK TO NATIVE REPORTLAB ---
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer, pagesize=A4,
