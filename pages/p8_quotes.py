@@ -58,9 +58,9 @@ def render():
     
     # Default items from template
     default_items = [
-        {"name": "Kiểm soát Côn trùng bay\n(Flying Insect Control)", "targets": "Muỗi, ruồi...\n(Mosquitoes, flies...)", "chemicals": "Spectra 10SC", "frequency": "1 lần / tháng\n(1 time/month)", "price": 300000, "quantity": 30, "note": "HCM/ Bình Dương"},
-        {"name": "Kiểm soát Gián Đức & Kiến\n(Cockroach & Ant Control)", "targets": "Gián Đức, kiến\n(German cockroaches, ants)", "chemicals": "Zentek, Posedon\nBả Gel sinh học / Bait Gel", "frequency": "1 lần / tháng\n(1 times/month)", "price": 500000, "quantity": 3, "note": "Vũng Tàu"},
-        {"name": "Kiểm soát Gặm nhấm\n(Rodent Control)", "targets": "Chuột cống, chuột nhắt\n(Rats, mice)", "chemicals": "Bả Storm, bẫy dính\n(Rat Bait Station, Glue Boards)", "frequency": "1 lần / tháng\n(1 times/month)", "price": 320000, "quantity": 4, "note": "Đồng Nai"}
+        {"name": "Kiểm soát Côn trùng bay\n(Flying Insect Control)", "targets": "Muỗi, ruồi...\n(Mosquitoes, flies...)", "chemicals": "Spectra 10SC", "frequency": "1 lần / tháng (1 time/month)", "price": 300000, "quantity": 30, "note": "HCM/ Bình Dương"},
+        {"name": "Kiểm soát Gián Đức & Kiến\n(Cockroach & Ant Control)", "targets": "Gián Đức, kiến\n(German cockroaches, ants)", "chemicals": "Zentek, Posedon\nBả Gel sinh học / Bait Gel", "frequency": "1 lần / tháng (1 time/month)", "price": 500000, "quantity": 3, "note": "Vũng Tàu"},
+        {"name": "Kiểm soát Gặm nhấm\n(Rodent Control)", "targets": "Chuột cống, chuột nhắt\n(Rats, mice)", "chemicals": "Bả Storm, bẫy dính\n(Rat Bait Station, Glue Boards)", "frequency": "1 lần / tháng (1 time/month)", "price": 320000, "quantity": 4, "note": "Đồng Nai"}
     ]
     
     PRESETS = {
@@ -74,25 +74,25 @@ def render():
             "name": "Kiểm soát Gián Đức & Kiến (Cockroach & Ant Control)",
             "targets": "Gián Đức, kiến (German cockroaches, ants)",
             "chemicals": "Zentek, Posedon Bả Gel sinh học",
-            "frequency": "1 lần / tháng (1 times/month)"
+            "frequency": "1 lần / tháng (1 time/month)"
         },
         "Gặm nhấm (Chuột)": {
             "name": "Kiểm soát Gặm nhấm (Rodent Control)",
             "targets": "Chuột cống, chuột nhắt (Rats, mice)",
             "chemicals": "Bả Storm, bẫy dính (Rat Bait Station, Glue Boards)",
-            "frequency": "1 lần / tháng (1 times/month)"
+            "frequency": "1 lần / tháng (1 time/month)"
         },
         "Khử trùng diệt khuẩn": {
             "name": "Khử trùng diệt khuẩn (Disinfection Service)",
             "targets": "Vi khuẩn, virus (Bacteria, viruses)",
             "chemicals": "Chlorine / Cloramin B",
-            "frequency": "1 lần / tháng (1 times/month)"
+            "frequency": "1 lần / tháng (1 time/month)"
         },
         "Kiểm soát Mối": {
             "name": "Kiểm soát Mối (Termite Control)",
             "targets": "Mối gỗ ẩm, mối đất (Subterranean termites)",
             "chemicals": "Mythic 240SC / Termize 200SC",
-            "frequency": "Bảo hành 1 năm"
+            "frequency": "Bảo hành 1 năm (1 year warranty)"
         }
     }
     
@@ -137,7 +137,19 @@ def render():
             "name": st.column_config.Column("Hạng mục dịch vụ", width="large"),
             "targets": st.column_config.Column("Đối tượng", width="medium"),
             "chemicals": st.column_config.Column("Hóa chất & Vật tư", width="medium"),
-            "frequency": st.column_config.Column("Tần suất", width="small"),
+            "frequency": st.column_config.SelectboxColumn(
+                "Tần suất", 
+                width="medium",
+                options=[
+                    "1 lần / tháng (1 time/month)",
+                    "2 lần / tháng (2 times/month)",
+                    "3 lần / tháng (3 times/month)",
+                    "4 lần / tháng (4 times/month)",
+                    "1 lần / quý (1 time/quarter)",
+                    "Bảo hành 1 năm (1 year warranty)",
+                    "Theo yêu cầu (On demand)"
+                ]
+            ),
             "price": st.column_config.NumberColumn("Đơn giá", min_value=0, step=1000, format="%,d"),
             "quantity": st.column_config.NumberColumn("SL", min_value=0, step=1),
             "note": st.column_config.Column("Ghi chú", width="medium"),
