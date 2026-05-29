@@ -79,7 +79,7 @@ section[data-testid="stSidebar"] { display: none !important; }
 }
 
 /* ── NAV ITEMS (radio buttons restyled) ── */
-.vhs-nav-st-radio {
+.element-container:has(.vhs-nav) + .element-container {
     position: sticky !important; top: 64px !important; z-index: 998 !important;
     background: #ffffff !important;
     padding: 10px 20px 14px 20px !important;
@@ -123,8 +123,8 @@ div[data-testid="stRadio"] [role="radiogroup"] label {
     white-space: nowrap !important;
     transition: all .15s !important;
 }
-.vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"] > label p,
-.vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"] > div p {
+.element-container:has(.vhs-nav) + .element-container div[data-testid="stRadio"] [role="radiogroup"] > label p,
+.element-container:has(.vhs-nav) + .element-container div[data-testid="stRadio"] [role="radiogroup"] > div p {
     text-transform: uppercase !important;
     font-weight: 600 !important;
     margin: 0 !important;
@@ -272,7 +272,7 @@ div[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
     .vhs-nav { display: none !important; }
     .block-container { padding: 60px .5rem 20px !important; }
     
-    .vhs-nav-st-radio {
+    .element-container:has(.vhs-nav) + .element-container {
         position: fixed !important;
         top: 0 !important; left: 0 !important; right: 0 !important;
         bottom: auto !important;
@@ -288,10 +288,10 @@ div[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
     }
     
     /* Scoped mobile styling for the nav radio only */
-    .vhs-nav-st-radio div[data-testid="stRadio"] { 
+    .element-container:has(.vhs-nav) + .element-container div[data-testid="stRadio"] { 
         width: 100% !important; margin: 0 !important; 
     }
-    .vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"] {
+    .element-container:has(.vhs-nav) + .element-container div[data-testid="stRadio"] [role="radiogroup"] {
         display: flex !important;
         width: 100% !important;
         gap: 0px !important;
@@ -302,10 +302,10 @@ div[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
         scroll-snap-type: x mandatory;
     }
     /* Ẩn thanh cuộn */
-    .vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"]::-webkit-scrollbar { display: none; }
-    .vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"] { -ms-overflow-style: none; scrollbar-width: none; }
+    .element-container:has(.vhs-nav) + .element-container div[data-testid="stRadio"] [role="radiogroup"]::-webkit-scrollbar { display: none; }
+    .element-container:has(.vhs-nav) + .element-container div[data-testid="stRadio"] [role="radiogroup"] { -ms-overflow-style: none; scrollbar-width: none; }
 
-    .vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"] > div {
+    .element-container:has(.vhs-nav) + .element-container div[data-testid="stRadio"] [role="radiogroup"] > div {
         flex: 0 0 auto !important;
         display: flex !important;
         scroll-snap-align: start;
@@ -313,11 +313,11 @@ div[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
         padding: 0 !important;
     }
     
-    /* Đưa Logbook lên đầu tiên trên Mobile */
-    .mobile-logbook-item {
+    /* Đưa Logbook lên đầu tiên trên Mobile bằng CSS nth-child */
+    .element-container:has(.vhs-nav) + .element-container div[data-testid="stRadio"] [role="radiogroup"] > div:nth-child(5) {
         order: -1 !important;
     }
-    .vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"] > div > label {
+    .element-container:has(.vhs-nav) + .element-container div[data-testid="stRadio"] [role="radiogroup"] > div > label {
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
@@ -333,15 +333,15 @@ div[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
         margin-right: 2px !important; 
         margin: 0 !important;
     }
-    .vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"] > div > label:hover {
+    .element-container:has(.vhs-nav) + .element-container div[data-testid="stRadio"] [role="radiogroup"] > div > label:hover {
         background: #e2e8f0 !important;
     }
-    .vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
+    .element-container:has(.vhs-nav) + .element-container div[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) {
         background: linear-gradient(135deg, #0f172a 0%, #1e3a2f 60%, #166534 100%) !important;
         color: white !important;
         box-shadow: 0 4px 10px rgba(22,163,74,0.3) !important;
     }
-    .vhs-nav-st-radio div[data-testid="stRadio"] [role="radiogroup"] p {
+    .element-container:has(.vhs-nav) + .element-container div[data-testid="stRadio"] [role="radiogroup"] p {
         font-size: 15px !important;
         font-weight: 700 !important;
         margin: 0 !important;
