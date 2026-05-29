@@ -256,8 +256,8 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, logbook_entry: dict)
                 "Phun sương": [48.59, 366.84], "Đặt bẫy": [230.71, 366.84], "Phun tồn lưu": [383.7, 366.84], "Phun khói": [48.59, 350.5], "Khử trùng": [230.71, 349.81], "Bả": [383.7, 349.81]
             }
             
-            hc = logbook_entry.get("hoa_chat", "").lower()
-            kq = logbook_entry.get("ket_qua", "").lower()
+            hc = (logbook_entry.get("hoa_chat") or "").lower()
+            kq = (logbook_entry.get("ket_qua") or "").lower()
             combined_text = f"{hc} {kq}"
             
             for key, (x, y) in checkbox_coords.items():
@@ -329,7 +329,7 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, logbook_entry: dict)
         ParagraphStyle("SH2", parent=styles["Normal"], fontSize=10, textColor=VHS_GREEN,
                        fontName="Helvetica-Bold", spaceAfter=4)))
     elements.append(Paragraph(
-        logbook_entry.get("hoa_chat", "Không có ghi chú"),
+        logbook_entry.get("hoa_chat") or "Không có ghi chú",
         ParagraphStyle("Content", parent=styles["Normal"], fontSize=9,
                        borderPad=5, borderColor=VHS_GREEN, borderWidth=0.5)
     ))
@@ -340,7 +340,7 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, logbook_entry: dict)
         ParagraphStyle("SH3", parent=styles["Normal"], fontSize=10, textColor=VHS_GREEN,
                        fontName="Helvetica-Bold", spaceAfter=4)))
     elements.append(Paragraph(
-        logbook_entry.get("ket_qua", "Hoàn thành tốt"),
+        logbook_entry.get("ket_qua") or "Hoàn thành tốt",
         ParagraphStyle("Content2", parent=styles["Normal"], fontSize=9)
     ))
     elements.append(Spacer(1, 1*cm))
