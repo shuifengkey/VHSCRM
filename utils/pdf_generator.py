@@ -222,6 +222,24 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, schedule_entry: dict
             c = canvas.Canvas(packet, pagesize=A4)
             c.setFont(fnt, 11)
 
+            # Đổi font chữ CÔNG TY TNHH VHS ở đầu trang thành Square721 Ex BT (có dấu Ô)
+            from reportlab.lib import colors
+            from reportlab.platypus import Paragraph
+            from reportlab.lib.styles import ParagraphStyle
+            
+            # Tăng chiều cao hcn trắng để xóa sạch vùng phía trên, tránh đè lên chữ cũ
+            c.setFillColor(colors.white)
+            c.rect(105, 765, 230, 35, fill=1, stroke=0)
+            
+            # Dùng leading lớn (24) để Paragraph không tự cắt xén dấu Ô
+            style = ParagraphStyle("Overlay", fontName="Square721", fontSize=13, leading=24, textColor=colors.HexColor("#1a6b3c"))
+            p = Paragraph('C<font name="Helvetica-Bold">Ô</font>NG TY TNHH VHS', style)
+            p.wrapOn(c, 230, 35)
+            # Vẽ ở Y=772 để cách xa biên trên
+            p.drawOn(c, 113, 772)
+            
+            c.setFillColor(colors.black) # Reset lại màu đen cho các chữ bên dưới
+
             c.drawString(148, 672, str(customer.get("ten_cty", "")))
             c.drawString(148, 650, str(customer.get("dia_chi", "")))
             c.drawString(148, 630, str(customer.get("sdt", "") or customer.get("so_dt", "")))
