@@ -403,8 +403,8 @@ def generate_payment_request_pdf(debt_data, attachments=None):
             w_sign_pt = 4.7*cm
             h_sign_pt = w_sign_pt * (h_sign / w_sign)
             
-            # Con dấu: rộng 3.7cm (+0.7cm)
-            w_seal_pt = 3.7*cm
+            # Con dấu: rộng 3.55cm (giảm 1.5mm từ 3.7cm)
+            w_seal_pt = 3.55*cm
             h_seal_pt = w_seal_pt * (h_seal / w_seal)
             
             sign_cell = SignatureOverlay(_SIGN_PATH, _SEAL_PATH, w_sign_pt, h_sign_pt, w_seal_pt, h_seal_pt)
