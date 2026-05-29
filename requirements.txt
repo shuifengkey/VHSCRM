@@ -19,6 +19,3 @@ pdfrw
 opencv-python-headless
 numpy
 cryptography
-folium
-streamlit-folium
-flexpolyline
