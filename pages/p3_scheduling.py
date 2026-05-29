@@ -766,17 +766,28 @@ def render():
         st.markdown("**🖨️ In Phiếu Xác Nhận Dịch Vụ Cho Ca Thi Công**")
         st.markdown('<hr style="margin:6px 0 12px">', unsafe_allow_html=True)
         
+        filter_type = st.radio("Bộ lọc ca thi công:", ["🔜 Ca sắp thi công (Chưa làm)", "📅 Tất cả (Từ 30 ngày trước tới nay)"], horizontal=True)
+        
         conn = get_connection()
         now_date = (datetime.now(timezone.utc) + timedelta(hours=7)).date()
         past_date = (now_date - timedelta(days=30)).isoformat()
         
-        schedules = conn.execute("""
-            SELECT s.id, s.ma_hd, s.ma_kh, c.ten_cty, s.ngay_du_kien, s.gio_bat_dau, s.gio_ket_thuc
-            FROM schedules s
-            JOIN customers c ON s.ma_kh = c.ma_kh
-            WHERE s.ngay_du_kien >= ?
-            ORDER BY s.ngay_du_kien ASC, s.gio_bat_dau ASC
-        """, (past_date,)).fetchall()
+        if "sắp thi công" in filter_type:
+            schedules = conn.execute("""
+                SELECT s.id, s.ma_hd, s.ma_kh, c.ten_cty, s.ngay_du_kien, s.gio_bat_dau, s.gio_ket_thuc
+                FROM schedules s
+                JOIN customers c ON s.ma_kh = c.ma_kh
+                WHERE s.trang_thai = 'scheduled'
+                ORDER BY s.ngay_du_kien ASC, s.gio_bat_dau ASC
+            """).fetchall()
+        else:
+            schedules = conn.execute("""
+                SELECT s.id, s.ma_hd, s.ma_kh, c.ten_cty, s.ngay_du_kien, s.gio_bat_dau, s.gio_ket_thuc
+                FROM schedules s
+                JOIN customers c ON s.ma_kh = c.ma_kh
+                WHERE s.ngay_du_kien >= ?
+                ORDER BY s.ngay_du_kien ASC, s.gio_bat_dau ASC
+            """, (past_date,)).fetchall()
         
         if not schedules:
             st.info("Không có ca thi công nào gần đây.")
