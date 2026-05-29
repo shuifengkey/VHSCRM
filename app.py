@@ -732,7 +732,6 @@ elif page == "📓 Work Log":
     from pages import p4_logbook; p4_logbook.render()
 elif page == "💰 Công Nợ":
     from pages import p6_debts; p6_debts.render()
-    from pages import p5_pdf; p5_pdf.render()
 elif page == "📝 Báo Giá":
     from pages import p8_quotes; p8_quotes.render()
 elif page == "⚙️ Cài đặt":
