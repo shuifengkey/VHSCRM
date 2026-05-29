@@ -8,8 +8,19 @@ from utils.pdf_generator import generate_phieu_xac_nhan
 from utils.styles    import section_header, badge, COLORS
 from datetime import timezone, date, datetime, timedelta
 import datetime as dt
-import plotly.graph_objects as go
 import calendar
+
+# AUTO-PATCH DB (Vì st.cache_data giữ init_db() không chạy lại)
+try:
+    from utils.database import get_connection
+    _conn = get_connection()
+    _conn.execute("ALTER TABLE schedules ADD COLUMN phuong_phap_xu_ly TEXT")
+    _conn.commit()
+    _conn.close()
+except Exception:
+    pass
+
+import plotly.graph_objects as go
 
 ST_CLR = {"completed":"#16a34a","scheduled":"#2563eb","skipped":"#94a3b8"}
 ST_LBL = {"completed":"Xong","scheduled":"Chờ TC","skipped":"Bỏ qua"}
