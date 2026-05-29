@@ -690,7 +690,7 @@ elif page == "💰 Công Nợ":
 elif page == "📝 Báo Giá":
     from pages import p8_quotes; p8_quotes.render()
 elif page == "⚙️ Cài đặt":
-    st.markdown("### 🔧 Cài đặt hệ thống")
+    st.markdown("### 🔧 CÀI ĐẶT HỆ THỐNG")
     
     t1, t2, t3 = st.tabs(["🔒 Bảo mật & Tài khoản", "👷 Quản lý Kỹ Thuật Viên", "📅 Đồng bộ Google Calendar"])
     
