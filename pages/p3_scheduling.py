@@ -4,6 +4,7 @@ import streamlit as st, sys, os
 from utils.database  import get_connection
 from utils.scheduling import (auto_generate_schedules, calc_dates_for_month,
                                is_job_active_now, THU_NAMES)
+from utils.pdf_generator import generate_phieu_xac_nhan
 from utils.styles    import section_header, badge, COLORS
 from datetime import timezone, date, datetime, timedelta
 import datetime as dt
@@ -123,8 +124,8 @@ def render():
     st.markdown(section_header("Lịch Thi Công","Quản lý lịch — Điều chỉnh thủ công — Calendar view","<i class=\"ph-calendar\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i>"),
                 unsafe_allow_html=True)
 
-    tab_today, tab_month, tab_cal, tab_bulk = st.tabs([
-        "🔥  Sắp Thi Công","📋  Theo Tháng / HĐ","📆  Calendar","⚙️  Hàng Loạt"
+    tab_today, tab_month, tab_cal, tab_bulk, tab_pdf = st.tabs([
+        "🔥 Sắp Thi Công","📜 Theo Tháng / HĐ","📅 Calendar","⚙️ Hàng Loạt","🖨️ In Phiếu Xác Nhận"
     ])
 
     # ═══════════════════════════════════
@@ -754,6 +755,84 @@ def render():
                             from utils.google_sync import auto_sync_schedule_to_google
                             auto_sync_schedule_to_google(conn, rs["id"], "upsert")
                         conn.commit(); conn.close()
-                        st.success(f"✓ Đã thêm ca ngày {extra_ngay.strftime('%d/%m/%Y')}"); st.rerun()
-                    except Exception as e: st.error(f"× {e}")
+                        st.success(f"✅ Đã thêm ca ngày {extra_ngay.strftime('%d/%m/%Y')}"); st.rerun()
+                    except Exception as e: st.error(f"❌ {e}")
             st.markdown("</div>", unsafe_allow_html=True)
+
+    # -------------------------------------------------------------------------
+    # IN PHIẾU XÁC NHẬN PDF
+    # -------------------------------------------------------------------------
+    with tab_pdf:
+        st.markdown("**🖨️ In Phiếu Xác Nhận Dịch Vụ Cho Ca Thi Công**")
+        st.markdown('<hr style="margin:6px 0 12px">', unsafe_allow_html=True)
+        
+        conn = get_connection()
+        now_date = (datetime.now(timezone.utc) + timedelta(hours=7)).date()
+        past_date = (now_date - timedelta(days=30)).isoformat()
+        
+        schedules = conn.execute("""
+            SELECT s.id, s.ma_hd, s.ma_kh, c.ten_cty, s.ngay_du_kien, s.gio_bat_dau, s.gio_ket_thuc
+            FROM schedules s
+            JOIN customers c ON s.ma_kh = c.ma_kh
+            WHERE s.ngay_du_kien >= ?
+            ORDER BY s.ngay_du_kien ASC, s.gio_bat_dau ASC
+        """, (past_date,)).fetchall()
+        
+        if not schedules:
+            st.info("Không có ca thi công nào gần đây.")
+        else:
+            opts = {
+                f"{r['ngay_du_kien']} {r['gio_bat_dau'] or ''} - [{r['ma_hd']}] {r['ten_cty']}": dict(r)
+                for r in schedules
+            }
+            sel_key = st.selectbox("Chọn ca thi công để in phiếu", list(opts.keys()))
+            sel_sch = opts[sel_key]
+            
+            customer = conn.execute("SELECT * FROM customers WHERE ma_kh=?", (sel_sch['ma_kh'],)).fetchone()
+            contract = conn.execute("SELECT * FROM contracts WHERE ma_hd=?", (sel_sch['ma_hd'],)).fetchone()
+            full_schedule = conn.execute("SELECT * FROM schedules WHERE id=?", (sel_sch['id'],)).fetchone()
+            
+            if customer and contract and full_schedule:
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    st.markdown(f"""
+                    <div style="background:#f0faf4;padding:12px;border-radius:8px;border-left:3px solid #1a6b3c;height:100%;">
+                        <b>THÔNG TIN KHÁCH HÀNG</b><br>
+                        <i class="ph-buildings"></i> {customer['ten_cty']}<br>
+                        <i class="ph-user"></i> {customer['dai_dien'] or '-'}<br>
+                        <i class="ph-phone"></i> {customer['sdt'] or '-'}<br>
+                        <i class="ph-map-pin"></i> {customer['dia_chi'] or '-'}
+                    </div>
+                    """, unsafe_allow_html=True)
+                with col_b:
+                    st.markdown(f"""
+                    <div style="background:#e8f5ee;padding:12px;border-radius:8px;border-left:3px solid #0d3d22;height:100%;">
+                        <b>THÔNG TIN CA THI CÔNG</b><br>
+                        <i class="ph-file-text"></i> MÃ HĐ: {contract['ma_hd']}<br>
+                        <i class="ph-calendar"></i> Ngày: {full_schedule['ngay_du_kien']}<br>
+                        ⏱ Giờ: {full_schedule['gio_bat_dau']} - {full_schedule['gio_ket_thuc']}<br>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                col_btn, _ = st.columns([1, 2])
+                with col_btn:
+                    if st.button("🖨️ XUẤT PHIẾU PDF", use_container_width=True, type="primary"):
+                        try:
+                            with st.spinner("⏳ Đang sinh phiếu..."):
+                                pdf_bytes = generate_phieu_xac_nhan(dict(customer), dict(contract), dict(full_schedule))
+                                filename = f"PhieuXacNhan_{customer['ma_kh']}_{full_schedule['ngay_du_kien'].replace('-','')}.pdf"
+                            
+                            st.download_button(
+                                label="📥 TẢI XUỐNG PDF",
+                                data=pdf_bytes,
+                                file_name=filename,
+                                mime="application/pdf",
+                                use_container_width=True
+                            )
+                            st.success(f"✅ PDF đã sẵn sàng: **{filename}**")
+                        except Exception as e:
+                            st.error(f"❌ Lỗi sinh PDF: {e}")
+                            st.exception(e)
+        conn.close()
