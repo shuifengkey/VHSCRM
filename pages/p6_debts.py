@@ -10,6 +10,26 @@ def format_money(val):
     if not val: return "0"
     return f"{int(val):,}".replace(",", ".")
 
+@st.experimental_dialog("Xác nhận xuất hóa đơn")
+def confirm_invoice(d_inv, so_hoa_don, ngay_xuat, trang_thai):
+    st.write(f"Bạn có chắc chắn muốn lưu hóa đơn **{so_hoa_don}** cho **{d_inv['ten_cty']}**?")
+    c1, c2 = st.columns(2)
+    if c1.button("✅ Đồng ý", use_container_width=True):
+        conn = get_connection()
+        gia_truoc_vat = d_inv['can_thu'] - d_inv['tien_vat']
+        vat_pct = (d_inv['tien_vat'] / gia_truoc_vat * 100) if gia_truoc_vat > 0 else 0
+        conn.execute("""
+            INSERT INTO invoices (ma_hd, ma_kh, ky_thang, so_hoa_don, ngay_xuat, gia_truoc_vat, vat_pct, tien_vat, tong_tien, trang_thai)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (d_inv['ma_hd'], d_inv['ma_kh'], d_inv['ky_thanh_toan'], so_hoa_don, ngay_xuat.isoformat(), gia_truoc_vat, vat_pct, d_inv['tien_vat'], d_inv['can_thu'], trang_thai))
+        conn.commit()
+        conn.close()
+        st.success("Tạo hóa đơn thành công!")
+        import time; time.sleep(1)
+        st.rerun()
+    if c2.button("❌ Hủy", use_container_width=True):
+        st.rerun()
+
 def render():
     st.markdown(section_header("Tài Chính & Kế Toán", "Quản lý dòng tiền, công nợ, hóa đơn VAT và chi phí đầu vào", "<i class=\"ph-money\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i>"), unsafe_allow_html=True)
 
@@ -333,14 +353,7 @@ def render():
                 
                 if st.button("Lưu Hóa Đơn", type="primary", use_container_width=True):
                     if so_hoa_don:
-                        gia_truoc_vat = d_inv['can_thu'] - d_inv['tien_vat']
-                        vat_pct = (d_inv['tien_vat'] / gia_truoc_vat * 100) if gia_truoc_vat > 0 else 0
-                        conn.execute("""
-                            INSERT INTO invoices (ma_hd, ma_kh, ky_thang, so_hoa_don, ngay_xuat, gia_truoc_vat, vat_pct, tien_vat, tong_tien, trang_thai)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        """, (d_inv['ma_hd'], d_inv['ma_kh'], d_inv['ky_thanh_toan'], so_hoa_don, ngay_xuat.isoformat(), gia_truoc_vat, vat_pct, d_inv['tien_vat'], d_inv['can_thu'], trang_thai))
-                        conn.commit()
-                        st.success("Tạo hóa đơn thành công!"); st.rerun()
+                        confirm_invoice(d_inv, so_hoa_don, ngay_xuat, trang_thai)
                     else:
                         st.warning("Vui lòng nhập số hóa đơn")
             else:
