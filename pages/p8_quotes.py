@@ -96,8 +96,11 @@ def render():
     
     st.session_state.quote_items = edited_df.to_dict('records')
     
-    # Calculate preview totals
-    subtotal = sum([float(r.get("price", 0) or 0) * int(r.get("quantity", 1) or 1) for r in st.session_state.quote_items if isinstance(r, dict)])
+    # Calculate preview totals safely using Pandas
+    safe_price = pd.to_numeric(edited_df['price'], errors='coerce').fillna(0)
+    safe_qty = pd.to_numeric(edited_df['quantity'], errors='coerce').fillna(1)
+    subtotal = (safe_price * safe_qty).sum()
+    
     vat_amt = subtotal * (vat_pct / 100.0)
     grand = subtotal + vat_amt
     
@@ -116,7 +119,7 @@ def render():
             st.error("Vui lòng nhập Tên khách hàng (Kính gửi) và Địa chỉ.")
             return
             
-        if len(st.session_state.quote_items) == 0:
+        if edited_df.empty or len(edited_df) == 0:
             st.error("Vui lòng thêm ít nhất 1 dịch vụ.")
             return
             
@@ -133,19 +136,22 @@ def render():
                 }
                 
                 i_data = []
-                for row in st.session_state.quote_items:
-                    if not row.get("name"): continue
-                    p = float(row.get("price", 0) or 0)
-                    q = int(row.get("quantity", 1) or 1)
+                for idx, row in edited_df.iterrows():
+                    name = str(row.get("name", "")).strip()
+                    if not name or name == "nan": 
+                        continue
+                    
+                    p = float(safe_price[idx])
+                    q = int(safe_qty[idx])
                     i_data.append({
-                        "name": row.get("name", ""),
-                        "targets": row.get("targets", ""),
-                        "chemicals": row.get("chemicals", ""),
-                        "frequency": row.get("frequency", ""),
+                        "name": name,
+                        "targets": str(row.get("targets", "")).replace('nan', ''),
+                        "chemicals": str(row.get("chemicals", "")).replace('nan', ''),
+                        "frequency": str(row.get("frequency", "")).replace('nan', ''),
                         "price": p,
                         "quantity": q,
                         "total": p * q,
-                        "note": row.get("note", "")
+                        "note": str(row.get("note", "")).replace('nan', '')
                     })
                     
                 pdf_bytes = generate_quote_pdf(q_data, i_data)
