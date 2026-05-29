@@ -58,7 +58,7 @@ def render():
     
     with col2:
         doc_type = st.selectbox("📄 Loại Chứng Từ", [
-            "📊 Báo Giá", "📋 Hợp Đồng", "✓ Phiếu Xác Nhận Dịch Vụ"
+            "📄 Báo Giá", "📜 Hợp Đồng"
         ])
     
     # Lấy dữ liệu khách hàng và hợp đồng
@@ -68,29 +68,12 @@ def render():
         "SELECT * FROM contracts WHERE ma_kh=? ORDER BY ngay_ky DESC LIMIT 1", 
         (selected_ma_kh,)
     ).fetchone()
-    
-    # Lấy thông tin ca thi công sắp tới (hoặc gần nhất)
-    schedule_entry = None
-    if "Phiếu Xác Nhận" in doc_type:
-        schedule_entry = conn.execute("""
-            SELECT * FROM schedules 
-            WHERE ma_kh=? AND trang_thai='scheduled'
-            ORDER BY ngay_du_kien ASC LIMIT 1
-        """, (selected_ma_kh,)).fetchone()
-        
-        # Fallback: nếu không có ca scheduled, lấy ca gần nhất bất kì
-        if not schedule_entry:
-            schedule_entry = conn.execute("""
-                SELECT * FROM schedules 
-                WHERE ma_kh=? 
-                ORDER BY ngay_du_kien DESC LIMIT 1
-            """, (selected_ma_kh,)).fetchone()
     conn.close()
     
     # Hiển thị preview thông tin
     if customer and contract:
         st.markdown("---")
-        st.markdown("**📋 Preview thông tin sẽ xuất vào PDF:**")
+        st.markdown("**🔍 Preview thông tin sẽ xuất vào PDF:**")
         
         col_a, col_b = st.columns(2)
         with col_a:
@@ -107,9 +90,9 @@ def render():
             st.markdown(f"""
             <div style="background:#e8f5ee;padding:12px;border-radius:8px;border-left:3px solid #0d3d22;">
                 <b>THÔNG TIN HỢP ĐỒNG</b><br>
-                <i class=\"ph-file-text\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Mã HĐ: {contract['ma_hd']}<br>
+                <i class=\"ph-file-text\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i> MÃ HĐ: {contract['ma_hd']}<br>
                 <i class=\"ph-calendar\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Tần suất: {contract['tan_suat']} lần/tháng<br>
-                ⏰ Giờ: {contract['gio_bat_dau']} - {contract['gio_ket_thuc']}<br>
+                ⏱ Giờ: {contract['gio_bat_dau']} - {contract['gio_ket_thuc']}<br>
                 <i class=\"ph-currency-circle-dollar\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Giá: {contract['gia_tri_thang']:,.0f}đ/tháng
             </div>
             """.replace(",","."), unsafe_allow_html=True)
@@ -128,14 +111,9 @@ def render():
                         if "Báo Giá" in doc_type:
                             pdf_bytes = generate_bao_gia(customer_dict, contract_dict)
                             filename = f"BaoGia_{selected_ma_kh}_{(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime('%Y%m%d')}.pdf"
-                        elif "Hợp Đồng" in doc_type:
+                        else:
                             pdf_bytes = generate_hop_dong(customer_dict, contract_dict)
                             filename = f"HopDong_{contract_dict['ma_hd']}_{(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime('%Y%m%d')}.pdf"
-                        else:
-                            # Phiếu xác nhận
-                            schedule_dict = dict(schedule_entry) if schedule_entry else None
-                            pdf_bytes = generate_phieu_xac_nhan(customer_dict, contract_dict, schedule_dict)
-                            filename = f"PhieuXacNhan_{selected_ma_kh}_{(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime('%Y%m%d%H%M')}.pdf"
                     
                     # Nút download
                     st.download_button(
