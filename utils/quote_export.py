@@ -99,8 +99,8 @@ def generate_quote_pdf(quote_data, items_data):
     content.append(Spacer(1, 0.5*cm))
 
     # --- ITEMS TABLE ---
-    # Column widths for Landscape A4 (usable ~27cm)
-    col_w = [1.2*cm, 4*cm, 3.5*cm, 4.5*cm, 3.5*cm, 3.5*cm, 2.5*cm, 3.5*cm, 1.1*cm]
+    # Column widths for Landscape A4 (usable ~27.3cm)
+    col_w = [1.0*cm, 4.5*cm, 3.5*cm, 4.5*cm, 2.5*cm, 3.0*cm, 2.0*cm, 3.5*cm, 2.8*cm]
     
     t_data = [[
         P("<b>STT</b>", align=TA_CENTER, size=8, bold=True, color=colors.white),
