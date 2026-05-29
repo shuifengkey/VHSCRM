@@ -27,7 +27,7 @@ def do_checkin_dialog_p4(job, ktv):
                 st.rerun()
             except Exception as e: 
                 conn.close()
-                st.error(f"❌ {e}")
+                st.error(f"× {e}")
     if col2.button("Không", use_container_width=True):
         st.rerun()
 
@@ -40,7 +40,7 @@ def do_checkout_dialog_p4(job, log, hoa_chat, ket_qua, attachments):
         from datetime import datetime, timezone, timedelta
         checkin_time = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
         if ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)) - checkin_time).total_seconds() < 300:
-            st.error("⚠️ Phải thi công ít nhất 5 phút mới được Check-out!")
+            st.error("! Phải thi công ít nhất 5 phút mới được Check-out!")
         else:
             try:
                 import os, uuid
@@ -80,7 +80,7 @@ def do_checkout_dialog_p4(job, log, hoa_chat, ket_qua, attachments):
                     conn_fallback.close()
                 st.session_state[f"co_success_{job['id']}"] = True
                 st.rerun()
-            except Exception as e: st.error(f"❌ {e}")
+            except Exception as e: st.error(f"× {e}")
     if col2.button("Không", use_container_width=True):
         st.rerun()
 
@@ -109,7 +109,7 @@ def render():
     .color-bosung { display: none; }
     </style>
     """, unsafe_allow_html=True)
-    st.markdown(section_header("Work Log Kỹ Thuật Viên", "Check-in / Check-out · Ghi chú hóa chất · Lịch sử thi công", "📓"), unsafe_allow_html=True)
+    st.markdown(section_header("Work Log Kỹ Thuật Viên", "Check-in / Check-out · Ghi chú hóa chất · Lịch sử thi công", "<i class=\"ph-notebook\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i>"), unsafe_allow_html=True)
 
     tab_work, tab_history, tab_stats = st.tabs(["🔧  Check-in / Out", "📋  Lịch Sử", "📊  Thống Kê KTV"])
 
@@ -164,7 +164,7 @@ def render():
         if not jobs:
             st.markdown("""
             <div class="vhs-card" style="text-align:center;padding:60px;">
-                <div style="font-size:56px;">🎉</div>
+                <div style="font-size:56px;"><i class=\"ph-confetti\" style=\"font-size:15px;color:#f59e0b;vertical-align:middle;line-height:1;margin-right:3px;\"></i></div>
                 <div style="font-size:18px;font-weight:700;color:#0f172a;margin-top:12px;">Không có ca nào trong 24h tới!</div>
             </div>""", unsafe_allow_html=True)
         else:
@@ -200,18 +200,18 @@ def render():
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
                         <div>
                             <div style="font-size:18px;font-weight:800;color:#0f172a;margin-bottom:4px;">
-                                🏢 {job['ten_cty']} {night_html} {overdue_html}
+                                <i class=\"ph-buildings\" style=\"font-size:15px;color:#475569;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {job['ten_cty']} {night_html} {overdue_html}
                             </div>
                             <div style="font-size:13px;color:#64748b;margin-top:6px;line-height:1.7;">
-                                📋 Hợp đồng: <b>{job['ma_hd']}</b><br>
-                                📍 Địa chỉ: {job['dia_chi'] or '-'}<br>
-                                📞 SĐT: {job['sdt'] or '-'}
+                                <i class=\"ph-clipboard-text\" style=\"font-size:15px;color:#6366f1;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Hợp đồng: <b>{job['ma_hd']}</b><br>
+                                <i class=\"ph-map-pin\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Địa chỉ: {job['dia_chi'] or '-'}<br>
+                                <i class=\"ph-phone\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> SĐT: {job['sdt'] or '-'}
                             </div>
                             <div style="margin-top:10px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;font-size:12px;color:#0f172a;line-height:1.6;">
-                                <b style="color:#2563eb;">📌 Hạng mục thi công:</b><br>
-                                🏠 <b>Khu vực:</b> {job['khu_vuc_xu_ly'] or '—'}<br>
-                                🕷️ <b>Dịch hại:</b> {(job.get('s_loai_con_trung') or job.get('loai_con_trung')) or '—'}<br>
-                                💊 <b>Phương pháp:</b> {job['phuong_phap_xu_ly'] or '—'}
+                                <b style="color:#2563eb;"><i class=\"ph-push-pin\" style=\"font-size:15px;color:#dc2626;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Hạng mục thi công:</b><br>
+                                <i class=\"ph-house\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> <b>Khu vực:</b> {job['khu_vuc_xu_ly'] or '—'}<br>
+                                <i class=\"ph-bug\" style=\"font-size:15px;color:#dc2626;vertical-align:middle;line-height:1;margin-right:3px;\"></i> <b>Dịch hại:</b> {(job.get('s_loai_con_trung') or job.get('loai_con_trung')) or '—'}<br>
+                                <i class=\"ph-pill\" style=\"font-size:15px;color:#7c3aed;vertical-align:middle;line-height:1;margin-right:3px;\"></i> <b>Phương pháp:</b> {job['phuong_phap_xu_ly'] or '—'}
                             </div>
                         </div>
                         <div style="text-align:center;background:#f0fdf4;border-radius:12px;padding:12px 20px;">
@@ -247,8 +247,8 @@ def render():
             {log['checkin_time'][11:16]} → {log['checkout_time'][11:16]}
             {f' · Thời gian: {dur_str}' if dur_str else ''}
         </div>
-        {'<div style="background:#fef9c3;border-radius:8px;padding:4px 8px;margin-top:6px;font-size:11px;color:#854d0e;display:inline-block;">⚠️ Có cảnh báo sai giờ</div>' if log.get('canh_bao_gio') else ''}
-        <div style="font-size:12px;color:#475569;margin-top:4px;"><b>👷 KTV:</b> {log.get('ky_thuat_vien','-')} &nbsp;|&nbsp; <b>💊 Hóa chất:</b> {log.get('hoa_chat','-')} &nbsp;|&nbsp; <b>📝 KQ:</b> {log.get('ket_qua','-')}</div>
+        {'<div style="background:#fef9c3;border-radius:8px;padding:4px 8px;margin-top:6px;font-size:11px;color:#854d0e;display:inline-block;"><i class=\"ph-warning\" style=\"font-size:15px;color:#d97706;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Có cảnh báo sai giờ</div>' if log.get('canh_bao_gio') else ''}
+        <div style="font-size:12px;color:#475569;margin-top:4px;"><b><i class=\"ph-hard-hat\" style=\"font-size:15px;color:#d97706;vertical-align:middle;line-height:1;margin-right:3px;\"></i> KTV:</b> {log.get('ky_thuat_vien','-')} &nbsp;|&nbsp; <b><i class=\"ph-pill\" style=\"font-size:15px;color:#7c3aed;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Hóa chất:</b> {log.get('hoa_chat','-')} &nbsp;|&nbsp; <b><i class=\"ph-note-pencil\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i> KQ:</b> {log.get('ket_qua','-')}</div>
     </div>
     """, unsafe_allow_html=True)
                             with c2:
@@ -397,7 +397,7 @@ def render():
                                     st.session_state[co_key] = True
                                     st.rerun()
                             else:
-                                st.error("⚠️ Bạn có chắc chắn muốn Check-out và kết thúc ca làm việc?")
+                                st.error("! Bạn có chắc chắn muốn Check-out và kết thúc ca làm việc?")
                                 col1, col2 = st.columns(2)
                                 if col1.button("❌ Quay lại", key=f"cancel_co_{job['id']}", use_container_width=True):
                                     st.session_state[co_key] = False
@@ -405,7 +405,7 @@ def render():
                                 if col2.button("✓ Xác nhận Check-out", key=f"do_co_{job['id']}", type="primary", use_container_width=True):
                                     checkin_time = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
                                     if ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)) - checkin_time).total_seconds() < 300:
-                                        st.error("⚠️ Phải thi công ít nhất 5 phút mới được Check-out!")
+                                        st.error("! Phải thi công ít nhất 5 phút mới được Check-out!")
                                     else:
                                         try:
                                             import os, uuid
@@ -448,7 +448,7 @@ def render():
                                             st.session_state[co_key] = False
                                             st.success("✓ Check-out thành công! Ca hoàn thành.")
                                             st.balloons(); st.rerun()
-                                        except Exception as e: st.error(f"❌ {e}")
+                                        except Exception as e: st.error(f"× {e}")
                     
                         st.markdown("</div>", unsafe_allow_html=True)
         
@@ -471,7 +471,7 @@ def render():
                             ktv = st.selectbox("👷 Chọn KTV phụ trách", opts, index=opts.index(current_ktv) if current_ktv in opts else 0, key=f"ktv_sel_{job['id']}", label_visibility="collapsed")
                     
                         if not ktv or ktv == "(Chưa có)":
-                            st.warning("⚠️ Vui lòng chọn kỹ thuật viên để check-in!")
+                            st.warning("! Vui lòng chọn kỹ thuật viên để check-in!")
                         else:
                             ci_key = f"confirm_ci_{job['id']}"
                             if not st.session_state.get(ci_key, False):
@@ -479,7 +479,7 @@ def render():
                                     st.session_state[ci_key] = True
                                     st.rerun()
                             else:
-                                st.warning("⚠️ Xác nhận bạn (KTV) đã có mặt và sẵn sàng thi công?")
+                                st.warning("! Xác nhận bạn (KTV) đã có mặt và sẵn sàng thi công?")
                                 col1, col2 = st.columns(2)
                                 if col1.button("❌ Hủy", key=f"cancel_ci_{job['id']}", use_container_width=True):
                                     st.session_state[ci_key] = False
@@ -490,7 +490,7 @@ def render():
                                 
                                     if active_other:
                                         conn.close()
-                                        st.error(f"❌ KTV **{ktv}** đang thi công tại **{active_other['ten_cty']}** (từ {active_other['checkin_time'][11:16]}). Phải Check-out ca đó trước khi Check-in ca mới!")
+                                        st.error(f"× KTV **{ktv}** đang thi công tại **{active_other['ten_cty']}** (từ {active_other['checkin_time'][11:16]}). Phải Check-out ca đó trước khi Check-in ca mới!")
                                     else:
                                         try:
                                             tc = check_time_violation(job["gio_bat_dau"], job["gio_ket_thuc"], (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), job["ngay_du_kien"])
@@ -504,7 +504,7 @@ def render():
                                             st.success(f"✓ Check-in lúc {(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime('%H:%M')} — Chúc làm tốt!")
                                             st.rerun()
                                         except Exception as e: 
-                                            st.error(f"❌ {e}")
+                                            st.error(f"× {e}")
                     
                     st.markdown("</div>", unsafe_allow_html=True)
     
@@ -596,10 +596,10 @@ def render():
                         c1, c2 = st.columns([5, 1], vertical_alignment="center")
                         with c1:
                             st.markdown(f"""
-<div style="font-size:15px;font-weight:700;color:#0f172a;">{status_icon} {log['ten_cty']} {'<span style="font-size:10px;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:8px;margin-left:8px;font-weight:700;display:inline-block;vertical-align:middle;">⚠️ SAI GIỜ</span>' if warn else ''}</div>
+<div style="font-size:15px;font-weight:700;color:#0f172a;">{status_icon} {log['ten_cty']} {'<span style="font-size:10px;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:8px;margin-left:8px;font-weight:700;display:inline-block;vertical-align:middle;"><i class=\"ph-warning\" style=\"font-size:15px;color:#d97706;vertical-align:middle;line-height:1;margin-right:3px;\"></i> SAI GIỜ</span>' if warn else ''}</div>
 <div style="font-size:12px;color:#64748b;margin-top:3px;">
-    👷 {log['ky_thuat_vien'] or '-'} &nbsp;·&nbsp;
-    🕐 {log['checkin_time'][11:16] if log['checkin_time'] else '-'} → {log['checkout_time'][11:16] if log['checkout_time'] else '...'} &nbsp;{dur}
+    <i class=\"ph-hard-hat\" style=\"font-size:15px;color:#d97706;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {log['ky_thuat_vien'] or '-'} &nbsp;·&nbsp;
+    <i class=\"ph-clock\" style=\"font-size:15px;color:#d97706;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {log['checkin_time'][11:16] if log['checkin_time'] else '-'} → {log['checkout_time'][11:16] if log['checkout_time'] else '...'} &nbsp;{dur}
 </div>
 <div style="margin-top:6px;display:flex;align-items:center;gap:4px;">
     <div style="font-size:11px;color:#94a3b8;margin-right:6px;">{log['checkin_time'][:10] if log['checkin_time'] else ''}</div>
@@ -714,7 +714,7 @@ def render():
                 <div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:14px 18px;margin-bottom:8px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <div>
-                            <div style="font-size:15px;font-weight:700;color:#0f172a;">👷 {r['ky_thuat_vien']}</div>
+                            <div style="font-size:15px;font-weight:700;color:#0f172a;"><i class=\"ph-hard-hat\" style=\"font-size:15px;color:#d97706;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {r['ky_thuat_vien']}</div>
                             <div style="font-size:12px;color:#64748b;">{r['done']}/{r['total']} ca hoàn thành · {r['warnings']} cảnh báo giờ</div>
                         </div>
                         <div style="text-align:right;">

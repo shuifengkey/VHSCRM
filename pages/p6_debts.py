@@ -11,7 +11,7 @@ def format_money(val):
     return f"{int(val):,}".replace(",", ".")
 
 def render():
-    st.markdown(section_header("Tài Chính & Kế Toán", "Quản lý dòng tiền, công nợ, hóa đơn VAT và chi phí đầu vào", "💵"), unsafe_allow_html=True)
+    st.markdown(section_header("Tài Chính & Kế Toán", "Quản lý dòng tiền, công nợ, hóa đơn VAT và chi phí đầu vào", "<i class=\"ph-money\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i>"), unsafe_allow_html=True)
 
     tab_overview, tab_debts, tab_invoices, tab_expenses = st.tabs(["📊 Tổng Quan", "📋 Công Nợ", "🧾 Hóa Đơn", "💸 Chi Phí Đầu Vào"])
 

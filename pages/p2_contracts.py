@@ -131,11 +131,11 @@ def render():
         st.markdown(f"""
         <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
           <div style="background:#dcfce7;border:1px solid #bbf7d0;border-radius:10px;padding:8px 16px;">
-            <span style="font-size:13px;color:#166534;font-weight:700;">🟢 {ok} Hiệu lực</span></div>
+            <span style="font-size:13px;color:#166534;font-weight:700;"><i class=\"ph-circle-fill\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {ok} Hiệu lực</span></div>
           <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:10px;padding:8px 16px;">
-            <span style="font-size:13px;color:#854d0e;font-weight:700;">🟡 {warn} Sắp hết (≤30n)</span></div>
+            <span style="font-size:13px;color:#854d0e;font-weight:700;"><i class=\"ph-circle-fill\" style=\"font-size:15px;color:#d97706;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {warn} Sắp hết (≤30n)</span></div>
           <div style="background:#fee2e2;border:1px solid #fecaca;border-radius:10px;padding:8px 16px;">
-            <span style="font-size:13px;color:#991b1b;font-weight:700;">🔴 {exp} Hết hạn</span></div>
+            <span style="font-size:13px;color:#991b1b;font-weight:700;"><i class=\"ph-circle-fill\" style=\"font-size:15px;color:#dc2626;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {exp} Hết hạn</span></div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -175,10 +175,10 @@ def render():
                         <div>
                           <div style="font-size:16px;font-weight:700;color:#0f172a;">{r['ten_cty']}</div>
                           <div style="font-size:12px;color:#64748b;margin-top:3px;">
-                            👤 {r['dai_dien'] or '—'} · 📞 {r['sdt'] or '—'}
+                            <i class=\"ph-user\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {r['dai_dien'] or '—'} · <i class=\"ph-phone\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {r['sdt'] or '—'}
                           </div>
                           <div style="font-size:12px;color:#2563eb;margin-top:6px;font-weight:600;">
-                            🗓️ {sched_desc}
+                            <i class=\"ph-calendar-check\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {sched_desc}
                           </div>
                         </div>
                         <div style="text-align:right;">
@@ -229,7 +229,7 @@ def render():
                 st.markdown(f"""
                 <div class="vhs-sub-card">
                   <div style="font-size:12px;font-weight:700;color:#0f172a;margin-bottom:8px;">
-                    📅 Dự kiến lịch tháng {ky_hien_tai}
+                    <i class=\"ph-calendar\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Dự kiến lịch tháng {ky_hien_tai}
                   </div>
                   {prev_html}
                 </div>
@@ -253,12 +253,12 @@ def render():
                         st.session_state[f"confirm_del_{r['ma_hd']}"] = True
 
                 if st.session_state.get(f"confirm_del_{r['ma_hd']}"):
-                    st.warning(f"⚠️ Bạn có chắc chắn muốn xóa hợp đồng **{r['ma_hd']}** và **toàn bộ lịch thi công** không?")
+                    st.warning(f"! Bạn có chắc chắn muốn xóa hợp đồng **{r['ma_hd']}** và **toàn bộ lịch thi công** không?")
                     c_yes, c_no = st.columns([1, 4])
                     with c_yes:
                         if st.button("✓ Xác nhận xóa", key=f"yes_{r['ma_hd']}"):
                             if st.session_state.get('auth_role') != 'admin':
-                                st.error("❌ Chỉ Admin mới có quyền xóa dữ liệu!")
+                                st.error("× Chỉ Admin mới có quyền xóa dữ liệu!")
                             else:
                                 conn = get_connection()
                                 conn.execute("DELETE FROM logbook WHERE schedule_id IN (SELECT id FROM schedules WHERE ma_hd=?)", (r['ma_hd'],))
@@ -275,7 +275,7 @@ def render():
                                 st.session_state[f"confirm_del_{r['ma_hd']}"] = False
                                 st.success("Đã xóa thành công!"); st.rerun()
                     with c_no:
-                        if st.button("❌ Hủy", key=f"no_{r['ma_hd']}"):
+                        if st.button("× Hủy", key=f"no_{r['ma_hd']}"):
                             st.session_state[f"confirm_del_{r['ma_hd']}"] = False
                             st.rerun()
 
@@ -293,7 +293,7 @@ def render():
             conn.close()
 
             if not all_kh:
-                st.warning("⚠️ Chưa có khách hàng. Bạn cần thêm Khách Hàng trước!")
+                st.warning("! Chưa có khách hàng. Bạn cần thêm Khách Hàng trước!")
             else:
                 st.markdown('<div class="vhs-card">', unsafe_allow_html=True)
                 st.markdown("**📋 Thông Tin Hợp Đồng**")
@@ -376,7 +376,7 @@ def render():
                         
                         st.markdown("""
                         <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin:6px 0;font-size:12px;color:#1e40af;">
-                          ⚙️ <b>Cấu hình chi tiết:</b> Bạn có thể chọn Ngày cố định hoặc Thứ cố định cho từng lần thi công trong tháng.
+                          <i class=\"ph-gear\" style=\"font-size:15px;color:#64748b;vertical-align:middle;line-height:1;margin-right:3px;\"></i> <b>Cấu hình chi tiết:</b> Bạn có thể chọn Ngày cố định hoặc Thứ cố định cho từng lần thi công trong tháng.
                         </div>
                         """, unsafe_allow_html=True)
                         
@@ -426,7 +426,7 @@ def render():
                         # ── KHÁCH LẺ ──
                         st.markdown("""
                         <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin:6px 0;font-size:12px;color:#92400e;">
-                          📌 <b>Khách lẻ:</b> Chọn ngày giờ thi công đầu tiên và thiết lập chu kỳ lặp (nếu có).
+                          <i class=\"ph-push-pin\" style=\"font-size:15px;color:#dc2626;vertical-align:middle;line-height:1;margin-right:3px;\"></i> <b>Khách lẻ:</b> Chọn ngày giờ thi công đầu tiên và thiết lập chu kỳ lặp (nếu có).
                         </div>
                         """, unsafe_allow_html=True)
     
@@ -488,7 +488,7 @@ def render():
                         st.markdown(f"""
                         <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px;margin:10px 0;">
                           <div style="font-size:12px;font-weight:700;color:#166534;margin-bottom:8px;">
-                            📅 Preview lịch tháng {ky_preview} — {TAN_SUAT_OPTS[tan_suat]}
+                            <i class=\"ph-calendar\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Preview lịch tháng {ky_preview} — {TAN_SUAT_OPTS[tan_suat]}
                           </div>
                           {prev_html}
                         </div>
@@ -503,11 +503,11 @@ def render():
                             gia_tri = -1
                             
                         if not ma_hd:
-                            st.error("⚠️ Phải nhập mã hợp đồng!")
+                            st.error("! Phải nhập mã hợp đồng!")
                         elif gia_tri < 0:
-                            st.error("⚠️ Giá trị hợp đồng không hợp lệ!")
+                            st.error("! Giá trị hợp đồng không hợp lệ!")
                         elif not time_valid:
-                            st.error("⚠️ Định dạng giờ không hợp lệ!")
+                            st.error("! Định dạng giờ không hợp lệ!")
                         else:
                             try:
                                 conn = get_connection()
@@ -538,7 +538,7 @@ def render():
                             except Exception as e:
                                 import traceback
                                 traceback.print_exc()
-                                st.error(f"❌ Có lỗi xảy ra: {e}")
+                                st.error(f"× Có lỗi xảy ra: {e}")
 
             st.markdown("</div>", unsafe_allow_html=True)
 

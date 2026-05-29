@@ -6,7 +6,7 @@ with open(filepath, "r", encoding="utf-8") as f:
 
 # Define the helper function to insert
 helper_func = """def render():
-    st.markdown(section_header("Quản lý Khách Hàng", "Thêm mới · Cập nhật · Theo dõi lịch sử", "👥"), unsafe_allow_html=True)
+    st.markdown(section_header("Quản lý Khách Hàng", "Thêm mới · Cập nhật · Theo dõi lịch sử", "<i class=\"ph-users\" style=\"font-size:15px;color:#6366f1;vertical-align:middle;line-height:1;margin-right:3px;\"></i>"), unsafe_allow_html=True)
 
     def render_edit_popover(r, suffix):
         with st.popover("✏️ Sửa"):
@@ -19,7 +19,7 @@ helper_func = """def render():
                 
                 if st.form_submit_button("💾 Lưu Cập Nhật", type="primary", use_container_width=True):
                     if sp and not sp.isdigit():
-                        st.error("⚠️ Số điện thoại chỉ được nhập số!")
+                        st.error("! Số điện thoại chỉ được nhập số!")
                     else:
                         try:
                             conn2 = get_connection()
@@ -107,7 +107,7 @@ layout_old = """        # Grid card layout
                                 
                                 if st.form_submit_button("💾 Lưu Cập Nhật", type="primary", use_container_width=True):
                                     if sp and not sp.isdigit():
-                                        st.error("⚠️ Số điện thoại chỉ được nhập số!")
+                                        st.error("! Số điện thoại chỉ được nhập số!")
                                     else:
                                         try:
                                             conn2 = get_connection()

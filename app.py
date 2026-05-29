@@ -341,7 +341,7 @@ div[data-testid="InputInstructions"] {{ display: none !important; }}
 
     st.markdown("""
 <div style="text-align:center;margin-top:32px;font-size:11px;color:#475569;">
-    🛡️ Bảo mật bởi VHSCRM
+    <i class=\"ph-shield-check\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Bảo mật bởi VHSCRM
 </div>
 """, unsafe_allow_html=True)
 
@@ -402,9 +402,9 @@ st.markdown(f"""
   <!-- nav items rendered by st.radio below -->
   <div style="flex:1;display:flex;align-items:center;" id="vhs-nav-items"></div>
   <div class="vhs-status">
-    <div class="vhs-status-pill">🔧 <b>{ca_hom_nay}</b> ca hôm nay</div>
-    <div class="vhs-status-pill">⚠️ Nợ <b>{format_money(tong_no)}</b></div>
-    <div class="vhs-status-pill">🕐 <b>{now.strftime('%H:%M')}</b></div>
+    <div class="vhs-status-pill"><i class=\"ph-wrench\" style=\"font-size:15px;color:#475569;vertical-align:middle;line-height:1;margin-right:3px;\"></i> <b>{ca_hom_nay}</b> ca hôm nay</div>
+    <div class="vhs-status-pill"><i class=\"ph-warning\" style=\"font-size:15px;color:#d97706;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Nợ <b>{format_money(tong_no)}</b></div>
+    <div class="vhs-status-pill"><i class=\"ph-clock\" style=\"font-size:15px;color:#d97706;vertical-align:middle;line-height:1;margin-right:3px;\"></i> <b>{now.strftime('%H:%M')}</b></div>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -645,7 +645,7 @@ if page == "🏠 Tổng Quan":
         rate    = int(ca_done/max(ca_done+ca_hom_nay,1)*100)
         st.markdown(f"""
         <div style="background:white;border:1px solid #e2e8f0;border-radius:14px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.04);">
-          <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:10px;">📈 Nhanh</div>
+          <div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:10px;"><i class=\"ph-chart-line-up\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Nhanh</div>
           {stat_row("Ca bỏ qua",f'<b style="color:#dc2626">{overdue}</b>')}
           {stat_row("KH còn nợ",f'<b style="color:#d97706">{kh_no}</b>')}
           {stat_row("Tỷ lệ HT",f'<b style="color:#16a34a">{rate}%</b>')}
@@ -683,11 +683,11 @@ elif page == "⚙️ Cài đặt":
                 new_pin2 = st.text_input("Nhập lại PIN mới", type="password", max_chars=6, placeholder="••••••")
                 if st.form_submit_button("💾 Lưu PIN mới", use_container_width=True):
                     if not _verify_pin(old_pin):
-                        st.error("❌ PIN hiện tại không đúng!")
+                        st.error("× PIN hiện tại không đúng!")
                     elif len(new_pin) < 4:
-                        st.error("❌ PIN mới phải có ít nhất 4 ký tự!")
+                        st.error("× PIN mới phải có ít nhất 4 ký tự!")
                     elif new_pin != new_pin2:
-                        st.error("❌ PIN mới không khớp!")
+                        st.error("× PIN mới không khớp!")
                     else:
                         _change_pin(new_pin)
                         st.success("✓ Đã đổi PIN thành công!")
@@ -754,7 +754,7 @@ elif page == "⚙️ Cài đặt":
             st.markdown("**🔄 Khôi phục CSDL**")
             uploaded_db = st.file_uploader("Tải lên file VHSCRM_Backup.db", type=["db", "sqlite"])
             if uploaded_db is not None:
-                st.warning("⚠️ **CẢNH BÁO:** Quá trình này sẽ XÓA TOÀN BỘ dữ liệu hiện tại và thay thế bằng dữ liệu từ file tải lên. Hãy chắc chắn bạn đã sao lưu trước khi thực hiện!")
+                st.warning("! **CẢNH BÁO:** Quá trình này sẽ XÓA TOÀN BỘ dữ liệu hiện tại và thay thế bằng dữ liệu từ file tải lên. Hãy chắc chắn bạn đã sao lưu trước khi thực hiện!")
                 if st.button("🚀 Thực hiện Khôi Phục", type="primary", use_container_width=True):
                     with st.spinner("Đang khôi phục dữ liệu..."):
                         import tempfile, sqlite3, os

@@ -28,7 +28,7 @@ def google_sync_dialog(thang, nam):
     cache_str = settings.get("google_token_cache")
     
     if not client_id or not client_secret:
-        st.warning("⚠️ Chưa cấu hình Google Cloud App!")
+        st.warning("! Chưa cấu hình Google Cloud App!")
         st.info("Vui lòng vào mục **Cài Đặt** để điền Client ID và Client Secret trước khi đồng bộ.")
         return
     
@@ -91,7 +91,7 @@ def google_sync_dialog(thang, nam):
                 if flow and "verification_url" in flow:
                     st.session_state.gg_flow_data = flow
                 else:
-                    st.error(f"❌ Không thể kết nối với Google. Lỗi: {err_msg}")
+                    st.error(f"× Không thể kết nối với Google. Lỗi: {err_msg}")
     
     if st.session_state.gg_flow_data:
         flow = st.session_state.gg_flow_data
@@ -116,7 +116,7 @@ def google_sync_dialog(thang, nam):
                     st.success("🎉 Đăng nhập thành công! Vui lòng ĐÓNG và mở lại hộp thoại để đồng bộ.")
                     st.balloons()
                 else:
-                    st.error(f"❌ Chưa xác nhận được. Lỗi: {err_msg}")
+                    st.error(f"× Chưa xác nhận được. Lỗi: {err_msg}")
 
 def render():
     conn_t = get_connection()
@@ -152,7 +152,7 @@ def render():
     }
     </style>
     """, unsafe_allow_html=True)
-    st.markdown(section_header("Lịch Thi Công","Quản lý lịch — Điều chỉnh thủ công — Calendar view","📅"),
+    st.markdown(section_header("Lịch Thi Công","Quản lý lịch — Điều chỉnh thủ công — Calendar view","<i class=\"ph-calendar\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i>"),
                 unsafe_allow_html=True)
 
     tab_today, tab_month, tab_cal, tab_bulk = st.tabs([
@@ -260,19 +260,19 @@ def render():
     <div>
     <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px;">
     {j['ten_cty']}
-    <span style="background:#dc2626;color:white;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">⚠️ QUÁ CA</span>
-    {'<span style="background:#1e1b4b;color:#c4b5fd;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">🌙 CA ĐÊM</span>' if is_night else ''}
+    <span style="background:#dc2626;color:white;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;"><i class=\"ph-warning\" style=\"font-size:15px;color:#d97706;vertical-align:middle;line-height:1;margin-right:3px;\"></i> QUÁ CA</span>
+    {'<span style="background:#1e1b4b;color:#c4b5fd;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;"><i class=\"ph-moon\" style=\"font-size:15px;color:#6366f1;vertical-align:middle;line-height:1;margin-right:3px;\"></i> CA ĐÊM</span>' if is_night else ''}
     </div>
     <div style="font-size:12px;color:#64748b;line-height:2;">
-    📋 <b>{j['ma_hd']}</b> · Kỳ <b>{j['ky_thang']}</b> · Lần <b>{j['lan_thu']}/{j['tan_suat']}</b><br>
-    📅 <b>{j['ngay_du_kien']}</b> · ⏰ <b>{j['gio_bat_dau']} → {j['gio_ket_thuc']}</b>
-    {'<br>📍 ' + j['dia_chi'] if j.get('dia_chi') else ''}
-    {'<br>👷 KTV: ' + j['ky_thuat_vien'] if j.get('ky_thuat_vien') else '<br>👷 KTV: (Chưa gán)'}
+    <i class=\"ph-clipboard-text\" style=\"font-size:15px;color:#6366f1;vertical-align:middle;line-height:1;margin-right:3px;\"></i> <b>{j['ma_hd']}</b> · Kỳ <b>{j['ky_thang']}</b> · Lần <b>{j['lan_thu']}/{j['tan_suat']}</b><br>
+    <i class=\"ph-calendar\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i> <b>{j['ngay_du_kien']}</b> · ⏰ <b>{j['gio_bat_dau']} → {j['gio_ket_thuc']}</b>
+    {'<br><i class=\"ph-map-pin\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> ' + j['dia_chi'] if j.get('dia_chi') else ''}
+    {'<br><i class=\"ph-hard-hat\" style=\"font-size:15px;color:#d97706;vertical-align:middle;line-height:1;margin-right:3px;\"></i> KTV: ' + j['ky_thuat_vien'] if j.get('ky_thuat_vien') else '<br><i class=\"ph-hard-hat\" style=\"font-size:15px;color:#d97706;vertical-align:middle;line-height:1;margin-right:3px;\"></i> KTV: (Chưa gán)'}
     </div>
     </div>
     <div style="background:white;border-radius:8px;padding:8px 14px;text-align:center;border:1px solid #dc262630;">
     <div style="font-size:10px;color:#94a3b8;">TRẠNG THÁI</div>
-    <div style="font-size:13px;font-weight:700;color:#dc2626;">⚠️ Quá ca</div>
+    <div style="font-size:13px;font-weight:700;color:#dc2626;"><i class=\"ph-warning\" style=\"font-size:15px;color:#d97706;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Quá ca</div>
     </div>
     </div>
     </div>
@@ -305,13 +305,13 @@ def render():
     <div>
     <div style="font-size:15px;font-weight:700;color:#0f172a;margin-bottom:4px;">
     {j['ten_cty']}
-    {'<span style="background:#1e1b4b;color:#c4b5fd;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;">🌙 CA ĐÊM</span>' if is_night else ''}
+    {'<span style="background:#1e1b4b;color:#c4b5fd;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px;"><i class=\"ph-moon\" style=\"font-size:15px;color:#6366f1;vertical-align:middle;line-height:1;margin-right:3px;\"></i> CA ĐÊM</span>' if is_night else ''}
     </div>
     <div style="font-size:12px;color:#64748b;line-height:2;">
-    📋 <b>{j['ma_hd']}</b> · Kỳ <b>{j['ky_thang']}</b> · Lần <b>{j['lan_thu']}/{j['tan_suat']}</b><br>
-    📅 <b>{j['ngay_du_kien']}</b> · ⏰ <b>{j['gio_bat_dau']} → {j['gio_ket_thuc']}</b>
-    {'<br>📍 ' + j['dia_chi'] if j.get('dia_chi') else ''}
-    {'<br>👷 KTV: ' + j['ky_thuat_vien'] if j.get('ky_thuat_vien') else '<br>👷 KTV: (Chưa gán)'}
+    <i class=\"ph-clipboard-text\" style=\"font-size:15px;color:#6366f1;vertical-align:middle;line-height:1;margin-right:3px;\"></i> <b>{j['ma_hd']}</b> · Kỳ <b>{j['ky_thang']}</b> · Lần <b>{j['lan_thu']}/{j['tan_suat']}</b><br>
+    <i class=\"ph-calendar\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i> <b>{j['ngay_du_kien']}</b> · ⏰ <b>{j['gio_bat_dau']} → {j['gio_ket_thuc']}</b>
+    {'<br><i class=\"ph-map-pin\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> ' + j['dia_chi'] if j.get('dia_chi') else ''}
+    {'<br><i class=\"ph-hard-hat\" style=\"font-size:15px;color:#d97706;vertical-align:middle;line-height:1;margin-right:3px;\"></i> KTV: ' + j['ky_thuat_vien'] if j.get('ky_thuat_vien') else '<br><i class=\"ph-hard-hat\" style=\"font-size:15px;color:#d97706;vertical-align:middle;line-height:1;margin-right:3px;\"></i> KTV: (Chưa gán)'}
     </div>
     </div>
     <div style="background:white;border-radius:8px;padding:8px 14px;text-align:center;border:1px solid {border}30;">
@@ -495,7 +495,7 @@ def render():
                               </div>
                               <div style="background:#f8fafc;border-radius:8px;padding:10px 14px;min-width:100px;">
                                 <div style="font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;">Giờ</div>
-                                <div style="font-size:14px;font-weight:700;color:#0f172a;">{'🌙 ' if is_night else ''}{r['gio_bat_dau']}→{r['gio_ket_thuc']}</div>
+                                <div style="font-size:14px;font-weight:700;color:#0f172a;">{'<i class=\"ph-moon\" style=\"font-size:15px;color:#6366f1;vertical-align:middle;line-height:1;margin-right:3px;\"></i> ' if is_night else ''}{r['gio_bat_dau']}→{r['gio_ket_thuc']}</div>
                               </div>
                               <div style="background:{sc}15;border:1px solid {sc}30;border-radius:8px;padding:10px 14px;">
                                 <div style="font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;">Trạng thái{manual_tag}</div>
@@ -507,12 +507,12 @@ def render():
                               </div>
                             </div>
                             <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#0369a1;line-height:1.6;">
-                              {'📍 <b>' + hd['dia_chi'] + '</b><br>' if hd.get('dia_chi') else ''}
-                              {'🏠 Khu vực: <b>' + hd['khu_vuc_xu_ly'] + '</b><br>' if hd.get('khu_vuc_xu_ly') else ''}
-                              {'🕷️ Dịch hại: <b>' + (r.get('loai_con_trung') or hd.get('loai_con_trung') or '') + '</b><br>' if (r.get('loai_con_trung') or hd.get('loai_con_trung')) else ''}
-                              {'💊 Phương pháp: <b>' + hd['phuong_phap_xu_ly'] + '</b>' if hd.get('phuong_phap_xu_ly') else ''}
+                              {'<i class=\"ph-map-pin\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> <b>' + hd['dia_chi'] + '</b><br>' if hd.get('dia_chi') else ''}
+                              {'<i class=\"ph-house\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Khu vực: <b>' + hd['khu_vuc_xu_ly'] + '</b><br>' if hd.get('khu_vuc_xu_ly') else ''}
+                              {'<i class=\"ph-bug\" style=\"font-size:15px;color:#dc2626;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Dịch hại: <b>' + (r.get('loai_con_trung') or hd.get('loai_con_trung') or '') + '</b><br>' if (r.get('loai_con_trung') or hd.get('loai_con_trung')) else ''}
+                              {'<i class=\"ph-pill\" style=\"font-size:15px;color:#7c3aed;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Phương pháp: <b>' + hd['phuong_phap_xu_ly'] + '</b>' if hd.get('phuong_phap_xu_ly') else ''}
                             </div>
-                            {f'<div style="font-size:12px;color:#64748b;">📝 {r["ghi_chu"]}</div>' if r.get("ghi_chu") else ""}
+                            {f'<div style="font-size:12px;color:#64748b;"><i class=\"ph-note-pencil\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {r["ghi_chu"]}</div>' if r.get("ghi_chu") else ""}
                             """, unsafe_allow_html=True)
     
                         with col_edit:
@@ -566,7 +566,7 @@ def render():
                                                     if e1 <= s1: e1 += 24*60
                                                     if e2 <= s2: e2 += 24*60
                                                     if max(s1, s2) < min(e1, e2):
-                                                        st.error(f"❌ KTV {new_ktv} bị trùng giờ với ca tại {ov['ten_cty']} ({ov['gio_bat_dau']} - {ov['gio_ket_thuc']})")
+                                                        st.error(f"× KTV {new_ktv} bị trùng giờ với ca tại {ov['ten_cty']} ({ov['gio_bat_dau']} - {ov['gio_ket_thuc']})")
                                                         overlap = True
                                                         break
                                                 if overlap:
@@ -589,7 +589,7 @@ def render():
                                             auto_sync_schedule_to_google(conn, r["id"], "upsert")
                                             conn.commit(); conn.close()
                                             st.success("✓ Đã cập nhật!"); st.rerun()
-                                        except Exception as e: st.error(f"❌ {e}")
+                                        except Exception as e: st.error(f"× {e}")
                                     if skip_btn:
                                         try:
                                             conn = get_connection()
@@ -598,7 +598,7 @@ def render():
                                             auto_sync_schedule_to_google(conn, r["id"], "upsert")
                                             conn.commit(); conn.close()
                                             st.info("Ca đã bỏ qua."); st.rerun()
-                                        except Exception as e: st.error(f"❌ {e}")
+                                        except Exception as e: st.error(f"× {e}")
                             else:
                                 st.markdown("""
                                 <div style="background:#dcfce7;border-radius:8px;padding:14px;text-align:center;">
@@ -787,5 +787,5 @@ def render():
                             auto_sync_schedule_to_google(conn, rs["id"], "upsert")
                         conn.commit(); conn.close()
                         st.success(f"✓ Đã thêm ca ngày {extra_ngay.strftime('%d/%m/%Y')}"); st.rerun()
-                    except Exception as e: st.error(f"❌ {e}")
+                    except Exception as e: st.error(f"× {e}")
             st.markdown("</div>", unsafe_allow_html=True)

@@ -146,7 +146,7 @@ def action_dialog(job, log):
                 st.session_state[ci_key] = True
                 st.rerun()
         else:
-            st.warning("⚠️ Vui lòng xác nhận bạn đã đến đúng địa điểm và sẵn sàng làm việc?")
+            st.warning("! Vui lòng xác nhận bạn đã đến đúng địa điểm và sẵn sàng làm việc?")
             col1, col2 = st.columns(2)
             if col1.button("❌ Hủy", key=f"cancel_ci_{job['id']}", use_container_width=True):
                 st.session_state[ci_key] = False
@@ -216,7 +216,7 @@ def action_dialog(job, log):
                 st.session_state[co_key] = True
                 st.rerun()
         else:
-            st.error("⚠️ Bạn có chắc chắn muốn kết thúc ca làm việc và nộp biên bản?")
+            st.error("! Bạn có chắc chắn muốn kết thúc ca làm việc và nộp biên bản?")
             col1, col2 = st.columns(2)
             if col1.button("❌ Quay lại", key=f"cancel_co_{log['id']}", use_container_width=True):
                 st.session_state[co_key] = False
@@ -370,7 +370,7 @@ def render():
     ktv = st.session_state.mobile_ktv
     st.markdown(f"""
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding:10px 0;">
-        <div style="font-size:20px;font-weight:800;color:#0f172a;">👋 Chào, {ktv}</div>
+        <div style="font-size:20px;font-weight:800;color:#0f172a;"><i class=\"ph-hand-waving\" style=\"font-size:15px;color:#f59e0b;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Chào, {ktv}</div>
     </div>
     """, unsafe_allow_html=True)
     
@@ -491,10 +491,10 @@ def render():
         st.markdown(f"""
         <div class="mobile-card" style="background:{bg_color};border-color:{border_color};{left_border}; margin-bottom:{margin_bottom}; padding-bottom:{padding_bottom};">
             <div class="shift-time">{job_item['gio_bat_dau']} - {job_item['gio_ket_thuc']}{date_str}</div>
-            <div class="shift-company">🏢 {job_item['ten_cty']}</div>{badge_str}
+            <div class="shift-company"><i class=\"ph-buildings\" style=\"font-size:15px;color:#475569;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {job_item['ten_cty']}</div>{badge_str}
             <div class="shift-address">
-                📍 {str(job_item['dia_chi']).replace(chr(10), ' ') if job_item['dia_chi'] else 'Chưa có địa chỉ'}<br>
-                📞 {job_item['sdt'] or 'Chưa có SĐT'}
+                <i class=\"ph-map-pin\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {str(job_item['dia_chi']).replace(chr(10), ' ') if job_item['dia_chi'] else 'Chưa có địa chỉ'}<br>
+                <i class=\"ph-phone\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {job_item['sdt'] or 'Chưa có SĐT'}
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -511,7 +511,7 @@ def render():
     if not (active_jobs or pending_jobs or completed_jobs):
         st.markdown("""
         <div class="mobile-card" style="text-align:center;padding:40px 20px;">
-            <div style="font-size:40px;margin-bottom:10px;">🎉</div>
+            <div style="font-size:40px;margin-bottom:10px;"><i class=\"ph-confetti\" style=\"font-size:15px;color:#f59e0b;vertical-align:middle;line-height:1;margin-right:3px;\"></i></div>
             <div style="font-size:18px;font-weight:700;color:#166534;">Bạn không có ca nào đang chờ!</div>
             <div style="font-size:14px;color:#64748b;margin-top:5px;">Tuyệt vời, hãy nghỉ ngơi nhé.</div>
         </div>

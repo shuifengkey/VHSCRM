@@ -3,7 +3,7 @@ from utils.database import get_connection
 from utils.styles import section_header
 
 def render():
-    st.markdown(section_header("Quản Lý KTV", "Quản lý hồ sơ, thêm/sửa/xóa danh sách Kỹ Thuật Viên", "👷"), unsafe_allow_html=True)
+    st.markdown(section_header("Quản Lý KTV", "Quản lý hồ sơ, thêm/sửa/xóa danh sách Kỹ Thuật Viên", "<i class=\"ph-hard-hat\" style=\"font-size:15px;color:#d97706;vertical-align:middle;line-height:1;margin-right:3px;\"></i>"), unsafe_allow_html=True)
     st.markdown("""
     <style>
     /* Color ALL popover buttons with dark gradient in this page */
@@ -38,11 +38,11 @@ def render():
                     with c1:
                         st.markdown(f"""
 <div style="display:flex;align-items:center;gap:12px;">
-    <div style="font-size:32px;">👷</div>
+    <div style="font-size:32px;"><i class=\"ph-hard-hat\" style=\"font-size:15px;color:#d97706;vertical-align:middle;line-height:1;margin-right:3px;\"></i></div>
     <div>
         <div style="font-size:16px;font-weight:700;color:#0f172a;">{r['ten']} <span style="font-size:12px;color:#64748b;font-weight:normal;">({r['ma_ktv']})</span></div>
         <div style="font-size:13px;color:#64748b;margin-top:4px;">
-            📞 {r['sdt'] or 'Chưa cập nhật'} &nbsp;|&nbsp; 
+            <i class=\"ph-phone\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {r['sdt'] or 'Chưa cập nhật'} &nbsp;|&nbsp; 
             <span style="padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;
                   background:{'#dcfce7' if r['active'] else '#fee2e2'};color:{'#166534' if r['active'] else '#991b1b'};">
                 {'Đang làm việc' if r['active'] else 'Đã nghỉ'}
@@ -72,7 +72,7 @@ def render():
                                 xac_nhan_xoa = st.checkbox("Xác nhận xóa KTV này", key=f"del_chk_{r['ma_ktv']}")
                                 if st.form_submit_button("🗑️ Xóa", use_container_width=True):
                                     if st.session_state.get('auth_role') != 'admin':
-                                        st.error("❌ Chỉ Admin mới có quyền xóa dữ liệu!")
+                                        st.error("× Chỉ Admin mới có quyền xóa dữ liệu!")
                                     elif xac_nhan_xoa:
                                         conn_del = get_connection()
                                         conn_del.execute("DELETE FROM technicians WHERE ma_ktv=?", (r['ma_ktv'],))
@@ -97,7 +97,7 @@ def render():
                 
             if st.form_submit_button("➕ Thêm KTV", use_container_width=True):
                 if not ma_ktv or not ten:
-                    st.error("⚠️ Mã KTV và Tên KTV là bắt buộc!")
+                    st.error("! Mã KTV và Tên KTV là bắt buộc!")
                 else:
                     sdt_clean = ''.join(filter(str.isdigit, sdt)) if sdt else ""
                     try:

@@ -8,7 +8,7 @@ from datetime import timezone, date, datetime, timedelta
 from utils.styles import section_header
 
 def render():
-    st.markdown(section_header("Xuất Chứng Từ PDF Tự Động", "Chọn khách hàng và loại chứng từ để sinh PDF", "🖨️"), unsafe_allow_html=True)
+    st.markdown(section_header("Xuất Chứng Từ PDF Tự Động", "Chọn khách hàng và loại chứng từ để sinh PDF", "<i class=\"ph-printer\" style=\"font-size:15px;color:#475569;vertical-align:middle;line-height:1;margin-right:3px;\"></i>"), unsafe_allow_html=True)
     
     conn = get_connection()
     all_kh = conn.execute("""
@@ -70,20 +70,20 @@ def render():
             st.markdown(f"""
             <div style="background:#f0faf4;padding:12px;border-radius:8px;border-left:3px solid #1a6b3c;">
                 <b>THÔNG TIN KHÁCH HÀNG</b><br>
-                🏢 {customer['ten_cty']}<br>
-                👤 {customer['dai_dien'] or '-'}<br>
-                📞 {customer['sdt'] or '-'}<br>
-                📍 {customer['dia_chi'] or '-'}
+                <i class=\"ph-buildings\" style=\"font-size:15px;color:#475569;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {customer['ten_cty']}<br>
+                <i class=\"ph-user\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {customer['dai_dien'] or '-'}<br>
+                <i class=\"ph-phone\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {customer['sdt'] or '-'}<br>
+                <i class=\"ph-map-pin\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> {customer['dia_chi'] or '-'}
             </div>
             """, unsafe_allow_html=True)
         with col_b:
             st.markdown(f"""
             <div style="background:#e8f5ee;padding:12px;border-radius:8px;border-left:3px solid #0d3d22;">
                 <b>THÔNG TIN HỢP ĐỒNG</b><br>
-                📄 Mã HĐ: {contract['ma_hd']}<br>
-                📅 Tần suất: {contract['tan_suat']} lần/tháng<br>
+                <i class=\"ph-file-text\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Mã HĐ: {contract['ma_hd']}<br>
+                <i class=\"ph-calendar\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Tần suất: {contract['tan_suat']} lần/tháng<br>
                 ⏰ Giờ: {contract['gio_bat_dau']} - {contract['gio_ket_thuc']}<br>
-                💰 Giá: {contract['gia_tri_thang']:,.0f}đ/tháng
+                <i class=\"ph-currency-circle-dollar\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i> Giá: {contract['gia_tri_thang']:,.0f}đ/tháng
             </div>
             """.replace(",","."), unsafe_allow_html=True)
         
@@ -107,7 +107,7 @@ def render():
                         else:
                             # Phiếu xác nhận
                             if not logbook_entry:
-                                st.error("❌ Chưa có dữ liệu thi công (check-out) cho khách hàng này!")
+                                st.error("× Chưa có dữ liệu thi công (check-out) cho khách hàng này!")
                                 return
                             logbook_dict = dict(logbook_entry)
                             pdf_bytes = generate_phieu_xac_nhan(customer_dict, contract_dict, logbook_dict)
@@ -124,19 +124,19 @@ def render():
                     st.success(f"✓ PDF đã sẵn sàng: **{filename}**")
                     
                 except Exception as e:
-                    st.error(f"❌ Lỗi sinh PDF: {e}")
+                    st.error(f"× Lỗi sinh PDF: {e}")
                     st.exception(e)
         
         with col_info:
             st.markdown(f"""
             <div style="padding:12px;background:#fffbeb;border-radius:8px;font-size:13px;">
-                📄 <b>Loại chứng từ:</b> {doc_type}<br>
-                🕐 <b>Thời điểm xuất:</b> {(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime('%H:%M %d/%m/%Y')}<br>
-                📂 <b>Định dạng:</b> PDF (A4, tiếng Việt)
+                <i class=\"ph-file-text\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i> <b>Loại chứng từ:</b> {doc_type}<br>
+                <i class=\"ph-clock\" style=\"font-size:15px;color:#d97706;vertical-align:middle;line-height:1;margin-right:3px;\"></i> <b>Thời điểm xuất:</b> {(datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).strftime('%H:%M %d/%m/%Y')}<br>
+                <i class=\"ph-folder-open\" style=\"font-size:15px;color:#d97706;vertical-align:middle;line-height:1;margin-right:3px;\"></i> <b>Định dạng:</b> PDF (A4, tiếng Việt)
             </div>
             """, unsafe_allow_html=True)
     
     elif customer and not contract:
-        st.warning(f"⚠️ Khách hàng **{customer['ten_cty']}** chưa có hợp đồng nào!")
+        st.warning(f"! Khách hàng **{customer['ten_cty']}** chưa có hợp đồng nào!")
     else:
-        st.error("❌ Không tìm thấy thông tin khách hàng!")
+        st.error("× Không tìm thấy thông tin khách hàng!")
