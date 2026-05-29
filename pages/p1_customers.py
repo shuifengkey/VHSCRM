@@ -2,7 +2,7 @@
 import streamlit as st
 import sys, os
 
-from utils.database import get_connection
+from utils.database import get_connection, get_cached_customers
 from utils.styles import card, badge, section_header, COLORS
 from datetime import date
 
@@ -84,6 +84,7 @@ def render():
                         conn2.execute("UPDATE customers SET ten_cty=?,dai_dien=?,sdt=?,dia_chi=?,ghi_chu=?,nguoi_lien_he=?,ten_phap_ly=?,ma_so_thue=?,dia_chi_phap_ly=? WHERE ma_kh=?",
                                       (ten,dd,sp_clean,da,gc,lh,tpl,mst,dc_pl,r["ma_kh"]))
                         conn2.commit(); conn2.close()
+                        get_cached_customers.clear()
                         import time
                         st.toast(f"✓ Đã lưu cập nhật cho {ten}!", icon="🎉")
                         st.balloons()
@@ -112,6 +113,7 @@ def render():
                             conn2.execute("DELETE FROM contracts WHERE ma_kh=?", (r["ma_kh"],))
                             conn2.execute("DELETE FROM customers WHERE ma_kh=?", (r["ma_kh"],))
                             conn2.commit(); conn2.close()
+                            get_cached_customers.clear()
                             st.success("Đã xóa Khách Hàng và các HĐ/Lịch liên quan!"); st.rerun()
                         except Exception as e: st.error(e)
                     else:
@@ -119,39 +121,81 @@ def render():
 
     # ===== DANH SÁCH =====
     with tab_list:
-        conn = get_connection()
         c1, c2, c3, c4 = st.columns([2.5, 1.2, 1, 1])
         with c1: search = st.text_input("🔍 Tìm kiếm", placeholder="Tên công ty, mã KH, số điện thoại...")
         with c2: filter_pk = st.selectbox("Phân khúc", ["Tất cả","Nhà hàng", "Khách sạn", "Căn hộ/Biệt thự", "KCC", "Nhà Kho/Xưởng"])
         with c3: sort_by = st.selectbox("Sắp xếp", ["Mã KH","Tên A-Z","Mới nhất"])
         with c4: view_mode = st.selectbox("Hiển thị", ["Dạng Thẻ", "Dạng Dòng"])
 
-        query = "SELECT k.*, (SELECT COUNT(*) FROM contracts c WHERE c.ma_kh=k.ma_kh AND c.trang_thai='active') as so_hd FROM customers k WHERE 1=1"
-        params = []
-        if search:
-            query += " AND (ma_kh LIKE ? OR ten_cty LIKE ? OR sdt LIKE ? OR dai_dien LIKE ?)"
-            params.extend([f"%{search}%"]*4)
-        if filter_pk != "Tất cả":
-            query += " AND phan_khuc=?"
-            params.append(filter_pk)
-        query += {"Mã KH":" ORDER BY ma_kh", "Tên A-Z":" ORDER BY ten_cty", "Mới nhất":" ORDER BY created_at DESC"}.get(sort_by, " ORDER BY ma_kh")
-
-        raw_rows = conn.execute(query, params).fetchall()
-        conn.close()
-        
         import html
-        rows = []
-        for r in raw_rows:
+        
+        # Lấy toàn bộ từ Cache
+        all_customers = get_cached_customers()
+        
+        # Python-side Filtering
+        filtered_rows = []
+        search_lower = search.lower() if search else ""
+        
+        for r in all_customers:
+            if search_lower:
+                match_search = (search_lower in str(r.get("ma_kh", "")).lower() or
+                                search_lower in str(r.get("ten_cty", "")).lower() or
+                                search_lower in str(r.get("sdt", "")).lower() or
+                                search_lower in str(r.get("dai_dien", "")).lower())
+                if not match_search:
+                    continue
+                    
+            if filter_pk != "Tất cả":
+                if r.get("phan_khuc") != filter_pk:
+                    continue
+                    
+            # Chuẩn bị hiển thị an toàn
             d = dict(r)
-            d["ten_cty"] = html.escape(d["ten_cty"] or "")
-            d["dai_dien"] = html.escape(d["dai_dien"] or "")
-            d["sdt"] = html.escape(d["sdt"] or "")
-            d["dia_chi"] = html.escape(d["dia_chi"] or "")
-            d["ghi_chu"] = html.escape(d["ghi_chu"] or "")
-            rows.append(d)
+            d["ten_cty"] = html.escape(d.get("ten_cty", "") or "")
+            d["dai_dien"] = html.escape(d.get("dai_dien", "") or "")
+            d["sdt"] = html.escape(d.get("sdt", "") or "")
+            d["dia_chi"] = html.escape(d.get("dia_chi", "") or "")
+            d["ghi_chu"] = html.escape(d.get("ghi_chu", "") or "")
+            filtered_rows.append(d)
 
-        # Tổng số đếm
-        st.markdown(f'<div style="font-size:13px;color:#64748b;margin-bottom:12px;">Tìm thấy <b style="color:#0f172a">{len(rows)}</b> khách hàng</div>', unsafe_allow_html=True)
+        # Python-side Sorting
+        if sort_by == "Mã KH":
+            filtered_rows.sort(key=lambda x: str(x.get("ma_kh", "")))
+        elif sort_by == "Tên A-Z":
+            filtered_rows.sort(key=lambda x: str(x.get("ten_cty", "")))
+        elif sort_by == "Mới nhất":
+            filtered_rows.sort(key=lambda x: str(x.get("created_at", "")), reverse=True)
+            
+        total_items = len(filtered_rows)
+
+        # Pagination
+        ITEMS_PER_PAGE = 30
+        total_pages = max(1, (total_items + ITEMS_PER_PAGE - 1) // ITEMS_PER_PAGE)
+        
+        if "cust_page" not in st.session_state:
+            st.session_state.cust_page = 1
+        
+        # Reset page if filter changes
+        if st.session_state.cust_page > total_pages:
+            st.session_state.cust_page = total_pages
+
+        pc1, pc2, pc3 = st.columns([1, 2, 1])
+        with pc1:
+            if st.button("⬅️ Trang Trước", use_container_width=True, disabled=(st.session_state.cust_page <= 1)):
+                st.session_state.cust_page -= 1
+                st.rerun()
+        with pc2:
+            st.markdown(f'<div style="text-align:center; padding-top:8px; font-size:14px; font-weight:600; color:#475569;">Trang {st.session_state.cust_page} / {total_pages} (Tìm thấy <b style="color:#0f172a">{total_items}</b> KH)</div>', unsafe_allow_html=True)
+        with pc3:
+            if st.button("Trang Sau ➡️", use_container_width=True, disabled=(st.session_state.cust_page >= total_pages)):
+                st.session_state.cust_page += 1
+                st.rerun()
+
+        start_idx = (st.session_state.cust_page - 1) * ITEMS_PER_PAGE
+        end_idx = start_idx + ITEMS_PER_PAGE
+        rows = filtered_rows[start_idx:end_idx]
+
+        st.markdown("<hr style='margin-top:0px; margin-bottom:16px'>", unsafe_allow_html=True)
 
         if not rows:
             st.markdown(card('<div style="text-align:center;padding:32px;color:#94a3b8;">😔 Không tìm thấy kết quả nào</div>'), unsafe_allow_html=True)
@@ -292,6 +336,7 @@ def render():
                             conn.execute("INSERT INTO customers (ma_kh,ten_cty,dai_dien,sdt,dia_chi,phan_khuc,ghi_chu,nguoi_lien_he,ten_phap_ly,ma_so_thue,dia_chi_phap_ly) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                                          (ma_kh.strip(), ten.strip(), dai_dien, sdt_clean, dia_chi, pk, ghi_chu, nguoi_lh, ten_pl, mst, dia_chi_pl))
                             conn.commit(); conn.close()
+                            get_cached_customers.clear()
                             st.session_state.add_kh_success = f"✓ Đã thêm **{ten}** ({ma_kh})"
                             st.rerun()
                         except Exception as e: st.error(f"❌ {e}")

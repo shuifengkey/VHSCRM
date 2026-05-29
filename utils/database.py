@@ -310,3 +310,19 @@ def seed_demo_data():
     # Removed mock data auto-generation as per user request
     conn.commit()
     conn.close()
+
+if st:
+    @st.cache_data(ttl=600)
+    def get_cached_customers():
+        conn = get_connection()
+        query = "SELECT k.*, (SELECT COUNT(*) FROM contracts c WHERE c.ma_kh=k.ma_kh AND c.trang_thai='active') as so_hd FROM customers k ORDER BY k.created_at DESC"
+        rows = conn.execute(query).fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
+else:
+    def get_cached_customers():
+        conn = get_connection()
+        query = "SELECT k.*, (SELECT COUNT(*) FROM contracts c WHERE c.ma_kh=k.ma_kh AND c.trang_thai='active') as so_hd FROM customers k ORDER BY k.created_at DESC"
+        rows = conn.execute(query).fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
