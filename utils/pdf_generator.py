@@ -228,7 +228,7 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, schedule_entry: dict
             # Ưu tiên tên pháp lý, nếu không có thì dùng tên thương hiệu
             ten_kh = str(customer.get("ten_phap_ly") or customer.get("ten_cty", ""))
             c.drawString(148, 672, ten_kh)
-            c.drawString(148, 650, str(customer.get("dia_chi", "")))
+            c.drawString(148, 654.25, str(customer.get("dia_chi", "")))
             c.drawString(148, 630, str(customer.get("sdt", "") or customer.get("so_dt", "")))
 
             # Thời gian (Lấy từ schedule)
@@ -240,9 +240,9 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, schedule_entry: dict
             m_str = ""
             
             if ci:
-                c.drawString(117, 310, str(ci)[:5])
+                c.drawString(117, 312.83, str(ci)[:5])
             if co:
-                c.drawString(242, 310, str(co)[:5])
+                c.drawString(242, 312.83, str(co)[:5])
 
             if ngay:
                 try:
@@ -253,8 +253,8 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, schedule_entry: dict
                     pass
 
             if d_str:
-                c.drawString(307, 310, d_str)
-                c.drawString(352, 310, m_str)
+                c.drawString(307, 312.83, d_str)
+                c.drawString(352, 312.83, m_str)
 
             # Checkboxes mapping
             checkbox_coords = {
