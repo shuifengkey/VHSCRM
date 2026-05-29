@@ -250,11 +250,32 @@ def render():
                     so_tien = 0
 
                 if st.button("Xác nhận thu", type="primary"):
-                    now_iso = (datetime.now(timezone.utc) + timedelta(hours=7)).date().isoformat()
-                    conn.execute("UPDATE debts SET da_thu=da_thu+?, ngay_thu=? WHERE id=?", (so_tien, now_iso, u["id"]))
-                    conn.commit()
-                    st.success(f"Đã ghi nhận thu {format_money(so_tien)}")
-                    st.rerun()
+                    if so_tien > 0:
+                        st.session_state["confirm_payment"] = {"so_tien": so_tien, "u": u}
+                    else:
+                        st.warning("Vui lòng nhập số tiền hợp lệ")
+                
+                if "confirm_payment" in st.session_state:
+                    data = st.session_state["confirm_payment"]
+                    if data["u"]["id"] == u["id"]:
+                        st.markdown(f"""
+                        <div style="background:#fffbeb;border:1px solid #fcd34d;padding:12px;border-radius:8px;margin-top:10px;">
+                            <b style="color:#b45309;">⚠️ Xác nhận:</b><br>
+                            Bạn chắc chắn muốn ghi nhận thu <b>{format_money(data['so_tien'])}đ</b> cho khách hàng <b>{data['u']['ten_cty']}</b>?
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        c1, c2 = st.columns(2)
+                        if c1.button("✅ Đồng ý", use_container_width=True, key="btn_yes_pay"):
+                            now_iso = (datetime.now(timezone.utc) + timedelta(hours=7)).date().isoformat()
+                            conn.execute("UPDATE debts SET da_thu=da_thu+?, ngay_thu=? WHERE id=?", (data['so_tien'], now_iso, data['u']["id"]))
+                            conn.commit()
+                            del st.session_state["confirm_payment"]
+                            st.success(f"Đã ghi nhận thu {format_money(data['so_tien'])}")
+                            st.rerun()
+                        if c2.button("❌ Hủy", use_container_width=True, key="btn_no_pay"):
+                            del st.session_state["confirm_payment"]
+                            st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
             
             st.markdown('<div style="height:10px;"></div>', unsafe_allow_html=True)
@@ -282,15 +303,34 @@ def render():
                     if dt_adv <= 0:
                         st.warning("Vui lòng nhập số tiền hợp lệ!")
                     else:
-                        now_iso = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().isoformat()
-                        existing = conn.execute("SELECT id FROM debts WHERE ma_hd=? AND ky_thanh_toan=?", (hd["ma_hd"], ky)).fetchone()
-                        if existing:
-                            conn.execute("UPDATE debts SET da_thu = da_thu + ?, ngay_thu=? WHERE id=?", (dt_adv, now_iso, existing["id"]))
-                        else:
-                            conn.execute("INSERT INTO debts (ma_hd,ma_kh,ky_thanh_toan,can_thu,da_thu,ghi_chu,ngay_thu) VALUES(?,?,?,?,?,?,?)",
-                                         (hd["ma_hd"],hd["ma_kh"],ky,0,dt_adv,"Thu trước",now_iso))
-                        conn.commit()
-                        st.success(f"Đã ghi nhận thu trước {format_money(dt_adv)} cho kỳ {ky}"); st.rerun()
+                        st.session_state["confirm_adv_payment"] = {"dt_adv": dt_adv, "hd": hd, "ky": ky}
+
+                if "confirm_adv_payment" in st.session_state:
+                    data = st.session_state["confirm_adv_payment"]
+                    if data["hd"]["ma_hd"] == hd["ma_hd"]:
+                        st.markdown(f"""
+                        <div style="background:#fffbeb;border:1px solid #fcd34d;padding:12px;border-radius:8px;margin-top:10px;">
+                            <b style="color:#b45309;">⚠️ Xác nhận:</b><br>
+                            Bạn chắc chắn muốn ghi nhận thu trước <b>{format_money(data['dt_adv'])}đ</b> cho kỳ <b>{data['ky']}</b> của khách hàng <b>{data['hd']['ma_kh']}</b>?
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        c1, c2 = st.columns(2)
+                        if c1.button("✅ Đồng ý", use_container_width=True, key="btn_yes_adv"):
+                            now_iso = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date().isoformat()
+                            existing = conn.execute("SELECT id FROM debts WHERE ma_hd=? AND ky_thanh_toan=?", (data["hd"]["ma_hd"], data["ky"])).fetchone()
+                            if existing:
+                                conn.execute("UPDATE debts SET da_thu = da_thu + ?, ngay_thu=? WHERE id=?", (data["dt_adv"], now_iso, existing["id"]))
+                            else:
+                                conn.execute("INSERT INTO debts (ma_hd,ma_kh,ky_thanh_toan,can_thu,da_thu,ghi_chu,ngay_thu) VALUES(?,?,?,?,?,?,?)",
+                                             (data["hd"]["ma_hd"], data["hd"]["ma_kh"], data["ky"], 0, data["dt_adv"], "Thu trước", now_iso))
+                            conn.commit()
+                            del st.session_state["confirm_adv_payment"]
+                            st.success(f"Đã ghi nhận thu trước {format_money(data['dt_adv'])} cho kỳ {data['ky']}")
+                            st.rerun()
+                        if c2.button("❌ Hủy", use_container_width=True, key="btn_no_adv"):
+                            del st.session_state["confirm_adv_payment"]
+                            st.rerun()
             st.markdown("</div>", unsafe_allow_html=True)
             
             st.markdown('<div style="height:10px;"></div>', unsafe_allow_html=True)
