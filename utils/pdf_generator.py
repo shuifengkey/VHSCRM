@@ -228,7 +228,7 @@ def generate_phieu_xac_nhan(customer: dict, contract: dict, schedule_entry: dict
             # Ưu tiên tên pháp lý, nếu không có thì dùng tên thương hiệu
             ten_kh = str(customer.get("ten_phap_ly") or customer.get("ten_cty", ""))
             c.drawString(148, 672, ten_kh)
-            c.drawString(148, 654.25, str(customer.get("dia_chi", "")))
+            c.drawString(148, 652.83, str(customer.get("dia_chi", "")))
             c.drawString(148, 630, str(customer.get("sdt", "") or customer.get("so_dt", "")))
 
             # Thời gian (Lấy từ schedule)
