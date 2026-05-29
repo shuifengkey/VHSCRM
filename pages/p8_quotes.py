@@ -133,6 +133,7 @@ def render():
         df,
         num_rows="dynamic",
         use_container_width=True,
+        key="quote_editor_key",
         column_config={
             "name": st.column_config.Column("Hạng mục dịch vụ", width="large"),
             "targets": st.column_config.Column("Đối tượng", width="medium"),
@@ -156,8 +157,6 @@ def render():
         },
         hide_index=True
     )
-    
-    st.session_state.quote_items = edited_df.to_dict('records')
     
     # Calculate preview totals safely using Pandas
     safe_price = pd.to_numeric(edited_df['price'], errors='coerce').fillna(0)
