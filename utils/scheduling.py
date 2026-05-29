@@ -339,19 +339,16 @@ def auto_generate_schedules(ma_hd: str, ky_thang: str, overwrite=False, future_o
             except:
                 pass
             
-        # Tìm dịch hại của lần thi công tương ứng (lan_thu) ở tháng gần nhất trước đó
+        # Tìm dịch hại, thời gian, KTV của lần thi công tương ứng (lan_thu) ở tháng gần nhất trước đó
         prev_sch = conn.execute(
-            "SELECT loai_con_trung FROM schedules WHERE ma_hd=? AND lan_thu=? AND ky_thang < ? ORDER BY ky_thang DESC LIMIT 1",
+            "SELECT loai_con_trung, gio_bat_dau, gio_ket_thuc, ky_thuat_vien FROM schedules WHERE ma_hd=? AND lan_thu=? AND ky_thang < ? ORDER BY ky_thang DESC LIMIT 1",
             (ma_hd, lan_thu, ky_thang)
         ).fetchone()
-        pest_val = prev_sch["loai_con_trung"] if prev_sch and prev_sch["loai_con_trung"] else hd.get("loai_con_trung")
-
-        # Lấy KTV từ lịch lần trước hoặc từ hợp đồng
-        prev_ktv = conn.execute(
-            "SELECT ky_thuat_vien FROM schedules WHERE ma_hd=? AND lan_thu=? AND ky_thang < ? AND ky_thuat_vien IS NOT NULL ORDER BY ky_thang DESC LIMIT 1",
-            (ma_hd, lan_thu, ky_thang)
-        ).fetchone()
-        ktv_val = prev_ktv["ky_thuat_vien"] if prev_ktv else hd.get("ky_thuat_vien")
+        
+        pest_val = prev_sch["loai_con_trung"] if (prev_sch and prev_sch["loai_con_trung"]) else hd.get("loai_con_trung")
+        ktv_val = prev_sch["ky_thuat_vien"] if (prev_sch and prev_sch["ky_thuat_vien"]) else hd.get("ky_thuat_vien")
+        gbd_val = prev_sch["gio_bat_dau"] if (prev_sch and prev_sch["gio_bat_dau"]) else hd["gio_bat_dau"]
+        gkt_val = prev_sch["gio_ket_thuc"] if (prev_sch and prev_sch["gio_ket_thuc"]) else hd["gio_ket_thuc"]
 
         rs = conn.execute("""
             INSERT INTO schedules
@@ -360,7 +357,7 @@ def auto_generate_schedules(ma_hd: str, ky_thang: str, overwrite=False, future_o
             VALUES(?,?,?,?,?,?,?,?,?,?)
             RETURNING id
         """, (ma_hd, hd["ma_kh"], ky_thang, lan_thu,
-              d.isoformat(), hd["gio_bat_dau"], hd["gio_ket_thuc"], "auto", pest_val, ktv_val)).fetchone()
+              d.isoformat(), gbd_val, gkt_val, "auto", pest_val, ktv_val)).fetchone()
         
         if rs:
             from utils.google_sync import auto_sync_schedule_to_google
