@@ -8,7 +8,7 @@ from datetime import date
 import plotly.graph_objects as go
 
 def render():
-    st.markdown(section_header("Quản Lý Khách Hàng", "Master Data — CRUD toàn bộ thông tin khách hàng", "<i class=\"ph-users\" style=\"font-size:15px;color:#6366f1;vertical-align:middle;line-height:1;margin-right:3px;\"></i>"), unsafe_allow_html=True)
+    st.markdown(section_header("Quản Lý Khách Hàng", "Master Data — CRUD toàn bộ thông tin khách hàng", "👥"), unsafe_allow_html=True)
 
     tab_list, tab_add, tab_detail = st.tabs(["📋  Danh Sách", "➕  Thêm Mới", "📊  Phân Tích"])
     
@@ -96,7 +96,7 @@ def render():
                 xac_nhan = st.checkbox(msg_del, key=f"xac_nhan_{r['ma_kh']}_{suffix}")
                 if st.form_submit_button("🗑️ Xóa Khách Hàng", use_container_width=True):
                     if st.session_state.get('auth_role') != 'admin':
-                        st.error("× Chỉ Admin mới có quyền xóa dữ liệu!")
+                        st.error("❌ Chỉ Admin mới có quyền xóa dữ liệu!")
                     elif xac_nhan:
                         try:
                             conn2 = get_connection()
@@ -181,15 +181,15 @@ def render():
 </div>
 <div style="background:#f8fafc; border-radius:8px; padding:10px; margin-bottom:12px; border:1px solid #e2e8f0;">
     <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; margin-bottom:6px;" title="Liên hệ">
-        <span style="background:#e0e7ff; color:#4338ca; border-radius:4px; padding:2px 5px; font-size:11px;"><i class=\"ph-user\" style=\"font-size:15px;color:#2563eb;vertical-align:middle;line-height:1;margin-right:3px;\"></i></span>
+        <span style="background:#e0e7ff; color:#4338ca; border-radius:4px; padding:2px 5px; font-size:11px;">👤</span>
         <b style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{r.get("nguoi_lien_he") or "Chưa có NLH"}</b>
     </div>
     <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; margin-bottom:6px;" title="SĐT">
-        <span style="background:#dcfce7; color:#15803d; border-radius:4px; padding:2px 5px; font-size:11px;"><i class=\"ph-phone\" style=\"font-size:15px;color:#16a34a;vertical-align:middle;line-height:1;margin-right:3px;\"></i></span>
+        <span style="background:#dcfce7; color:#15803d; border-radius:4px; padding:2px 5px; font-size:11px;">📞</span>
         <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{r["sdt"] or "Chưa có SĐT"}</span>
     </div>
     <div style="display:flex; align-items:center; gap:8px; font-size:13px; color:#475569; padding-top:6px; border-top:1px dashed #cbd5e1;" title="Pháp lý">
-        <span style="background:#fef08a; color:#a16207; border-radius:4px; padding:2px 5px; font-size:11px;"><i class=\"ph-scales\" style=\"font-size:15px;color:#6366f1;vertical-align:middle;line-height:1;margin-right:3px;\"></i></span>
+        <span style="background:#fef08a; color:#a16207; border-radius:4px; padding:2px 5px; font-size:11px;">⚖️</span>
         <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:11px;">{r.get("ten_phap_ly") or r["ten_cty"]} | {r.get("ma_so_thue") or "Chưa có MST"}</span>
     </div>
 </div>
@@ -284,7 +284,7 @@ def render():
                 submitted = st.form_submit_button("➕ Tạo Khách Hàng Mới", use_container_width=True)
                 if submitted:
                     if not ma_kh or not ten:
-                        st.error("! Mã KH và Tên Khách Hàng là bắt buộc!")
+                        st.error("⚠️ Mã KH và Tên Khách Hàng là bắt buộc!")
                     else:
                         sdt_clean = ''.join(filter(str.isdigit, sdt)) if sdt else ""
                         try:
@@ -294,7 +294,7 @@ def render():
                             conn.commit(); conn.close()
                             st.session_state.add_kh_success = f"✓ Đã thêm **{ten}** ({ma_kh})"
                             st.rerun()
-                        except Exception as e: st.error(f"× {e}")
+                        except Exception as e: st.error(f"❌ {e}")
             st.markdown('</div>', unsafe_allow_html=True)
 
 
