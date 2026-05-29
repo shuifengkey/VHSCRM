@@ -27,6 +27,8 @@ def _register_fonts():
     if os.path.exists(_FONT_REG) and os.path.exists(_FONT_BOLD):
         pdfmetrics.registerFont(TTFont("Roboto",      _FONT_REG))
         pdfmetrics.registerFont(TTFont("Roboto-Bold", _FONT_BOLD))
+        from reportlab.pdfbase.pdfmetrics import registerFontFamily
+        registerFontFamily("Roboto", normal="Roboto", bold="Roboto-Bold")
         return "Roboto", "Roboto-Bold"
     return "Helvetica", "Helvetica-Bold"
 
