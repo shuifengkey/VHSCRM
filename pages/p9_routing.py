@@ -9,14 +9,13 @@ from streamlit_folium import st_folium
 def ui():
     st.title("🗺️ Tối Ưu Lộ Trình Xe Máy (HERE Maps)")
     
-    st.info("Tính năng này sử dụng Google Maps để lấy tọa độ và HERE Maps để tính toán đường đi xe máy ngắn nhất cho KTV.")
+    st.info("Tính năng này sử dụng hoàn toàn HERE Maps API để lấy tọa độ và tính toán đường đi xe máy ngắn nhất cho KTV.")
     
     # Get API keys from secrets
-    google_api_key = st.secrets.get("GOOGLE_MAPS_API_KEY", "")
     here_api_key = st.secrets.get("HERE_API_KEY", "")
     
-    if not google_api_key or not here_api_key:
-        st.warning("⚠️ Hệ thống chưa được cấu hình đủ API Keys. Vui lòng thêm `GOOGLE_MAPS_API_KEY` và `HERE_API_KEY` vào file cấu hình (Streamlit Secrets) để sử dụng tính năng này.")
+    if not here_api_key:
+        st.warning("⚠️ Hệ thống chưa được cấu hình đủ API Keys. Vui lòng thêm `HERE_API_KEY` vào file cấu hình (Streamlit Secrets) để sử dụng tính năng này.")
         return
         
     conn = get_connection()
@@ -66,7 +65,7 @@ def ui():
                         lat, lng = s["lat"], s["lng"]
                         if not lat or not lng:
                             st.write(f"Đang lấy tọa độ cho: {s['ten_cty']}...")
-                            lat, lng = get_coordinates_from_address(s["dia_chi"], google_api_key)
+                            lat, lng = get_coordinates_from_address(s["dia_chi"], here_api_key)
                             if lat and lng:
                                 # Lưu vào DB để lần sau không gọi lại
                                 conn.execute("UPDATE customers SET lat=?, lng=? WHERE dia_chi=?", (lat, lng, s["dia_chi"]))
