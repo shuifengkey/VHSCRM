@@ -379,7 +379,7 @@ def generate_payment_request_pdf(debt_data, attachments=None):
                     self.sign_path = sign_path
                     self.seal_path = seal_path
                     self.width = 8.0*cm
-                    self.height = 2.5*cm
+                    self.height = 1.8*cm
                     self.w_sign_pt = sign_w
                     self.h_sign_pt = sign_h
                     self.w_seal_pt = seal_w
@@ -388,14 +388,14 @@ def generate_payment_request_pdf(debt_data, attachments=None):
                 def draw(self):
                     # Chữ ký: căn giữa cột 8cm -> x = 2.0cm
                     sign_x = 2.0*cm
-                    sign_y = 0.2*cm
+                    sign_y = 0.0*cm
                     # mask='auto' giữ nguyên nền trong suốt của PNG
                     self.canv.drawImage(self.sign_path, sign_x, sign_y, 
                                         width=self.w_sign_pt, height=self.h_sign_pt, mask='auto')
                     
-                    # Con dấu đè lên 3/4 chữ ký (x = 3.0cm), tràn lên chữ phía trên (y = 1.0cm)
-                    seal_x = sign_x + (self.w_sign_pt * 0.25)
-                    seal_y = 1.0*cm
+                    # Con dấu đè lên bên trái chữ ký (x = 1.2cm), tràn lên chữ phía trên (y = 0.4cm)
+                    seal_x = 1.2*cm
+                    seal_y = 0.4*cm
                     self.canv.drawImage(self.seal_path, seal_x, seal_y, 
                                         width=self.w_seal_pt, height=self.h_seal_pt, mask='auto')
 
@@ -403,7 +403,7 @@ def generate_payment_request_pdf(debt_data, attachments=None):
             w_sign_pt = 4.0*cm
             h_sign_pt = w_sign_pt * (h_sign / w_sign)
             
-            # Con dấu: đè lên 3/4 chữ ký -> rộng 3cm
+            # Con dấu: đè lên chữ ký -> rộng 3cm
             w_seal_pt = 3.0*cm
             h_seal_pt = w_seal_pt * (h_seal / w_seal)
             
@@ -414,14 +414,11 @@ def generate_payment_request_pdf(debt_data, attachments=None):
         sign_cell = Spacer(1, 1.5*cm)
 
     sign = Table([
-        [P("<b>GIÁM ĐỐC</b><br/>(Director)",
+        [P("<b>GIÁM ĐỐC</b><br/>(Director)<br/><font size='8' color='grey'><i>(Ký, đóng dấu, ghi rõ họ tên)</i></font>",
            size=9, align=TA_CENTER, bold=True),
          "",
          P("<b>ĐẠI DIỆN KHÁCH HÀNG</b><br/>(Approved by)",
            size=9, align=TA_CENTER, bold=True)],
-        [P("<i>(Ký, đóng dấu, ghi rõ họ tên)</i>",
-           size=8, align=TA_CENTER, color=colors.grey),
-         "", ""],
         [sign_cell, "", ""],
         [P("<b>TRẦN THỊ THÚY AN</b>",
            size=9, align=TA_CENTER, bold=True),
