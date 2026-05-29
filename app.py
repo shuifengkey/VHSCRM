@@ -485,11 +485,12 @@ NAV_ITEMS = [
     "📓 Work Log",
     "💰 Công Nợ",
     "🖨️ Xuất PDF",
+    "📝 Báo Giá",
     "⚙️ Cài đặt"
 ]
 
 # Đặt radio ngay dưới navbar (CSS inline lo Desktop, CSS media query lo Mobile)
-st.markdown('<div style="background:#0f172a;padding:0 24px 0 180px;margin-top:-74px;margin-bottom:20px;" class="nav-marker">', unsafe_allow_html=True)
+st.markdown('<div style="background:#ffffff;padding:0 24px 0 180px;margin-top:-74px;margin-bottom:20px;" class="nav-marker">', unsafe_allow_html=True)
 page = st.radio("nav", NAV_ITEMS, horizontal=True, label_visibility="collapsed", key="topnav")
 st.markdown("</div>", unsafe_allow_html=True)
 
@@ -734,6 +735,10 @@ elif page == "💰 Công Nợ":
     from pages import p6_debts; p6_debts.render()
 elif page == "🖨️ Xuất PDF":
     from pages import p5_pdf; p5_pdf.render()
+elif page == "📝 Báo Giá":
+    importlib.reload(sys.modules.get('pages.p8_quotes', __import__('pages.p8_quotes')))
+    from pages import p8_quotes
+    p8_quotes.render()
 elif page == "⚙️ Cài đặt":
     st.markdown("### 🔧 Cài đặt hệ thống")
     
