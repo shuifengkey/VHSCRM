@@ -55,22 +55,23 @@ def render():
         col_chart, col_top = st.columns([3,2])
         
         with col_chart:
-            # Biểu đồ Dòng tiền 6 tháng
-            monthly = conn.execute('''
-                SELECT k, SUM(dt) dt, SUM(chi) chi FROM (
-                    SELECT ky_thanh_toan as k, da_thu as dt, 0 as chi FROM debts
-                    UNION ALL
-                    SELECT strftime('%Y-%m', ngay_chi) as k, 0 as dt, so_tien as chi FROM expenses
-                ) GROUP BY k ORDER BY k DESC LIMIT 6
-            ''').fetchall()
-            monthly = list(reversed(monthly))
-            
-            if monthly:
-                fig = go.Figure()
-                fig.add_scatter(x=[r["k"] for r in monthly], y=[r["dt"] for r in monthly], name="Thu (VND)", line=dict(color="#16a34a",width=3), mode="lines+markers")
-                fig.add_scatter(x=[r["k"] for r in monthly], y=[r["chi"] for r in monthly], name="Chi (VND)", line=dict(color="#dc2626",width=3), mode="lines+markers")
-                fig.update_layout(height=260, title="Thu Chi 6 Tháng Gần Nhất", margin=dict(l=10,r=10,t=40,b=20), paper_bgcolor="white", plot_bgcolor="white")
-                st.plotly_chart(fig, use_container_width=True)
+            with st.container(border=True):
+                # Biểu đồ Dòng tiền 6 tháng
+                monthly = conn.execute('''
+                    SELECT k, SUM(dt) dt, SUM(chi) chi FROM (
+                        SELECT ky_thanh_toan as k, da_thu as dt, 0 as chi FROM debts
+                        UNION ALL
+                        SELECT strftime('%Y-%m', ngay_chi) as k, 0 as dt, so_tien as chi FROM expenses
+                    ) GROUP BY k ORDER BY k DESC LIMIT 6
+                ''').fetchall()
+                monthly = list(reversed(monthly))
+                
+                if monthly:
+                    fig = go.Figure()
+                    fig.add_scatter(x=[r["k"] for r in monthly], y=[r["dt"] for r in monthly], name="Thu (VND)", line=dict(color="#16a34a",width=3), mode="lines+markers")
+                    fig.add_scatter(x=[r["k"] for r in monthly], y=[r["chi"] for r in monthly], name="Chi (VND)", line=dict(color="#dc2626",width=3), mode="lines+markers")
+                    fig.update_layout(height=260, title="Thu Chi 6 Tháng Gần Nhất", margin=dict(l=10,r=10,t=40,b=20), paper_bgcolor="white", plot_bgcolor="white")
+                    st.plotly_chart(fig, use_container_width=True)
                 
         with col_top:
             st.markdown('<div class="vhs-card" style="padding:18px;">', unsafe_allow_html=True)
