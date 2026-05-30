@@ -80,11 +80,11 @@ section[data-testid="stSidebar"] { display: none !important; }
 
 /* ── NAV ITEMS (radio buttons restyled) ── */
 .element-container:has(.vhs-nav) + .element-container {
-    position: sticky !important; top: 64px !important; z-index: 998 !important;
+    position: sticky !important; top: 0px !important; z-index: 998 !important;
     background: #ffffff !important;
     padding: 10px 20px 14px 20px !important;
     margin-bottom: 24px !important;
-    border-radius: 0 0 14px 14px !important;
+    border-radius: 14px !important;
     box-shadow: 0 6px 16px rgba(0,0,0,.05) !important;
     width: 100% !important;
     box-sizing: border-box !important;
