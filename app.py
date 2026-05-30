@@ -120,26 +120,44 @@ def _hash_pin(pin: str) -> str:
     return hashlib.sha256(pin.encode()).hexdigest()
 
 def _ensure_pin_table():
-    """Tạo bảng app_settings và PIN mặc định (1234) nếu chưa có."""
+    """Tạo bảng app_settings và PIN mặc định cho Admin (1234) và Staff (5678) nếu chưa có."""
     conn = get_connection()
     conn.execute("""CREATE TABLE IF NOT EXISTS app_settings (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
     )""")
     conn.commit()
-    existing = conn.execute("SELECT value FROM app_settings WHERE key='pin_hash'").fetchone()
-    if not existing:
+    
+    # Setup Admin PIN
+    existing_admin = conn.execute("SELECT value FROM app_settings WHERE key='pin_hash'").fetchone()
+    if not existing_admin:
         conn.execute("INSERT INTO app_settings (key, value) VALUES ('pin_hash', ?)", (_hash_pin("1234"),))
-        conn.commit()
+        
+    # Setup Staff PIN
+    existing_staff = conn.execute("SELECT value FROM app_settings WHERE key='staff_pin_hash'").fetchone()
+    if not existing_staff:
+        conn.execute("INSERT INTO app_settings (key, value) VALUES ('staff_pin_hash', ?)", (_hash_pin("5678"),))
+        
+    conn.commit()
     conn.close()
 
-def _verify_pin(pin: str) -> bool:
+def _verify_pin(pin: str) -> str:
+    """Returns 'admin' if admin PIN, 'staff' if staff PIN, else ''."""
     conn = get_connection()
-    row = conn.execute("SELECT value FROM app_settings WHERE key='pin_hash'").fetchone()
+    admin_row = conn.execute("SELECT value FROM app_settings WHERE key='pin_hash'").fetchone()
+    staff_row = conn.execute("SELECT value FROM app_settings WHERE key='staff_pin_hash'").fetchone()
     conn.close()
-    if not row:
-        return pin == "1234"
-    return row["value"] == _hash_pin(pin)
+    
+    hashed_input = _hash_pin(pin)
+    
+    admin_hash = admin_row["value"] if admin_row else _hash_pin("1234")
+    staff_hash = staff_row["value"] if staff_row else _hash_pin("5678")
+    
+    if hashed_input == admin_hash:
+        return "admin"
+    elif hashed_input == staff_hash:
+        return "staff"
+    return ""
 
 import time
 def _check_lockout():
@@ -301,10 +319,10 @@ div[data-testid="InputInstructions"] {{ display: none !important; }}
     if submitted:
         is_valid = False
         role = ""
-        
-        if _verify_pin(pin_val):
+        role_type = _verify_pin(pin_val)
+        if role_type:
             is_valid = True
-            role = "admin"
+            role = role_type
         else:
             conn_auth = get_connection()
             ktv_row = conn_auth.execute("SELECT ten FROM technicians WHERE active=1 AND pin=? AND pin != '' AND pin IS NOT NULL", (pin_val,)).fetchone()
@@ -493,6 +511,9 @@ NAV_ITEMS = [
     "📝 Báo Giá",
     "⚙️ Cài đặt"
 ]
+
+if st.session_state.get("auth_role") == "staff":
+    NAV_ITEMS = ["📅 Lịch Thi Công", "📓 Work Log"]
 
 # Đặt radio ngay dưới navbar.
 page = st.radio("nav", NAV_ITEMS, horizontal=True, label_visibility="collapsed", key="topnav")
