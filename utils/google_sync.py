@@ -119,11 +119,10 @@ def delete_event_on_google(creds, event_id):
     except Exception as e:
         return False, str(e)
 
-def auto_sync_schedule_to_google(conn, schedule_id, action="upsert"):
+def _sync_internal(conn, schedule_id, action="upsert"):
     """
     Tự động đồng bộ 1 schedule lên Google Calendar.
     action: "upsert" (tạo mới hoặc cập nhật), "delete" (xóa)
-    Lưu ý: HAm này sử dụng object conn từ utils.database.get_connection()
     """
     # 1. Get credentials
     settings = dict(conn.execute("SELECT key_name, value_data FROM settings").fetchall())
@@ -144,8 +143,6 @@ def auto_sync_schedule_to_google(conn, schedule_id, action="upsert"):
         
     # 3. Get schedule info
     if action == "delete":
-        # Với delete, cần biết google_event_id. Thường truyền google_event_id vào schedule_id nếu bản ghi đã bị xóa khỏi DB.
-        # Nhưng để an toàn, ta coi schedule_id là google_event_id luôn.
         ok, msg = delete_event_on_google(creds, schedule_id)
         return ok, msg
         
@@ -178,6 +175,29 @@ def auto_sync_schedule_to_google(conn, schedule_id, action="upsert"):
         conn.commit()
         
     return ok, eid
+
+import threading
+import time
+
+def auto_sync_schedule_to_google(conn, schedule_id, action="upsert"):
+    """
+    Wrapper chạy ngầm để không làm đơ giao diện Streamlit khi tạo/sửa nhiều lịch.
+    """
+    def task():
+        # Đợi 1.5 giây để Thread chính kịp commit dữ liệu vào DB (SQLite)
+        time.sleep(1.5)
+        from utils.database import get_connection
+        thread_conn = get_connection()
+        try:
+            _sync_internal(thread_conn, schedule_id, action)
+        except Exception as e:
+            print(f"Async Google Sync Error: {e}")
+        finally:
+            thread_conn.close()
+            
+    t = threading.Thread(target=task)
+    t.start()
+    return True, "Syncing in background"
 
 from googleapiclient.http import MediaIoBaseUpload
 import io
