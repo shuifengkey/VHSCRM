@@ -503,114 +503,115 @@ def render():
     
                         with col_edit:
                             if tt != "completed":
-                                st.markdown("**✏️ Điều Chỉnh**")
-                                with st.form(f"edit_{r['id']}"):
-                                    new_ngay = st.date_input(
-                                        "Đổi ngày",
-                                        value=date.fromisoformat(r["ngay_du_kien"]),
-                                        key=f"dn_{r['id']}"
-                                    )
-                                    c_a,c_b = st.columns(2)
-                                    with c_a:
-                                        h_bd,m_bd = map(int,r["gio_bat_dau"].split(":"))
-                                        new_gbd = st.time_input("Giờ bắt đầu",
-                                            value=dt.time(h_bd,m_bd), key=f"gbd_{r['id']}")
-                                    with c_b:
-                                        h_kt,m_kt = map(int,r["gio_ket_thuc"].split(":"))
-                                        new_gkt = st.time_input("Giờ kết thúc",
-                                            value=dt.time(h_kt,m_kt), key=f"gkt_{r['id']}")
-                                    new_gc = st.text_input("Ghi chú",
-                                        value=r.get("ghi_chu","") or "", key=f"gc_{r['id']}")
-                                    
-                                    curr_ktv = r.get("ky_thuat_vien", "")
-                                    ktv_idx = 0
-                                    if curr_ktv in KTV_LIST:
-                                        ktv_idx = KTV_LIST.index(curr_ktv) + 1
-                                    new_ktv = st.selectbox("Kỹ thuật viên", [""] + KTV_LIST, index=ktv_idx, key=f"ktv_{r['id']}")
-                                    
-                                    new_pest = st.text_input("Dịch hại", value=r.get("loai_con_trung") or hd.get("loai_con_trung") or "", key=f"pest_{r['id']}")
-                                    new_method = st.text_input("Phương pháp xử lý", value=r.get("phuong_phap_xu_ly") or hd.get("phuong_phap_xu_ly") or "", key=f"method_{r['id']}")
-                                    
-                                    st.markdown("<div style='font-size:13px;font-weight:600;margin-bottom:8px;color:#0f172a;'>🔄 Áp dụng cho các kỳ sau:</div>", unsafe_allow_html=True)
-                                    cc1, cc2, cc3, cc4 = st.columns(4)
-                                    with cc1: apply_time = st.checkbox("Giờ thi công", value=False, key=f"app_time_{r['id']}")
-                                    with cc2: apply_ktv = st.checkbox("KTV", value=False, key=f"app_ktv_{r['id']}")
-                                    with cc3: apply_pest = st.checkbox("Dịch hại", value=False, key=f"app_pest_{r['id']}")
-                                    with cc4: apply_method = st.checkbox("Phương pháp", value=False, key=f"app_method_{r['id']}")
-    
-                                    cs,ck = st.columns(2)
-                                    with cs: save_btn = st.form_submit_button("💾 Lưu",use_container_width=True)
-                                    with ck: skip_btn = st.form_submit_button("🚫 Bỏ qua",use_container_width=True,type="secondary")
-    
-                                    if save_btn:
-                                        try:
-                                            conn = get_connection()
-                                            
-                                            # Thu thập các ngày sẽ cập nhật (ca hiện tại + ca tương lai)
-                                            dates_to_check = [new_ngay]
-                                            future_ids = []
-                                            if apply_time or apply_ktv or apply_pest or apply_method:
-                                                future_schedules = conn.execute("SELECT id, ngay_du_kien FROM schedules WHERE ma_hd=? AND lan_thu=? AND ky_thang > ? AND trang_thai!='skipped' AND trang_thai!='completed'", (r["ma_hd"], r["lan_thu"], r["ky_thang"])).fetchall()
-                                                for fs in future_schedules:
-                                                    if apply_ktv:
-                                                        dates_to_check.append(date.fromisoformat(fs["ngay_du_kien"]))
-                                                    future_ids.append(fs["id"])
-                                            
-                                            # Check overlap
-                                            if new_ktv:
-                                                from utils.scheduling import check_ktv_schedule_conflict
-                                                conflicts = check_ktv_schedule_conflict(new_ktv, r["ma_hd"], dates_to_check, new_gbd.strftime("%H:%M"), new_gkt.strftime("%H:%M"))
-                                                if conflicts:
-                                                    for c in conflicts[:3]:
-                                                        st.error(f"❌ Ngày {datetime.strptime(c['date'], '%Y-%m-%d').strftime('%d/%m/%Y')}: Trùng lịch với {c['ten_cty']} ({c['gio_bat_dau']} - {c['gio_ket_thuc']})")
-                                                    if len(conflicts) > 3:
-                                                        st.error(f"...và {len(conflicts)-3} ca trùng khác.")
-                                                    conn.close()
-                                                    continue
-                                            
-                                            conn.execute("""UPDATE schedules
-                                                SET ngay_du_kien=?,gio_bat_dau=?,gio_ket_thuc=?,ghi_chu=?,nguon='manual',ky_thuat_vien=?,loai_con_trung=?,phuong_phap_xu_ly=?
-                                                WHERE id=?""",
-                                                (new_ngay.isoformat(), new_gbd.strftime("%H:%M"),
-                                                 new_gkt.strftime("%H:%M"), new_gc, new_ktv, new_pest, new_method, r["id"]))
-                                            
-                                            if apply_time or apply_ktv or apply_pest or apply_method:
-                                                set_clauses = ["nguon='manual'"]
-                                                params = []
-                                                if apply_time:
-                                                    set_clauses.extend(["gio_bat_dau=?", "gio_ket_thuc=?"])
-                                                    params.extend([new_gbd.strftime("%H:%M"), new_gkt.strftime("%H:%M")])
-                                                if apply_ktv:
-                                                    set_clauses.append("ky_thuat_vien=?")
-                                                    params.append(new_ktv)
-                                                if apply_pest:
-                                                    set_clauses.append("loai_con_trung=?")
-                                                    params.append(new_pest)
-                                                if apply_method:
-                                                    set_clauses.append("phuong_phap_xu_ly=?")
-                                                    params.append(new_method)
+                                if st.session_state.get("auth_role") != "staff":
+                                    st.markdown("**✏️ Điều Chỉnh**")
+                                    with st.form(f"edit_{r['id']}"):
+                                        new_ngay = st.date_input(
+                                            "Đổi ngày",
+                                            value=date.fromisoformat(r["ngay_du_kien"]),
+                                            key=f"dn_{r['id']}"
+                                        )
+                                        c_a,c_b = st.columns(2)
+                                        with c_a:
+                                            h_bd,m_bd = map(int,r["gio_bat_dau"].split(":"))
+                                            new_gbd = st.time_input("Giờ bắt đầu",
+                                                value=dt.time(h_bd,m_bd), key=f"gbd_{r['id']}")
+                                        with c_b:
+                                            h_kt,m_kt = map(int,r["gio_ket_thuc"].split(":"))
+                                            new_gkt = st.time_input("Giờ kết thúc",
+                                                value=dt.time(h_kt,m_kt), key=f"gkt_{r['id']}")
+                                        new_gc = st.text_input("Ghi chú",
+                                            value=r.get("ghi_chu","") or "", key=f"gc_{r['id']}")
+                                        
+                                        curr_ktv = r.get("ky_thuat_vien", "")
+                                        ktv_idx = 0
+                                        if curr_ktv in KTV_LIST:
+                                            ktv_idx = KTV_LIST.index(curr_ktv) + 1
+                                        new_ktv = st.selectbox("Kỹ thuật viên", [""] + KTV_LIST, index=ktv_idx, key=f"ktv_{r['id']}")
+                                        
+                                        new_pest = st.text_input("Dịch hại", value=r.get("loai_con_trung") or hd.get("loai_con_trung") or "", key=f"pest_{r['id']}")
+                                        new_method = st.text_input("Phương pháp xử lý", value=r.get("phuong_phap_xu_ly") or hd.get("phuong_phap_xu_ly") or "", key=f"method_{r['id']}")
+                                        
+                                        st.markdown("<div style='font-size:13px;font-weight:600;margin-bottom:8px;color:#0f172a;'>🔄 Áp dụng cho các kỳ sau:</div>", unsafe_allow_html=True)
+                                        cc1, cc2, cc3, cc4 = st.columns(4)
+                                        with cc1: apply_time = st.checkbox("Giờ thi công", value=False, key=f"app_time_{r['id']}")
+                                        with cc2: apply_ktv = st.checkbox("KTV", value=False, key=f"app_ktv_{r['id']}")
+                                        with cc3: apply_pest = st.checkbox("Dịch hại", value=False, key=f"app_pest_{r['id']}")
+                                        with cc4: apply_method = st.checkbox("Phương pháp", value=False, key=f"app_method_{r['id']}")
+        
+                                        cs,ck = st.columns(2)
+                                        with cs: save_btn = st.form_submit_button("💾 Lưu",use_container_width=True)
+                                        with ck: skip_btn = st.form_submit_button("🚫 Bỏ qua",use_container_width=True,type="secondary")
+        
+                                        if save_btn:
+                                            try:
+                                                conn = get_connection()
                                                 
-                                                params.extend([r["ma_hd"], r["lan_thu"], r["ky_thang"]])
-                                                query = f"UPDATE schedules SET {', '.join(set_clauses)} WHERE ma_hd=? AND lan_thu=? AND ky_thang > ? AND trang_thai!='skipped' AND trang_thai!='completed'"
-                                                conn.execute(query, params)
-                                            
-                                            from utils.google_sync import auto_sync_schedule_to_google
-                                            auto_sync_schedule_to_google(conn, r["id"], "upsert")
-                                            if apply_time or apply_ktv or apply_pest or apply_method:
-                                                for fid in future_ids:
-                                                    auto_sync_schedule_to_google(conn, fid, "upsert")
+                                                # Thu thập các ngày sẽ cập nhật (ca hiện tại + ca tương lai)
+                                                dates_to_check = [new_ngay]
+                                                future_ids = []
+                                                if apply_time or apply_ktv or apply_pest or apply_method:
+                                                    future_schedules = conn.execute("SELECT id, ngay_du_kien FROM schedules WHERE ma_hd=? AND lan_thu=? AND ky_thang > ? AND trang_thai!='skipped' AND trang_thai!='completed'", (r["ma_hd"], r["lan_thu"], r["ky_thang"])).fetchall()
+                                                    for fs in future_schedules:
+                                                        if apply_ktv:
+                                                            dates_to_check.append(date.fromisoformat(fs["ngay_du_kien"]))
+                                                        future_ids.append(fs["id"])
+                                                
+                                                # Check overlap
+                                                if new_ktv:
+                                                    from utils.scheduling import check_ktv_schedule_conflict
+                                                    conflicts = check_ktv_schedule_conflict(new_ktv, r["ma_hd"], dates_to_check, new_gbd.strftime("%H:%M"), new_gkt.strftime("%H:%M"))
+                                                    if conflicts:
+                                                        for c in conflicts[:3]:
+                                                            st.error(f"❌ Ngày {datetime.strptime(c['date'], '%Y-%m-%d').strftime('%d/%m/%Y')}: Trùng lịch với {c['ten_cty']} ({c['gio_bat_dau']} - {c['gio_ket_thuc']})")
+                                                        if len(conflicts) > 3:
+                                                            st.error(f"...và {len(conflicts)-3} ca trùng khác.")
+                                                        conn.close()
+                                                        continue
+                                                
+                                                conn.execute("""UPDATE schedules
+                                                    SET ngay_du_kien=?,gio_bat_dau=?,gio_ket_thuc=?,ghi_chu=?,nguon='manual',ky_thuat_vien=?,loai_con_trung=?,phuong_phap_xu_ly=?
+                                                    WHERE id=?""",
+                                                    (new_ngay.isoformat(), new_gbd.strftime("%H:%M"),
+                                                     new_gkt.strftime("%H:%M"), new_gc, new_ktv, new_pest, new_method, r["id"]))
+                                                
+                                                if apply_time or apply_ktv or apply_pest or apply_method:
+                                                    set_clauses = ["nguon='manual'"]
+                                                    params = []
+                                                    if apply_time:
+                                                        set_clauses.extend(["gio_bat_dau=?", "gio_ket_thuc=?"])
+                                                        params.extend([new_gbd.strftime("%H:%M"), new_gkt.strftime("%H:%M")])
+                                                    if apply_ktv:
+                                                        set_clauses.append("ky_thuat_vien=?")
+                                                        params.append(new_ktv)
+                                                    if apply_pest:
+                                                        set_clauses.append("loai_con_trung=?")
+                                                        params.append(new_pest)
+                                                    if apply_method:
+                                                        set_clauses.append("phuong_phap_xu_ly=?")
+                                                        params.append(new_method)
                                                     
-                                            conn.commit(); conn.close()
-                                            st.success("✓ Đã cập nhật!"); st.rerun()
-                                        except Exception as e: st.error(f"× {e}")
-                                    if skip_btn:
-                                        try:
-                                            conn = get_connection()
-                                            conn.execute("UPDATE schedules SET trang_thai='skipped' WHERE id=?",(r["id"],))
-                                            from utils.google_sync import auto_sync_schedule_to_google
-                                            auto_sync_schedule_to_google(conn, r["id"], "upsert")
-                                            conn.commit(); conn.close()
-                                            st.info("Ca đã bỏ qua."); st.rerun()
+                                                    params.extend([r["ma_hd"], r["lan_thu"], r["ky_thang"]])
+                                                    query = f"UPDATE schedules SET {', '.join(set_clauses)} WHERE ma_hd=? AND lan_thu=? AND ky_thang > ? AND trang_thai!='skipped' AND trang_thai!='completed'"
+                                                    conn.execute(query, params)
+                                                
+                                                from utils.google_sync import auto_sync_schedule_to_google
+                                                auto_sync_schedule_to_google(conn, r["id"], "upsert")
+                                                if apply_time or apply_ktv or apply_pest or apply_method:
+                                                    for fid in future_ids:
+                                                        auto_sync_schedule_to_google(conn, fid, "upsert")
+                                                        
+                                                conn.commit(); conn.close()
+                                                st.success("✓ Đã cập nhật!"); st.rerun()
+                                            except Exception as e: st.error(f"× {e}")
+                                        if skip_btn:
+                                            try:
+                                                conn = get_connection()
+                                                conn.execute("UPDATE schedules SET trang_thai='skipped' WHERE id=?",(r["id"],))
+                                                from utils.google_sync import auto_sync_schedule_to_google
+                                                auto_sync_schedule_to_google(conn, r["id"], "upsert")
+                                                conn.commit(); conn.close()
+                                                st.info("Ca đã bỏ qua."); st.rerun()
                                         except Exception as e: st.error(f"× {e}")
                             else:
                                 st.markdown("""
@@ -619,42 +620,43 @@ def render():
                                   <div style="font-size:12px;color:#166534;font-weight:600;margin-top:4px;">Đã hoàn thành</div>
                                 </div>""", unsafe_allow_html=True)
     
-                # Nếu thiếu ca → sinh thêm
-            if len(rows) < expected:
-                st.markdown(f'<div style="background:#fef9c3;border-radius:8px;padding:10px;margin-top:8px;font-size:13px;color:#854d0e;">⚠️ Còn thiếu <b>{expected-len(rows)}</b> ca</div>', unsafe_allow_html=True)
-                if st.button("🤖 Sinh Ca Còn Thiếu", key="gen_miss"):
-                    n = auto_generate_schedules(hd["ma_hd"],ky_sel)
-                    st.success(f"✓ Sinh thêm {n} ca.") if n else st.info("Đã đủ.")
-                    st.rerun()
-
-            # Sinh kỳ kế tiếp
-            ky_next = (date(int(ky_sel[:4]),int(ky_sel[5:7]),1)+timedelta(days=32)).strftime("%Y-%m")
-            conn = get_connection()
-            nc = conn.execute("SELECT COUNT(*) FROM schedules WHERE ma_hd=? AND ky_thang=?",
-                              (hd["ma_hd"],ky_next)).fetchone()[0]
-            conn.close()
-            if nc == 0:
-                if st.button(f"📆 Sinh Lịch Kỳ Kế Tiếp ({ky_next})", key="gen_next"):
-                    n = auto_generate_schedules(hd["ma_hd"],ky_next)
-                    st.success(f"✓ Đã sinh {n} ca cho {ky_next}"); st.rerun()
-            else:
-                st.markdown(f'<div style="font-size:12px;color:#16a34a;margin-top:8px;">✓ Kỳ {ky_next} đã có {nc} ca</div>', unsafe_allow_html=True)
-            
-            st.markdown("<hr style='margin:10px 0;'/>", unsafe_allow_html=True)
-            if st.button("🔄 Làm mới / Xoá Lịch Kỳ Này", type="secondary", help="Xoá các ca chưa làm để sinh lại đúng thứ tự"):
+            # Nếu thiếu ca → sinh thêm
+            if st.session_state.get("auth_role") != "staff":
+                if len(rows) < expected:
+                    st.markdown(f'<div style="background:#fef9c3;border-radius:8px;padding:10px;margin-top:8px;font-size:13px;color:#854d0e;">⚠️ Còn thiếu <b>{expected-len(rows)}</b> ca</div>', unsafe_allow_html=True)
+                    if st.button("🤖 Sinh Ca Còn Thiếu", key="gen_miss"):
+                        n = auto_generate_schedules(hd["ma_hd"],ky_sel)
+                        st.success(f"✓ Sinh thêm {n} ca.") if n else st.info("Đã đủ.")
+                        st.rerun()
+    
+                # Sinh kỳ kế tiếp
+                ky_next = (date(int(ky_sel[:4]),int(ky_sel[5:7]),1)+timedelta(days=32)).strftime("%Y-%m")
                 conn = get_connection()
-                to_del = conn.execute("SELECT id, google_event_id FROM schedules WHERE ma_hd=? AND ky_thang=? AND trang_thai='scheduled'", (hd["ma_hd"], ky_sel)).fetchall()
-                if to_del:
-                    from utils.google_sync import auto_sync_schedule_to_google
-                    for d in to_del:
-                        if d["google_event_id"]:
-                            try:
-                                auto_sync_schedule_to_google(conn, d["id"], "delete")
-                            except: pass
-                    conn.execute("DELETE FROM schedules WHERE ma_hd=? AND ky_thang=? AND trang_thai='scheduled'", (hd["ma_hd"], ky_sel))
-                    conn.commit()
+                nc = conn.execute("SELECT COUNT(*) FROM schedules WHERE ma_hd=? AND ky_thang=?",
+                                  (hd["ma_hd"],ky_next)).fetchone()[0]
                 conn.close()
-                st.rerun()
+                if nc == 0:
+                    if st.button(f"📆 Sinh Lịch Kỳ Kế Tiếp ({ky_next})", key="gen_next"):
+                        n = auto_generate_schedules(hd["ma_hd"],ky_next)
+                        st.success(f"✓ Đã sinh {n} ca cho {ky_next}"); st.rerun()
+                else:
+                    st.markdown(f'<div style="font-size:12px;color:#16a34a;margin-top:8px;">✓ Kỳ {ky_next} đã có {nc} ca</div>', unsafe_allow_html=True)
+                
+                st.markdown("<hr style='margin:10px 0;'/>", unsafe_allow_html=True)
+                if st.button("🔄 Làm mới / Xoá Lịch Kỳ Này", type="secondary", help="Xoá các ca chưa làm để sinh lại đúng thứ tự"):
+                    conn = get_connection()
+                    to_del = conn.execute("SELECT id, google_event_id FROM schedules WHERE ma_hd=? AND ky_thang=? AND trang_thai='scheduled'", (hd["ma_hd"], ky_sel)).fetchall()
+                    if to_del:
+                        from utils.google_sync import auto_sync_schedule_to_google
+                        for d in to_del:
+                            if d["google_event_id"]:
+                                try:
+                                    auto_sync_schedule_to_google(conn, d["id"], "delete")
+                                except: pass
+                        conn.execute("DELETE FROM schedules WHERE ma_hd=? AND ky_thang=? AND trang_thai='scheduled'", (hd["ma_hd"], ky_sel))
+                        conn.commit()
+                    conn.close()
+                    st.rerun()
 
     # ═══════════════════════════════════
     # CALENDAR
@@ -667,8 +669,9 @@ def render():
         with c2: sel_y = st.selectbox("Năm", year_list, index=year_list.index(today.year))
         
         with c3:
-            if st.button("🔄 Đồng bộ", use_container_width=True):
-                google_sync_dialog(sel_m, sel_y)
+            if st.session_state.get("auth_role") != "staff":
+                if st.button("🔄 Đồng bộ", use_container_width=True):
+                    google_sync_dialog(sel_m, sel_y)
 
         conn = get_connection()
         ky_str = f"{sel_y}-{sel_m:02d}"
@@ -746,80 +749,83 @@ def render():
     # HÀNG LOẠT
     # ═══════════════════════════════════
     with tab_bulk:
-        conn = get_connection()
-        cts  = conn.execute("""
-            SELECT ct.ma_hd, ct.ma_kh, c.ten_cty, ct.tan_suat
-            FROM contracts ct JOIN customers c ON ct.ma_kh=c.ma_kh
-            WHERE ct.trang_thai='active' ORDER BY ct.ma_hd
-        """).fetchall()
-        conn.close()
-
-        col_b, col_s = st.columns(2)
-        today = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date()
-
-        with col_b:
-            st.markdown('<div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:18px;">', unsafe_allow_html=True)
-            st.markdown("**🤖 Sinh Hàng Loạt**")
-            st.markdown('<hr style="margin:6px 0 12px">', unsafe_allow_html=True)
-
-            ky_choices = [(today.replace(day=1)+timedelta(days=32*i)).strftime("%Y-%m") for i in range(4)]
-            ky_bulk = st.selectbox("Kỳ tháng",ky_choices,key="ky_bulk2")
-            hd_bulk = st.multiselect("HĐ (bỏ trống = tất cả)",
-                [r["ma_hd"] for r in cts],
-                format_func=lambda x: next((f"{r['ma_hd']} — {r['ten_cty']}" for r in cts if r["ma_hd"]==x),x))
-
-            if st.button("🚀 Sinh Tất Cả",use_container_width=True,key="btn_bulk2"):
-                targets = hd_bulk if hd_bulk else [r["ma_hd"] for r in cts]
-                total = sum(auto_generate_schedules(m,ky_bulk) for m in targets)
-                st.success(f"✓ Sinh {total} ca mới cho {ky_bulk}") if total else st.info("Tất cả đã có.")
-                st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
-
-        with col_s:
-            st.markdown('<div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:18px;">', unsafe_allow_html=True)
-            st.markdown("**➕ Thêm Ca Thủ Công**")
-            st.markdown('<hr style="margin:6px 0 12px">', unsafe_allow_html=True)
-
-            with st.form("form_manual_ca"):
-                hd_opts3 = {f"{r['ma_hd']} — {r['ten_cty']}": dict(r) for r in cts}
-                hd_s3    = st.selectbox("Hợp đồng",list(hd_opts3.keys()))
-                hd3      = hd_opts3.get(hd_s3,{})
-
-                c1,c2 = st.columns(2)
-                with c1:
-                    extra_ngay = st.date_input("Ngày thi công",value=today,key="ex_ngay")
-                    h_bd = int(hd3.get("gio_bat_dau","08:00").split(":")[0])
-                    m_bd = int(hd3.get("gio_bat_dau","08:00").split(":")[1])
-                    extra_gbd  = st.time_input("Giờ bắt đầu",value=dt.time(h_bd,m_bd),key="ex_gbd")
-                with c2:
-                    h_kt = int(hd3.get("gio_ket_thuc","12:00").split(":")[0])
-                    m_kt = int(hd3.get("gio_ket_thuc","12:00").split(":")[1])
-                    extra_gkt  = st.time_input("Giờ kết thúc",value=dt.time(h_kt,m_kt),key="ex_gkt")
-                    extra_gc   = st.text_input("Ghi chú",key="ex_gc")
-
-                if st.form_submit_button("➕ Thêm Ca",use_container_width=True):
-                    try:
-                        ky_extra = extra_ngay.strftime("%Y-%m")
-                        conn = get_connection()
-                        max_lan = conn.execute(
-                            "SELECT COALESCE(MAX(lan_thu),0) FROM schedules WHERE ma_hd=? AND ky_thang=?",
-                            (hd3["ma_hd"],ky_extra)
-                        ).fetchone()[0]
-                        rs = conn.execute("""INSERT INTO schedules
-                            (ma_hd,ma_kh,ky_thang,lan_thu,ngay_du_kien,gio_bat_dau,gio_ket_thuc,nguon,ghi_chu)
-                            VALUES(?,?,?,?,?,?,?,?,?) RETURNING id""",
-                            (hd3["ma_hd"],hd3["ma_kh"],ky_extra,max_lan+1,
-                             extra_ngay.isoformat(),extra_gbd.strftime("%H:%M"),
-                             extra_gkt.strftime("%H:%M"),"manual",extra_gc)).fetchone()
-                        if rs:
-                            from utils.google_sync import auto_sync_schedule_to_google
-                            auto_sync_schedule_to_google(conn, rs["id"], "upsert")
-                        conn.commit(); conn.close()
-                        st.success(f"✅ Đã thêm ca ngày {extra_ngay.strftime('%d/%m/%Y')}"); st.rerun()
-                    except Exception as e: st.error(f"❌ {e}")
-            st.markdown("</div>", unsafe_allow_html=True)
-
-    # -------------------------------------------------------------------------
+        if st.session_state.get("auth_role") == "staff":
+                st.warning("⚠️ Tài khoản nhân viên không có quyền truy cập tính năng cấu hình hàng loạt.")
+            else:
+                conn = get_connection()
+            cts  = conn.execute("""
+                SELECT ct.ma_hd, ct.ma_kh, c.ten_cty, ct.tan_suat
+                FROM contracts ct JOIN customers c ON ct.ma_kh=c.ma_kh
+                WHERE ct.trang_thai='active' ORDER BY ct.ma_hd
+            """).fetchall()
+            conn.close()
+    
+            col_b, col_s = st.columns(2)
+            today = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date()
+    
+            with col_b:
+                st.markdown('<div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:18px;">', unsafe_allow_html=True)
+                st.markdown("**🤖 Sinh Hàng Loạt**")
+                st.markdown('<hr style="margin:6px 0 12px">', unsafe_allow_html=True)
+    
+                ky_choices = [(today.replace(day=1)+timedelta(days=32*i)).strftime("%Y-%m") for i in range(4)]
+                ky_bulk = st.selectbox("Kỳ tháng",ky_choices,key="ky_bulk2")
+                hd_bulk = st.multiselect("HĐ (bỏ trống = tất cả)",
+                    [r["ma_hd"] for r in cts],
+                    format_func=lambda x: next((f"{r['ma_hd']} — {r['ten_cty']}" for r in cts if r["ma_hd"]==x),x))
+    
+                if st.button("🚀 Sinh Tất Cả",use_container_width=True,key="btn_bulk2"):
+                    targets = hd_bulk if hd_bulk else [r["ma_hd"] for r in cts]
+                    total = sum(auto_generate_schedules(m,ky_bulk) for m in targets)
+                    st.success(f"✓ Sinh {total} ca mới cho {ky_bulk}") if total else st.info("Tất cả đã có.")
+                    st.rerun()
+                st.markdown("</div>", unsafe_allow_html=True)
+    
+            with col_s:
+                st.markdown('<div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:18px;">', unsafe_allow_html=True)
+                st.markdown("**➕ Thêm Ca Thủ Công**")
+                st.markdown('<hr style="margin:6px 0 12px">', unsafe_allow_html=True)
+    
+                with st.form("form_manual_ca"):
+                    hd_opts3 = {f"{r['ma_hd']} — {r['ten_cty']}": dict(r) for r in cts}
+                    hd_s3    = st.selectbox("Hợp đồng",list(hd_opts3.keys()))
+                    hd3      = hd_opts3.get(hd_s3,{})
+    
+                    c1,c2 = st.columns(2)
+                    with c1:
+                        extra_ngay = st.date_input("Ngày thi công",value=today,key="ex_ngay")
+                        h_bd = int(hd3.get("gio_bat_dau","08:00").split(":")[0])
+                        m_bd = int(hd3.get("gio_bat_dau","08:00").split(":")[1])
+                        extra_gbd  = st.time_input("Giờ bắt đầu",value=dt.time(h_bd,m_bd),key="ex_gbd")
+                    with c2:
+                        h_kt = int(hd3.get("gio_ket_thuc","12:00").split(":")[0])
+                        m_kt = int(hd3.get("gio_ket_thuc","12:00").split(":")[1])
+                        extra_gkt  = st.time_input("Giờ kết thúc",value=dt.time(h_kt,m_kt),key="ex_gkt")
+                        extra_gc   = st.text_input("Ghi chú",key="ex_gc")
+    
+                    if st.form_submit_button("➕ Thêm Ca",use_container_width=True):
+                        try:
+                            ky_extra = extra_ngay.strftime("%Y-%m")
+                            conn = get_connection()
+                            max_lan = conn.execute(
+                                "SELECT COALESCE(MAX(lan_thu),0) FROM schedules WHERE ma_hd=? AND ky_thang=?",
+                                (hd3["ma_hd"],ky_extra)
+                            ).fetchone()[0]
+                            rs = conn.execute("""INSERT INTO schedules
+                                (ma_hd,ma_kh,ky_thang,lan_thu,ngay_du_kien,gio_bat_dau,gio_ket_thuc,nguon,ghi_chu)
+                                VALUES(?,?,?,?,?,?,?,?,?) RETURNING id""",
+                                (hd3["ma_hd"],hd3["ma_kh"],ky_extra,max_lan+1,
+                                 extra_ngay.isoformat(),extra_gbd.strftime("%H:%M"),
+                                 extra_gkt.strftime("%H:%M"),"manual",extra_gc)).fetchone()
+                            if rs:
+                                from utils.google_sync import auto_sync_schedule_to_google
+                                auto_sync_schedule_to_google(conn, rs["id"], "upsert")
+                            conn.commit(); conn.close()
+                            st.success(f"✅ Đã thêm ca ngày {extra_ngay.strftime('%d/%m/%Y')}"); st.rerun()
+                        except Exception as e: st.error(f"❌ {e}")
+                st.markdown("</div>", unsafe_allow_html=True)
+    
+        # -------------------------------------------------------------------------
     # IN PHIẾU XÁC NHẬN PDF
     # -------------------------------------------------------------------------
     with tab_pdf:

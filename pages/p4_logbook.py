@@ -260,7 +260,7 @@ def render():
                                         for idx, att in enumerate(att_list):
                                             c_n, c_b = st.columns([5,1], vertical_alignment="center")
                                             c_n.markdown(f"<div style='font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#64748b;'>📄 {att.split('_', 1)[-1] if '_' in att else att}</div>", unsafe_allow_html=True)
-                                            if c_b.button("❌", key=f"del_act_{job['id']}_{idx}", help="Xóa file này"):
+                                            if c_b.button("❌", key=f"del_act_{job['id']}_{idx}", help="Xóa file này", disabled=(st.session_state.get("auth_role") == "staff")):
                                                 att_list.remove(att)
                                                 conn_del = get_connection()
                                                 conn_del.execute("UPDATE logbook SET attachments=? WHERE id=?", (",".join(att_list), log["id"]))
@@ -391,64 +391,67 @@ def render():
                                     saved.append(_fn)
                                 st.session_state[f"dk_saved_{job['id']}"] = saved
                                 st.toast("✓ Đã lưu tạm ảnh đính kèm!", icon="📎")
-                            co_key = f"confirm_co_{job['id']}"
-                            if not st.session_state.get(co_key, False):
-                                if st.button("🚪 CHECK-OUT — KẾT THÚC CA", type="primary", use_container_width=True, key=f"btn_co_{job['id']}"):
-                                    st.session_state[co_key] = True
-                                    st.rerun()
+                            if st.session_state.get("auth_role") == "staff":
+                                st.info("🔒 Nhân viên không có quyền Check-out")
                             else:
-                                st.error("! Bạn có chắc chắn muốn Check-out và kết thúc ca làm việc?")
-                                col1, col2 = st.columns(2)
-                                if col1.button("❌ Quay lại", key=f"cancel_co_{job['id']}", use_container_width=True):
-                                    st.session_state[co_key] = False
-                                    st.rerun()
-                                if col2.button("✓ Xác nhận Check-out", key=f"do_co_{job['id']}", type="primary", use_container_width=True):
-                                    checkin_time = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
-                                    if ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)) - checkin_time).total_seconds() < 300:
-                                        st.error("! Phải thi công ít nhất 5 phút mới được Check-out!")
-                                    else:
-                                        try:
-                                            import os, uuid
-                                            # Use pre-saved files from session_state (saved on select, not on checkout)
-                                            uploaded_paths = st.session_state.pop(f"dk_saved_{job['id']}", [])
-                                            if not uploaded_paths and attachments:
-                                                # Fallback: save now if not pre-saved
-                                                upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
-                                                os.makedirs(upload_dir, exist_ok=True)
-                                                for f in attachments:
-                                                    filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
-                                                    filepath = os.path.join(upload_dir, filename)
-                                                    with open(filepath, "wb") as out:
-                                                        out.write(f.getbuffer())
-                                                    uploaded_paths.append(filename)
-                                            attachments_str = ",".join(uploaded_paths) if uploaded_paths else ""
-        
-                                            conn = get_connection()
-                                            conn.execute("UPDATE logbook SET checkout_time=?,hoa_chat=?,ket_qua=?,attachments=? WHERE id=?",
-                                                         ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), hoa_chat, ket_qua, attachments_str, log["id"]))
-                                            conn.commit()
-                                            conn.close()
-                                        
-                                            from utils.schedule_engine import complete_schedule as cs_fn
-                                            conn_ct = __import__('utils.database', fromlist=['get_connection']).get_connection()
-                                            ct_row = conn_ct.execute('SELECT * FROM contracts WHERE ma_hd=?',(job['ma_hd'],)).fetchone()
-                                            conn_ct.close()
-                                        
-                                            if ct_row:
-                                                result = cs_fn(job['id'], dict(ct_row))
-                                                if result.get('next_ids'):
-                                                    st.info(f"📅 Đã tự động tạo {len(result['next_ids'])} ca kỳ tiếp theo cho {job['ten_cty']}!")
-                                            else:
-                                                conn_fallback = __import__('utils.database', fromlist=['get_connection']).get_connection()
-                                                conn_fallback.execute("UPDATE schedules SET trang_thai='completed' WHERE id=?", (job['id'],))
-                                                from utils.google_sync import auto_sync_schedule_to_google
-                                                auto_sync_schedule_to_google(conn_fallback, job['id'], "upsert")
-                                                conn_fallback.commit()
-                                                conn_fallback.close()
-                                            st.session_state[co_key] = False
-                                            st.success("✓ Check-out thành công! Ca hoàn thành.")
-                                            st.balloons(); st.rerun()
-                                        except Exception as e: st.error(f"× {e}")
+                                co_key = f"confirm_co_{job['id']}"
+                                if not st.session_state.get(co_key, False):
+                                    if st.button("🚪 CHECK-OUT — KẾT THÚC CA", type="primary", use_container_width=True, key=f"btn_co_{job['id']}"):
+                                        st.session_state[co_key] = True
+                                        st.rerun()
+                                else:
+                                    st.error("! Bạn có chắc chắn muốn Check-out và kết thúc ca làm việc?")
+                                    col1, col2 = st.columns(2)
+                                    if col1.button("❌ Quay lại", key=f"cancel_co_{job['id']}", use_container_width=True):
+                                        st.session_state[co_key] = False
+                                        st.rerun()
+                                    if col2.button("✓ Xác nhận Check-out", key=f"do_co_{job['id']}", type="primary", use_container_width=True):
+                                        checkin_time = datetime.fromisoformat(log["checkin_time"]).replace(tzinfo=None)
+                                        if ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)) - checkin_time).total_seconds() < 300:
+                                            st.error("! Phải thi công ít nhất 5 phút mới được Check-out!")
+                                        else:
+                                            try:
+                                                import os, uuid
+                                                # Use pre-saved files from session_state (saved on select, not on checkout)
+                                                uploaded_paths = st.session_state.pop(f"dk_saved_{job['id']}", [])
+                                                if not uploaded_paths and attachments:
+                                                    # Fallback: save now if not pre-saved
+                                                    upload_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+                                                    os.makedirs(upload_dir, exist_ok=True)
+                                                    for f in attachments:
+                                                        filename = f"{uuid.uuid4().hex[:8]}_{f.name}"
+                                                        filepath = os.path.join(upload_dir, filename)
+                                                        with open(filepath, "wb") as out:
+                                                            out.write(f.getbuffer())
+                                                        uploaded_paths.append(filename)
+                                                attachments_str = ",".join(uploaded_paths) if uploaded_paths else ""
+            
+                                                conn = get_connection()
+                                                conn.execute("UPDATE logbook SET checkout_time=?,hoa_chat=?,ket_qua=?,attachments=? WHERE id=?",
+                                                             ((datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).isoformat(), hoa_chat, ket_qua, attachments_str, log["id"]))
+                                                conn.commit()
+                                                conn.close()
+                                            
+                                                from utils.schedule_engine import complete_schedule as cs_fn
+                                                conn_ct = __import__('utils.database', fromlist=['get_connection']).get_connection()
+                                                ct_row = conn_ct.execute('SELECT * FROM contracts WHERE ma_hd=?',(job['ma_hd'],)).fetchone()
+                                                conn_ct.close()
+                                            
+                                                if ct_row:
+                                                    result = cs_fn(job['id'], dict(ct_row))
+                                                    if result.get('next_ids'):
+                                                        st.info(f"📅 Đã tự động tạo {len(result['next_ids'])} ca kỳ tiếp theo cho {job['ten_cty']}!")
+                                                else:
+                                                    conn_fallback = __import__('utils.database', fromlist=['get_connection']).get_connection()
+                                                    conn_fallback.execute("UPDATE schedules SET trang_thai='completed' WHERE id=?", (job['id'],))
+                                                    from utils.google_sync import auto_sync_schedule_to_google
+                                                    auto_sync_schedule_to_google(conn_fallback, job['id'], "upsert")
+                                                    conn_fallback.commit()
+                                                    conn_fallback.close()
+                                                st.session_state[co_key] = False
+                                                st.success("✓ Check-out thành công! Ca hoàn thành.")
+                                                st.balloons(); st.rerun()
+                                            except Exception as e: st.error(f"× {e}")
                     
                         st.markdown("</div>", unsafe_allow_html=True)
         
@@ -472,6 +475,8 @@ def render():
                     
                         if not ktv or ktv == "(Chưa có)":
                             st.warning("! Vui lòng chọn kỹ thuật viên để check-in!")
+                        elif st.session_state.get("auth_role") == "staff":
+                            st.info("🔒 Nhân viên không có quyền Check-in")
                         else:
                             ci_key = f"confirm_ci_{job['id']}"
                             if not st.session_state.get(ci_key, False):
@@ -615,7 +620,7 @@ def render():
                                     for idx, att in enumerate(att_list):
                                         c_n, c_b = st.columns([5,1], vertical_alignment="center")
                                         c_n.markdown(f"<div style='font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#64748b;'>📄 {att.split('_', 1)[-1] if '_' in att else att}</div>", unsafe_allow_html=True)
-                                        if c_b.button("❌", key=f"del_hist_{log['id']}_{idx}", help="Xóa file này"):
+                                        if c_b.button("❌", key=f"del_hist_{log['id']}_{idx}", help="Xóa file này", disabled=(st.session_state.get("auth_role") == "staff")):
                                             att_list.remove(att)
                                             conn_del = get_connection()
                                             conn_del.execute("UPDATE logbook SET attachments=? WHERE id=?", (",".join(att_list), log["id"]))
