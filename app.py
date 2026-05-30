@@ -643,15 +643,20 @@ if page == "🏠 Tổng Quan":
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col_b:
+        # Auto-expire contracts that have passed their expiry date
+        conn.execute("UPDATE contracts SET trang_thai='expired' WHERE ngay_het_han < date('now','localtime') AND trang_thai='active'")
+        conn.commit()
+        
         expiring = conn.execute("""
             SELECT ct.ma_hd, ct.ngay_het_han, c.ten_cty,
-                   CAST(julianday(ct.ngay_het_han)-julianday('now') AS INT) days_left
+                   CAST(julianday(ct.ngay_het_han)-julianday('now', 'localtime') AS INT) days_left
             FROM contracts ct JOIN customers c ON ct.ma_kh=c.ma_kh
-            WHERE ct.ngay_het_han <= date('now','+30 days') AND ct.trang_thai='active'
+            WHERE ct.ngay_het_han BETWEEN date('now','localtime','-15 days') AND date('now','localtime','+30 days') 
+              AND ct.trang_thai IN ('active', 'expired')
             ORDER BY ct.ngay_het_han LIMIT 5
         """).fetchall()
         st.markdown('<div style="background:white;border:1px solid #e2e8f0;border-radius:14px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.04);">', unsafe_allow_html=True)
-        st.markdown('<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:12px;">⚠️ HĐ Sắp Hết Hạn</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:12px;">⚠️ HĐ Sắp/Đã Hết Hạn</div>', unsafe_allow_html=True)
         if expiring:
             for e in expiring:
                 d  = e["days_left"]
