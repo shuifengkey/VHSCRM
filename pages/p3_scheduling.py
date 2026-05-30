@@ -612,7 +612,7 @@ def render():
                                                 auto_sync_schedule_to_google(conn, r["id"], "upsert")
                                                 conn.commit(); conn.close()
                                                 st.info("Ca đã bỏ qua."); st.rerun()
-                                        except Exception as e: st.error(f"× {e}")
+                                            except Exception as e: st.error(f"× {e}")
                             else:
                                 st.markdown("""
                                 <div style="background:#dcfce7;border-radius:8px;padding:14px;text-align:center;">
@@ -750,19 +750,18 @@ def render():
     # ═══════════════════════════════════
     with tab_bulk:
         if st.session_state.get("auth_role") == "staff":
-                st.warning("⚠️ Tài khoản nhân viên không có quyền truy cập tính năng cấu hình hàng loạt.")
-            else:
-                conn = get_connection()
+            st.warning("⚠️ Tài khoản nhân viên không có quyền truy cập tính năng cấu hình hàng loạt.")
+        else:
+            conn = get_connection()
             cts  = conn.execute("""
                 SELECT ct.ma_hd, ct.ma_kh, c.ten_cty, ct.tan_suat
                 FROM contracts ct JOIN customers c ON ct.ma_kh=c.ma_kh
                 WHERE ct.trang_thai='active' ORDER BY ct.ma_hd
             """).fetchall()
             conn.close()
-    
             col_b, col_s = st.columns(2)
             today = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=7)).date()
-    
+        
             with col_b:
                 st.markdown('<div style="background:white;border:1px solid #e2e8f0;border-radius:12px;padding:18px;">', unsafe_allow_html=True)
                 st.markdown("**🤖 Sinh Hàng Loạt**")
