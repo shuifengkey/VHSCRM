@@ -582,9 +582,13 @@ def render():
     with tab_chart:
         conn = get_connection()
         top8 = conn.execute("""
-            SELECT ct.ma_hd, k.ten_cty, ct.gia_tri_thang
+            SELECT ct.ma_hd, k.ten_cty, 
+                   CASE 
+                       WHEN ct.don_vi_tinh LIKE '%lần%' THEN ct.gia_tri_thang * ct.tan_suat 
+                       ELSE ct.gia_tri_thang 
+                   END as true_value
             FROM contracts ct JOIN customers k ON ct.ma_kh=k.ma_kh
-            WHERE ct.trang_thai='active' ORDER BY ct.gia_tri_thang DESC LIMIT 8
+            WHERE ct.trang_thai='active' ORDER BY true_value DESC LIMIT 8
         """).fetchall()
         freq = conn.execute("""
             SELECT tan_suat, kieu_lap, COUNT(*) cnt
@@ -597,10 +601,10 @@ def render():
             if top8:
                 fig = go.Figure(go.Bar(
                     y=[r["ten_cty"][:22] for r in top8],
-                    x=[r["gia_tri_thang"]/1e6 for r in top8],
+                    x=[r["true_value"]/1e6 for r in top8],
                     orientation="h",
                     marker_color=["#16a34a","#22c55e","#4ade80","#86efac"]*2,
-                    text=[f"{int(r['gia_tri_thang'] or 0):,}".replace(",", ".") for r in top8],
+                    text=[f"{int(r['true_value'] or 0):,}".replace(",", ".") for r in top8],
                     textposition="outside",
                 ))
                 fig.update_layout(
