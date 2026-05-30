@@ -171,44 +171,45 @@ def action_dialog(job, log):
         pest_found = st.text_area("Côn trùng phát hiện / Ghi chú", value=log.get("ket_qua", ""), height=80)
         chemical   = st.text_area("Hóa chất sử dụng", value=log.get("hoa_chat", ""), height=80)
         
-        # === CAMERA SCAN (xử lý client-side bằng OpenCV.js) ===
-        st.markdown("**📸 Chụp ảnh biên bản (Document Scanner)**")
-        from components.custom_camera import custom_camera
-        scanned_img = custom_camera(key=f"scan_{log['id']}", height=540)
-        
-        # Lưu ảnh đã scan vào session nếu nhận được
-        scan_key = f"scanned_files_{log['id']}"
-        if scan_key not in st.session_state:
-            st.session_state[scan_key] = []
-        
-        if scanned_img and isinstance(scanned_img, str) and scanned_img.startswith("data:image"):
-            import base64, os, hashlib
-            upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
-            os.makedirs(upload_dir, exist_ok=True)
+        with st.expander("📸 Chụp ảnh / Đính kèm biên bản", expanded=False):
+            # === CAMERA SCAN (xử lý client-side bằng OpenCV.js) ===
+            st.markdown("**📸 Chụp ảnh biên bản (Document Scanner)**")
+            from components.custom_camera import custom_camera
+            scanned_img = custom_camera(key=f"scan_{log['id']}", height=540)
             
-            # Decode base64 JPEG
-            header, b64data = scanned_img.split(",", 1)
-            img_hash = hashlib.md5(b64data.encode('utf-8')).hexdigest()[:12]
-            fname = f"{img_hash}_scan.jpg"
+            # Lưu ảnh đã scan vào session nếu nhận được
+            scan_key = f"scanned_files_{log['id']}"
+            if scan_key not in st.session_state:
+                st.session_state[scan_key] = []
             
-            # Thêm vào danh sách đã scan (tránh trùng)
-            if fname not in st.session_state[scan_key]:
-                fpath = os.path.join(upload_dir, fname)
-                with open(fpath, "wb") as f:
-                    f.write(base64.b64decode(b64data))
-                st.session_state[scan_key].append(fname)
-                st.toast("✓ Đã lưu ảnh scan!", icon="📸")
-                st.rerun()
-        
-        if st.session_state[scan_key]:
-            st.markdown(f"**🖼️ Đã scan: {len(st.session_state[scan_key])} ảnh**")
-        
-        st.markdown("---")
-        
-        # === FILE UPLOADER (cho PDF và ảnh thường) ===
-        extra_files = st.file_uploader("📎 Đính kèm thêm (PDF/Ảnh)", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"extra_{log['id']}")
-        if extra_files:
-            st.markdown(f"**📎 Đã chọn:** {', '.join([p.name for p in extra_files])}")
+            if scanned_img and isinstance(scanned_img, str) and scanned_img.startswith("data:image"):
+                import base64, os, hashlib
+                upload_dir = os.path.join(os.path.dirname(__file__), "..", "uploads")
+                os.makedirs(upload_dir, exist_ok=True)
+                
+                # Decode base64 JPEG
+                header, b64data = scanned_img.split(",", 1)
+                img_hash = hashlib.md5(b64data.encode('utf-8')).hexdigest()[:12]
+                fname = f"{img_hash}_scan.jpg"
+                
+                # Thêm vào danh sách đã scan (tránh trùng)
+                if fname not in st.session_state[scan_key]:
+                    fpath = os.path.join(upload_dir, fname)
+                    with open(fpath, "wb") as f:
+                        f.write(base64.b64decode(b64data))
+                    st.session_state[scan_key].append(fname)
+                    st.toast("✓ Đã lưu ảnh scan!", icon="📸")
+                    st.rerun()
+            
+            if st.session_state[scan_key]:
+                st.markdown(f"**🖼️ Đã scan: {len(st.session_state[scan_key])} ảnh**")
+            
+            st.markdown("---")
+            
+            # === FILE UPLOADER (cho PDF và ảnh thường) ===
+            extra_files = st.file_uploader("📎 Đính kèm thêm (PDF/Ảnh)", type=['png', 'jpg', 'jpeg', 'pdf'], accept_multiple_files=True, key=f"extra_{log['id']}")
+            if extra_files:
+                st.markdown(f"**📎 Đã chọn:** {', '.join([p.name for p in extra_files])}")
         
         co_key = f"confirm_co_{log['id']}"
         if not st.session_state.get(co_key, False):
