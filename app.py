@@ -193,9 +193,10 @@ def _reset_lockout():
     conn.commit()
     conn.close()
 
-def _change_pin(new_pin: str):
+def _change_pin(new_pin: str, role: str = "admin"):
     conn = get_connection()
-    conn.execute("UPDATE app_settings SET value=? WHERE key='pin_hash'", (_hash_pin(new_pin),))
+    key = 'staff_pin_hash' if role == 'staff' else 'pin_hash'
+    conn.execute("UPDATE app_settings SET value=? WHERE key=?", (_hash_pin(new_pin), key))
     conn.commit()
     conn.close()
 
@@ -733,7 +734,7 @@ elif page == "⚙️ Cài đặt":
         st.divider()
         col1, col2 = st.columns([1, 2])
         with col1:
-            st.markdown("**🔑 Đổi mã PIN**")
+            st.markdown("**🔑 Đổi mã PIN (Admin)**")
             with st.form("form_change_pin"):
                 old_pin = st.text_input("PIN hiện tại", type="password", max_chars=6, placeholder="••••••")
                 new_pin = st.text_input("PIN mới", type="password", max_chars=6, placeholder="••••••")
@@ -746,8 +747,26 @@ elif page == "⚙️ Cài đặt":
                     elif new_pin != new_pin2:
                         st.error("× PIN mới không khớp!")
                     else:
-                        _change_pin(new_pin)
+                        _change_pin(new_pin, role="admin")
                         st.success("✓ Đã đổi PIN thành công!")
+                        
+            st.markdown("**🔑 Đổi mã PIN (Nhân viên)**")
+            with st.form("form_change_staff_pin"):
+                st.info("Mã PIN dành cho nhân viên văn phòng (chỉ được xem lịch và lịch sử).")
+                old_staff_pin = st.text_input("PIN Admin hoặc PIN nhân viên hiện tại", type="password", max_chars=6, placeholder="••••••", key="old_staff")
+                new_staff_pin = st.text_input("PIN nhân viên mới", type="password", max_chars=6, placeholder="••••••", key="new_staff")
+                new_staff_pin2 = st.text_input("Nhập lại PIN nhân viên", type="password", max_chars=6, placeholder="••••••", key="new_staff2")
+                if st.form_submit_button("💾 Lưu PIN Nhân viên", use_container_width=True):
+                    # To change staff PIN, Admin can either provide the correct staff PIN or their Admin PIN
+                    if _verify_pin(old_staff_pin) not in ("staff", "admin"):
+                        st.error("× PIN xác thực không đúng!")
+                    elif len(new_staff_pin) < 4:
+                        st.error("× PIN mới phải có ít nhất 4 ký tự!")
+                    elif new_staff_pin != new_staff_pin2:
+                        st.error("× PIN mới không khớp!")
+                    else:
+                        _change_pin(new_staff_pin, role="staff")
+                        st.success("✓ Đã đổi PIN nhân viên thành công!")
                         
         with col2:
             st.markdown("**🚪 Tài khoản**")
