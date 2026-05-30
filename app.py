@@ -567,44 +567,46 @@ if page == "🏠 Tổng Quan":
     # Charts
     col_l, col_r = st.columns([3,2])
     with col_l:
-        monthly = conn.execute("""
-            SELECT ky_thanh_toan, SUM(can_thu) ct, SUM(da_thu) dt
-            FROM debts GROUP BY ky_thanh_toan ORDER BY ky_thanh_toan DESC LIMIT 6
-        """).fetchall()
-        monthly = list(reversed(monthly))
-        if monthly:
-            fig = go.Figure()
-            fig.add_scatter(x=[r["ky_thanh_toan"] for r in monthly],
-                            y=[r["ct"] for r in monthly],
-                            name="Cần Thu", line=dict(color="#e2e8f0",width=3),
-                            fill="tozeroy", fillcolor="rgba(226,232,240,.3)")
-            fig.add_scatter(x=[r["ky_thanh_toan"] for r in monthly],
-                            y=[r["dt"] for r in monthly],
-                            name="Đã Thu", line=dict(color="#16a34a",width=3),
-                            fill="tozeroy", fillcolor="rgba(22,163,74,.15)",
-                            mode="lines+markers", marker=dict(size=6,color="#16a34a"))
-            fig.update_layout(height=240, paper_bgcolor="white", plot_bgcolor="white",
-                title=dict(text="Doanh Thu 6 Tháng (triệu đ)",font=dict(size=13,color="#0f172a")),
-                margin=dict(l=10,r=10,t=36,b=30), font=dict(family="Inter"),
-                xaxis=dict(showgrid=False), yaxis=dict(showgrid=True,gridcolor="#f1f5f9"),
-                legend=dict(orientation="h",y=-0.25))
-            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar":False})
+        with st.container(border=True):
+            monthly = conn.execute("""
+                SELECT ky_thanh_toan, SUM(can_thu) ct, SUM(da_thu) dt
+                FROM debts GROUP BY ky_thanh_toan ORDER BY ky_thanh_toan DESC LIMIT 6
+            """).fetchall()
+            monthly = list(reversed(monthly))
+            if monthly:
+                fig = go.Figure()
+                fig.add_scatter(x=[r["ky_thanh_toan"] for r in monthly],
+                                y=[r["ct"] for r in monthly],
+                                name="Cần Thu", line=dict(color="#e2e8f0",width=3),
+                                fill="tozeroy", fillcolor="rgba(226,232,240,.3)")
+                fig.add_scatter(x=[r["ky_thanh_toan"] for r in monthly],
+                                y=[r["dt"] for r in monthly],
+                                name="Đã Thu", line=dict(color="#16a34a",width=3),
+                                fill="tozeroy", fillcolor="rgba(22,163,74,.15)",
+                                mode="lines+markers", marker=dict(size=6,color="#16a34a"))
+                fig.update_layout(height=240, paper_bgcolor="white", plot_bgcolor="white",
+                    title=dict(text="Doanh Thu 6 Tháng (triệu đ)",font=dict(size=13,color="#0f172a")),
+                    margin=dict(l=10,r=10,t=36,b=30), font=dict(family="Inter"),
+                    xaxis=dict(showgrid=False), yaxis=dict(showgrid=True,gridcolor="#f1f5f9"),
+                    legend=dict(orientation="h",y=-0.25))
+                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar":False})
 
     with col_r:
-        seg = conn.execute("SELECT phan_khuc, COUNT(*) cnt FROM customers GROUP BY phan_khuc").fetchall()
-        if seg:
-            fig2 = go.Figure(go.Pie(
-                labels=[r["phan_khuc"] for r in seg],
-                values=[r["cnt"] for r in seg], hole=.58,
-                marker=dict(colors=["#16a34a","#2563eb","#d97706"],line=dict(color="white",width=3)),
-                textinfo="label+percent", textfont=dict(size=11),
-            ))
-            fig2.add_annotation(text=f"<b>{total_kh}</b><br>KH",x=.5,y=.5,
-                                font=dict(size=16,color="#0f172a"),showarrow=False)
-            fig2.update_layout(height=240, paper_bgcolor="white", showlegend=False,
-                title=dict(text="Phân Khúc KH",font=dict(size=13,color="#0f172a")),
-                margin=dict(l=10,r=10,t=36,b=10), font=dict(family="Inter"))
-            st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar":False})
+        with st.container(border=True):
+            seg = conn.execute("SELECT phan_khuc, COUNT(*) cnt FROM customers GROUP BY phan_khuc").fetchall()
+            if seg:
+                fig2 = go.Figure(go.Pie(
+                    labels=[r["phan_khuc"] for r in seg],
+                    values=[r["cnt"] for r in seg], hole=.58,
+                    marker=dict(colors=["#16a34a","#2563eb","#d97706"],line=dict(color="white",width=3)),
+                    textinfo="label+percent", textfont=dict(size=11),
+                ))
+                fig2.add_annotation(text=f"<b>{total_kh}</b><br>KH",x=.5,y=.5,
+                                    font=dict(size=16,color="#0f172a"),showarrow=False)
+                fig2.update_layout(height=240, paper_bgcolor="white", showlegend=False,
+                    title=dict(text="Phân Khúc KH",font=dict(size=13,color="#0f172a")),
+                    margin=dict(l=10,r=10,t=36,b=10), font=dict(family="Inter"))
+                st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar":False})
 
     # Bottom row
     col_a, col_b, col_c = st.columns([2,2,1])
